@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "experimentalDecorators": true,  // this line
+        "skipLibCheck": true,
+        "outDir": "../dist",
+        "baseUrl": "tsconfig",
+        "module": "commonjs"
+    }
+}
