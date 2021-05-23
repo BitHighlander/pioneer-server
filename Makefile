@@ -8,7 +8,7 @@ clean::
 	find . -name "node_modules" -type d -prune -print | xargs du -chs && find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' \; &&\
 
 build::
-	npm i && npm run build
+	for dir in services/*; do (cd "$dir" && npm i && npm run build); done
 
 #TODO
 test::
