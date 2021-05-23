@@ -7,7 +7,7 @@ executors:
 
 jobs:
   make:
-    resource_class: xlarge
+    resource_class: large
     executor: node
     parameters:
       env:
@@ -19,34 +19,6 @@ jobs:
           docker_layer_caching: true
       - run:
           command: "make"
-
-  build:
-    resource_class: xlarge
-    executor: node
-    parameters:
-      env:
-        description: stage or prod
-        type: string
-    steps:
-      - run: sudo apt-get install libudev-dev libusb-dev libusb-1.0
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          command: "curl -sL https://github.com/digitalocean/doctl/releases/download/v1.56.0/doctl-1.56.0-linux-amd64.tar.gz | tar -xzv"
-      - run:
-          command: "sudo mv doctl /usr/local/bin"
-      - run:
-          command: npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-      - run:
-          name: build
-          command: "cd services/pioneer-server && npm i"
-      - run:
-          name: build
-          command: "cd services/pioneer-pubkey-ingester && npm i"
-      - run:
-          name: build
-          command: "doctl auth init -t $DIGITALOCEAN_TOKEN && doctl registry login && npm run build:rest && npm run build:worker"
   deploy:
     executor: node
     parameters:
@@ -58,8 +30,11 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
+          name: push
+          command: "make push"
+      - run:
           name: update
-          command: "cd deploy && npm i && node leeroy-sdk.js"
+          command: "make up"
 
 
 not_master: &not_master

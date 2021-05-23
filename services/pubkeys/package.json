@@ -1,0 +1,39 @@
+{
+  "name": "pioneer-pubkey-ingester",
+  "version": "1.0.1",
+  "private": true,
+  "scripts": {
+    "yarn": "yarn",
+    "start": "node lib/index",
+    "test": "npm run build && node lib/index",
+    "build": "tsc -p .",
+    "dev": "npm run build && npm run start",
+    "prepublish": "npm run build",
+    "docker:build": "docker build -t pioneer/pioneer-pubkey-ingester:latest .",
+    "docker:tag": "docker tag pioneer/pioneer-pubkey-ingester:latest registry.digitalocean.com/pioneer/pioneer/pioneer-pubkey-ingester:latest",
+    "docker:push": "docker push registry.digitalocean.com/pioneer/pioneer/pioneer-pubkey-ingester:latest",
+    "docker:push:all": "npm run docker:build && npm run docker:tag && npm run docker:push"
+  },
+  "dependencies": {
+    "@pioneer-platform/bnb-network": "^6.2.2",
+    "@pioneer-platform/cosmos-network": "^6.2.11",
+    "@pioneer-platform/default-mongo": "^8.1.2",
+    "@pioneer-platform/default-redis": "^8.1.2",
+    "@pioneer-platform/fio-network": "^8.1.2",
+    "@pioneer-platform/loggerdog": "^8.0.0",
+    "@pioneer-platform/network": "^6.3.88",
+    "@pioneer-platform/redis-queue": "^8.1.2",
+    "@pioneer-platform/thor-network": "^6.2.5",
+    "@pioneer-platform/utxo-network": "^6.2.18",
+    "chai": "^4.3.4",
+    "dotenv": "^8.1.0",
+    "wait-promise": "^0.4.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "@types/node": "^13.13.50",
+    "nodemon": "^2.0.7",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.9"
+  }
+}
