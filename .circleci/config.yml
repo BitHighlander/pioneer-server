@@ -19,7 +19,7 @@ jobs:
           docker_layer_caching: true
       - run:
           command: "make"
-  deploy:
+  push:
     executor: node
     parameters:
       env:
@@ -30,37 +30,19 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          name: push
           command: "make push"
+  update:
+    executor: node
+    parameters:
+      env:
+        description: stage or prod
+        type: string
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
-          name: update
           command: "make up"
-
-
-not_master: &not_master
-  filters:
-    branches:
-      ignore: master
-
-only_master: &only_master
-  filters:
-    branches:
-      only:
-        - master
-
-only_develop: &only_develop
-  filters:
-    branches:
-      only:
-        - develop
-
-# Blue* deployment
-only_release_canidate: &only_release_canidate
-  filters:
-    branches:
-      only:
-        - release-canidate
-
 workflows:
   version: 2
   build-master:
@@ -68,14 +50,12 @@ workflows:
       - make:
           name: make
           env: prod
-      - build:
-          <<: *only_develop
+      - push:
           name: push image
           env: prod
           requires:
             - make
-      - deploy:
-          <<: *only_develop
+      - upate:
           name: deploy image
           env: prod
           requires:
