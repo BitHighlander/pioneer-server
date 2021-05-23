@@ -26,7 +26,7 @@
     "build:routes-prod": "mkdir -p src-api/routes && tsoa routes --configuration tsoaProd.json",
     "build:swagger-prod": "mkdir -p api && mkdir -p api/dist && tsoa swagger --configuration tsoaProd.json",
     "build:ts": "tsc -p src-api",
-    "build": "npm run build:all-prod",
+    "build": "npm run build:routes-local && npm run build:swagger-local && npm run build:ts && npm run build:web",
     "build:all-local": "npm run build:routes-local && npm run build:swagger-local && npm run build:ts && npm run build:web",
     "build:all-local:watch": "onchange 'src/**/*.ts' -- npm run build:all-local",
     "build:all-stage": "npm run build:routes && npm run build:swagger && npm run build:ts && npm run build:web",

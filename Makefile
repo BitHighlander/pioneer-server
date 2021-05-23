@@ -8,10 +8,7 @@ clean::
 	find . -name "node_modules" -type d -prune -print | xargs du -chs && find . -name 'node_modules' -type d -prune -print -exec rm -rf '{}' \; &&\
 
 build::
-#	$(foreach file, $(wildcard services/*), echo $(file);)
-	$(foreach service, $(wildcard services/*), cd $(service) && npm i && npm run build;)
-#	for dir in services/*; do (echo "$dir"); done
-#	for dir in services/*; do (cd "$dir" && npm i && npm run build); done
+	sh scripts/build.sh
 
 #TODO
 test::
