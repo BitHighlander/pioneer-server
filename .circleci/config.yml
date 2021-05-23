@@ -56,7 +56,7 @@ workflows:
           env: prod
           requires:
             - make
-      - upate:
+      - update:
           name: deploy image
           env: prod
           requires:
