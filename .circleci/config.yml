@@ -30,7 +30,9 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          command: "docker login -u $DOCKER_USER -p $DOCKER_PASS"
+          command: "curl -sL https://github.com/digitalocean/doctl/releases/download/v1.56.0/doctl-1.56.0-linux-amd64.tar.gz | tar -xzv"
+      - run:
+          command: "doctl auth init -t $DIGITALOCEAN_TOKEN && doctl registry login"
       - run:
           command: "make push"
   update:
