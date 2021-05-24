@@ -267,6 +267,7 @@ subscriber.on('message', async function (channel, payloadS) {
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
                         log.info(tag,"sending message to user!")
+                        pairing.type = "pairing"
                         globalSockets[socketid].emit('message', pairing);
                     }
                 }

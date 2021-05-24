@@ -1198,7 +1198,8 @@ export class pioneerPrivateController extends Controller {
                 if(!userInfoMongo){
                     output.resultSaveUserDB = await usersDB.insert(userInfo)
                 }
-
+                //delete descriptions
+                delete userInfo.walletDescriptions
                 let redisSuccess = await redis.hmset(body.username,userInfo)
                 log.info(tag,"redisSuccess: ",redisSuccess)
 
