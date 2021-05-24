@@ -30,6 +30,8 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
+          command: "docker login -u $DOCKER_USER -p $DOCKER_PASS"
+      - run:
           command: "make push"
   update:
     executor: node
