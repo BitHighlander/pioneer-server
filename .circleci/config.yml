@@ -32,6 +32,8 @@ jobs:
       - run:
           command: "curl -sL https://github.com/digitalocean/doctl/releases/download/v1.56.0/doctl-1.56.0-linux-amd64.tar.gz | tar -xzv"
       - run:
+          command: "sudo mv doctl /usr/local/bin"
+      - run:
           command: "doctl auth init -t $DIGITALOCEAN_TOKEN && doctl registry login"
       - run:
           command: "make push"
