@@ -25,7 +25,7 @@ let sleep = wait.sleep;
 const networks:any = {
     'ETH' : require('@pioneer-platform/eth-network'),
     'ATOM': require('@pioneer-platform/cosmos-network'),
-    'BNB' : require('@pioneer-platform/bnb-network'),
+    'BNB' : require('@pioneer-platform/binance-network'),
     // 'EOS' : require('@pioneer-platform/eos-network'),
     'FIO' : require('@pioneer-platform/fio-network'),
     'ANY' : require('@pioneer-platform/utxo-network'),
