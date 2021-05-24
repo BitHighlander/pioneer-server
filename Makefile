@@ -1,6 +1,6 @@
 SHELL=/bin/bash
 
-env=skunkworks
+env=prod
 
 .DEFAULT_GOAL := build
 
@@ -12,12 +12,10 @@ build::
 
 #TODO
 test::
-	echo env
+	echo $(env)
 
 push::
-	docker build -t pioneer/pioneer-server:latest . &&\
-	docker tag pioneer/pioneer-server:latest registry.digitalocean.com/pioneer/pioneer/pioneer-server:latest &&\
-    docker push registry.digitalocean.com/pioneer/pioneer/pioneer-server:latest
+	sh scripts/push-images-$(env).sh
 
 up::
 	node deploy/leeroy-sdk.js
