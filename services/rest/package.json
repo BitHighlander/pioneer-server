@@ -55,6 +55,7 @@
     "@pioneer-platform/pioneer-client": "latest",
     "@pioneer-platform/pioneer-coins": "latest",
     "@pioneer-platform/pioneer-sdk": "latest",
+    "@pioneer-platform/pioneer-types": "latest",
     "@pioneer-platform/redis-queue": "latest",
     "@pioneer-platform/secret-network": "latest",
     "@pioneer-platform/signing": "latest",
