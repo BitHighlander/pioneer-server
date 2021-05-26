@@ -19,21 +19,10 @@ const networks:any = {
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
 
-//types
-interface Error {
-    success:boolean
-    tag:string
-    e:any
-}
-
-export class ApiError extends Error {
-    private statusCode: number;
-    constructor(name: string, statusCode: number, message?: string) {
-        super(message);
-        this.name = name;
-        this.statusCode = statusCode;
-    }
-}
+import {
+    Error,
+    ApiError
+} from "@pioneer-platform/pioneer-types";
 
 //route
 @Tags('Fio Endpoints')

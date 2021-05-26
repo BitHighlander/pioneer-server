@@ -82,89 +82,16 @@ let CACHE_OVERRIDE = true
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
 // import * as express from 'express';
 
-//import { User, UserCreateRequest, UserUpdateRequest } from '../models/user';
+import {
+    Error,
+    ApiError,
+    Asset,
+    BroadcastBody,
+    GetFeesWithMemoBody,
+    EstimateFeeBody,
+    BodyAllowance
+} from "@pioneer-platform/pioneer-types";
 
-interface Asset {
-    chain:string,
-    symbol:string,
-    ticker:string,
-}
-
-interface ThorchainMemoEncodedBody {
-    asset:Asset,
-    vaultAddress:string,
-    toAddress:string
-}
-
-interface BroadcastBody {
-    coin?:string
-    isTestnet?:boolean,
-    serialized:string
-    signature?:string
-    type?:string
-    txid:string
-    broadcastBody?:any
-    noBroadcast?:boolean
-    dscription?:any
-    invocationId?:string
-}
-
-//types
-interface Error {
-    success:boolean
-    tag:string
-    e:any
-}
-
-export class ApiError extends Error {
-    private statusCode: number;
-    constructor(name: string, statusCode: number, message?: string) {
-        super(message);
-        this.name = name;
-        this.statusCode = statusCode;
-    }
-}
-
-interface Recipient{
-    address:string
-    amount:string,
-    sendMax:boolean
-}
-
-interface GetFeesWithMemoBody{
-    coin:string
-    memo:string,
-}
-
-interface EstimateFeeBody{
-    coin:string
-    amount:string,
-    contract:string,
-    recipient:string,
-    memo:string
-}
-
-interface Input{
-    network:string
-    xpub:string,
-    account_address_n:[number]
-    script_type:string
-}
-
-interface UnsignedUtxoRequest {
-    network:string
-    recipients:any
-    include_txs:boolean
-    include_hex:boolean
-    effort:number
-    inputs:any
-}
-
-interface BodyAllowance {
-    token:string
-    spender:string
-    sender:string
-}
 
 //TODO move this to coins module!
 let UTXO_COINS = [
@@ -985,15 +912,15 @@ export class pioneerPublicController extends Controller {
             let output:any = {}
             log.info(tag,"body: ",body)
 
-            if(UTXO_COINS.indexOf(body.coin) >= 0){
+            if(UTXO_COINS.indexOf(body.network) >= 0){
                 //TODO supported assets
-                let resp = await networks['ANY'].getFeesWithRates(body.coin,body.memo)
+                let resp = await networks['ANY'].getFeesWithRates(body.network,body.memo)
                 log.info("resp:",resp)
                 //else error
                 output = resp
             }else{
                 //not supported
-                throw Error("coin not supported! coin: "+body.coin)
+                throw Error("coin not supported! coin: "+body.network)
             }
 
             return(output)

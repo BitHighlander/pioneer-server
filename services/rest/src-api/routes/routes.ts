@@ -58,7 +58,7 @@ const models: TsoaRoute.Models = {
     "GetFeesWithMemoBody": {
         "dataType": "refObject",
         "properties": {
-            "coin": {"dataType":"string","required":true},
+            "network": {"dataType":"string","required":true},
             "memo": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
@@ -125,7 +125,7 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "createPairingCodeBody": {
+    "CreatePairingCodeBody": {
         "dataType": "refObject",
         "properties": {
             "service": {"dataType":"string"},
@@ -135,7 +135,7 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "createApiKeyBody": {
+    "CreateApiKeyBody": {
         "dataType": "refObject",
         "properties": {
             "account": {"dataType":"string","required":true},
@@ -167,15 +167,10 @@ const models: TsoaRoute.Models = {
     "WalletDescription": {
         "dataType": "refObject",
         "properties": {
-            "walletId": {"dataType":"string","required":true},
+            "context": {"dataType":"string","required":true},
             "type": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "AuthProviders": {
-        "dataType": "refEnum",
-        "enums": ["shapeshift","bitcoin"],
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "RegisterBody": {
@@ -187,14 +182,13 @@ const models: TsoaRoute.Models = {
             "data": {"ref":"RegisterBodyData","required":true},
             "auth": {"dataType":"string","required":true},
             "walletDescription": {"ref":"WalletDescription","required":true},
-            "walletId": {"dataType":"string","required":true},
+            "context": {"dataType":"string","required":true},
             "queryKey": {"dataType":"string"},
-            "provider": {"ref":"AuthProviders","required":true},
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "importBody": {
+    "ImportBody": {
         "dataType": "refObject",
         "properties": {
             "source": {"dataType":"string","required":true},
@@ -204,7 +198,7 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "createAppBody": {
+    "CreateAppBody": {
         "dataType": "refObject",
         "properties": {
             "name": {"dataType":"string","required":true},
@@ -1014,10 +1008,10 @@ export function RegisterRoutes(app: express.Router) {
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/api/v1/info/:walletId',
+        app.get('/api/v1/info/:context',
             function pioneerPrivateController_info(request: any, response: any, next: any) {
             const args = {
-                    walletId: {"in":"path","name":"walletId","required":true,"dataType":"string"},
+                    context: {"in":"path","name":"context","required":true,"dataType":"string"},
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
             };
 
@@ -1244,7 +1238,7 @@ export function RegisterRoutes(app: express.Router) {
         app.post('/api/v1/createPairingCode',
             function pioneerPrivateController_createPairingCode(request: any, response: any, next: any) {
             const args = {
-                    body: {"in":"body","name":"body","required":true,"ref":"createPairingCodeBody"},
+                    body: {"in":"body","name":"body","required":true,"ref":"CreatePairingCodeBody"},
                     Authorization: {"in":"header","name":"Authorization","required":true,"dataType":"any"},
             };
 
@@ -1267,7 +1261,7 @@ export function RegisterRoutes(app: express.Router) {
         app.post('/api/v1/createApiKey',
             function pioneerPrivateController_createApiKey(request: any, response: any, next: any) {
             const args = {
-                    body: {"in":"body","name":"body","required":true,"ref":"createApiKeyBody"},
+                    body: {"in":"body","name":"body","required":true,"ref":"CreateApiKeyBody"},
                     Authorization: {"in":"header","name":"Authorization","required":true,"dataType":"any"},
             };
 
@@ -1360,7 +1354,7 @@ export function RegisterRoutes(app: express.Router) {
             function pioneerPrivateController_import(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
-                    body: {"in":"body","name":"body","required":true,"ref":"importBody"},
+                    body: {"in":"body","name":"body","required":true,"ref":"ImportBody"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -1383,7 +1377,7 @@ export function RegisterRoutes(app: express.Router) {
             function XAppsController_createApp(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
-                    body: {"in":"body","name":"body","required":true,"ref":"createAppBody"},
+                    body: {"in":"body","name":"body","required":true,"ref":"CreateAppBody"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

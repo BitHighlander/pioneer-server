@@ -32,37 +32,11 @@ import * as express from 'express';
 //import { User, UserCreateRequest, UserUpdateRequest } from '../models/user';
 
 //types
-interface Error {
-    success:boolean
-    tag:string
-    e:any
-}
-
-interface Health {
-    online:boolean
-    name:string
-    version:string
-    system:any
-    hostname:string,
-    uptime:any,
-    loadavg:any
-}
-
-// interface Health {
-//   online:boolean
-//   name:string
-//   version:string
-//   system:any
-// }
-
-export class ApiError extends Error {
-    private statusCode: number;
-    constructor(name: string, statusCode: number, message?: string) {
-        super(message);
-        this.name = name;
-        this.statusCode = statusCode;
-    }
-}
+import {
+    Health,
+    ApiError,
+    Error
+} from "@pioneer-platform/pioneer-types";
 
 //route
 @Tags('Status Endpoints')

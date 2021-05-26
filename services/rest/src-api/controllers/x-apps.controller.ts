@@ -29,19 +29,11 @@ txsRawDB.createIndex({txhash: 1}, {unique: true})
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
 
-//types
-interface Error {
-    success:boolean
-    tag:string
-    e:any
-}
+import {
+    Error,
+    CreateAppBody
+} from "@pioneer-platform/pioneer-types";
 
-interface createAppBody {
-    name:string
-    image:string
-    version:string
-    description:string
-}
 
 export class ApiError extends Error {
     private statusCode: number;
@@ -63,7 +55,7 @@ export class XAppsController extends Controller {
      */
 
     @Post('/create')
-    public async createApp(@Header('Authorization') authorization: string,@Body() body: createAppBody): Promise<any> {
+    public async createApp(@Header('Authorization') authorization: string,@Body() body: CreateAppBody): Promise<any> {
         let tag = TAG + " | transactions | "
         try{
             let success = appsDB.insert(body)

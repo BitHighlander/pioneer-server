@@ -11,189 +11,51 @@ const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
 log.info(TAG,"PIONEER VERSION: ",pjson.version)
 const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
-let connection  = require("@pioneer-platform/default-mongo")
-let queue = require("@pioneer-platform/redis-queue")
-
-var randomstring = require("randomstring");
-let coincap = require('@pioneer-platform/coincap')
-
-let usersDB = connection.get('users')
-let pubkeysDB = connection.get('pubkeys')
-let txsDB = connection.get('transactions')
-let utxosDB = connection.get('utxo')
-let invocationsDB = connection.get('invocations')
-
+const connection  = require("@pioneer-platform/default-mongo")
+const queue = require("@pioneer-platform/redis-queue")
+const randomstring = require("randomstring");
+const coincap = require('@pioneer-platform/coincap')
+const usersDB = connection.get('users')
+const pubkeysDB = connection.get('pubkeys')
+const txsDB = connection.get('transactions')
+const utxosDB = connection.get('utxo')
+const invocationsDB = connection.get('invocations')
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
 utxosDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
-
-let {
-    getNativeAssetForBlockchain
-} = require('@pioneer-platform/pioneer-coins')
-
 txsDB.createIndex({invocationId: 1})
 
 const axios = require('axios')
 const network = require("@pioneer-platform/network")
-
 import { v4 as uuidv4 } from 'uuid';
-
-//globals
-
-//modules
+const short = require('short-uuid');
 let pioneer = require('../pioneer')
 
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
-import * as express from 'express';
 
 let PIONEER_INFO_CACHE_TIME = process.env['PIONEER_INFO_CACHE_TIME'] || 60 * 5
 
-enum AuthProviders {
-    shapeshift = 'shapeshift',
-    bitcoin = 'bitcoin'
-}
-
-// TYPES
-export interface CoinInfo {
-    coin: string;
-    note?: string;
-    script_type:string;
-    available_scripts_types?:any
-    long?: string;
-    path:string
-    master: string;
-    network:string;
-    pubkey: string;
-    curve?: string,
-    tpub?: string;
-    xpub?: string;
-    zpub?: string;
-    type?:string
-}
+import {
+    Error,
+    ApiError,
+    PairBody,
+    SetContextBody,
+    RegisterEosUsername,
+    UpdateInvocationBody,
+    DeleteInvocationBody,
+    IgnoreShitcoins,
+    TransactionsBody,
+    ImportBody,
+    CreateApiKeyBody,
+    RegisterBody,
+    CreatePairingCodeBody
+} from "@pioneer-platform/pioneer-types";
 
 
-interface RegisterBodyData {
-    pubkeys: any;
-}
-
-// interface RegisterBodyData {
-//     pubkeys: CoinInfo[];
-// }
-
-interface GetNewAddressBody {
-    coin:string
-}
-
-interface PairBody {
-    code:string
-}
-
-interface SetContextBody {
-    context:string
-}
-
-interface RegisterEosUsername {
-    username:string
-    pubkey:string
-}
-
-interface UpdateInvocationBody {
-    invocationId:string,
-    invocation:any,
-    unsignedTx:any,
-    signedTx?:any
-}
-
-interface DeleteInvocationBody {
-    invocationId:string,
-}
-
-interface IgnoreShitcoins {
-    coins:any[]
-    shitcoins?:any[]
-}
-
-interface WalletInfo {
-    apps: any;
-    walletId: string;
-    username: any;
-    totalValueUsd: any;
-    valueUsds: any;
-    balances: any;
-    masters: any;
-    pubkeys: any;
-}
-
-interface TransactionsBody {
-    coin:string
-    startTime?:number
-    endTime?:number
-    startBlock?:number
-    endBlock?:number
-}
-
-//importBody
-interface importBody {
-    source:string,
-    coin:string,
-    // pubkeys:Array<Pubkeys> //TODO why this no work
-    pubkeys:any
-}
-
-interface Pubkeys {
-    address: string;
-    index: string
-}
-
-interface WalletDescription {
-    walletId: string
-    type: string
-}
-
-interface RegisterBody {
-    isTestnet?:boolean
-    blockchains:any
-    username:string
-    data:RegisterBodyData,
-    auth:string,
-    walletDescription:WalletDescription,
-    walletId: string,
-    queryKey?:string,
-    provider:AuthProviders
-}
-
-interface createApiKeyBody {
-    account:string
-    data?:any
-}
-
-interface createPairingCodeBody {
-    service?:string
-    url?:string
-    data?:any
-}
-
-const short = require('short-uuid');
-
-//types
-interface Error {
-    success:boolean
-    tag:string
-    e:any
-}
-
-export class ApiError extends Error {
-    private statusCode: number;
-    constructor(name: string, statusCode: number, message?: string) {
-        super(message);
-        this.name = name;
-        this.statusCode = statusCode;
-    }
-}
 
 //route
 @Tags('Private Endpoints')
@@ -308,13 +170,13 @@ export class pioneerPrivateController extends Controller {
                         let walletInfo = userInfoMongo.walletDescriptions[i]
                         //get portfolio from cache
                         //get asset balances
-                        let assetBalances = await redis.hgetall(username+":assets:"+walletInfo.walletId)
+                        let assetBalances = await redis.hgetall(username+":assets:"+walletInfo.context)
                         log.info(tag,"assetBalances: ",assetBalances)
                         let valuePortfolio = await coincap.valuePortfolio(assetBalances)
                         log.info(tag,"valuePortfolio: ",valuePortfolio)
 
                         let walletDescription = {
-                            walletId:walletInfo.walletId,
+                            context:walletInfo.context,
                             type:walletInfo.type,
                             values:valuePortfolio.values,
                             valueUsdContext:valuePortfolio.total
@@ -354,13 +216,13 @@ export class pioneerPrivateController extends Controller {
 
 
      */
-    @Get('/info/{walletId}')
-    public async info(walletId:string,@Header('Authorization') authorization: string): Promise<any> {
+    @Get('/info/{context}')
+    public async info(context:string,@Header('Authorization') authorization: string): Promise<any> {
         let tag = TAG + " | info | "
         try{
             log.info(tag,"queryKey: ",authorization)
-            if(!walletId) throw Error("103: walletId required!")
-            log.info(tag,"walletId: ",walletId)
+            if(!context) throw Error("103: context required!")
+            log.info(tag,"context: ",context)
 
             let accountInfo = await redis.hgetall(authorization)
             log.info(tag,"accountInfo: ",accountInfo)
@@ -374,10 +236,10 @@ export class pioneerPrivateController extends Controller {
                     throw Error("unknown token. token:"+authorization)
                 }
                 //
-                let isKnownWallet = await redis.sismember(username+':wallets',walletId)
+                let isKnownWallet = await redis.sismember(username+':wallets',context)
                 log.info(tag,"isKnownWallet: ",isKnownWallet)
 
-                let { pubkeys, masters } = await pioneer.getPubkeys(username,walletId)
+                let { pubkeys, masters } = await pioneer.getPubkeys(username,context)
                 //build wallet info
                 walletInfo.pubkeys = pubkeys
                 walletInfo.masters = masters
@@ -394,7 +256,7 @@ export class pioneerPrivateController extends Controller {
                 walletInfo.blockchains = userInfoMongo.blockchains
 
                 //get asset balances
-                let assetBalances = await redis.hgetall(username+":assets:"+walletId)
+                let assetBalances = await redis.hgetall(username+":assets:"+context)
                 if(!assetBalances) throw Error("User Asset Balance Cache missing!")
 
                 //fill in 0's
@@ -411,7 +273,7 @@ export class pioneerPrivateController extends Controller {
                 walletInfo.valueUsds = valuePortfolio.values
                 walletInfo.totalValueUsd = valuePortfolio.total
                 walletInfo.username = username
-                walletInfo.walletId = walletId
+                walletInfo.context = context
                 walletInfo.apps = await redis.smembers(username+":apps")
 
                 return walletInfo
@@ -857,7 +719,7 @@ export class pioneerPrivateController extends Controller {
      */
 
     @Post('/createPairingCode')
-    public async createPairingCode(@Body() body: createPairingCodeBody, @Header() Authorization: any): Promise<any> {
+    public async createPairingCode(@Body() body: CreatePairingCodeBody, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | createPairingCode | "
         try{
             log.debug(tag,"account: ",body)
@@ -904,7 +766,7 @@ export class pioneerPrivateController extends Controller {
      */
 
     @Post('/createApiKey')
-    public async createApiKey(@Body() body: createApiKeyBody, @Header() Authorization: any): Promise<any> {
+    public async createApiKey(@Body() body: CreateApiKeyBody, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | createApiKey | "
         try{
             log.debug(tag,"account: ",body)
@@ -1142,7 +1004,7 @@ export class pioneerPrivateController extends Controller {
             let output:any = {}
             let newKey
             log.info(tag,"body: ",body)
-            if(!body.walletId) throw Error("102: walletId required on body!")
+            if(!body.context) throw Error("102: context required on body!")
             if(!body.blockchains) throw Error("103: blockchains required on body!")
             if(typeof(body.walletDescription) === 'string') throw Error("104: Invalid Wallet Description!")
 
@@ -1191,7 +1053,7 @@ export class pioneerPrivateController extends Controller {
                     username:body.username,
                     verified:true,
                     blockchains:body.blockchains,
-                    wallets:[body.walletId], // just one wallet for now
+                    wallets:[body.context], // just one wallet for now
                     walletDescriptions:[body.walletDescription]
                 }
 
@@ -1213,14 +1075,14 @@ export class pioneerPrivateController extends Controller {
                 userInfoMongo = userInfo
 
                 //Assume wallet new
-                output.result = await pioneer.register(body.username, body.data.pubkeys,body.walletId)
+                output.result = await pioneer.register(body.username, body.data.pubkeys,body.context)
                 log.info(tag,"resultPioneer: ",output.result)
 
                 //set user context to only wallet
-                await redis.hset(body.username,'context',body.walletId)
+                await redis.hset(body.username,'context',body.context)
 
                 //add to wallet set
-                await redis.sadd(username+':wallets',body.walletId)
+                await redis.sadd(username+':wallets',body.context)
             }
 
             //get wallets
@@ -1228,30 +1090,30 @@ export class pioneerPrivateController extends Controller {
             if(!userWallets) throw Error("No wallets found!")
 
             //add to wallet set
-            await redis.sadd(username+':wallets',body.walletId)
+            await redis.sadd(username+':wallets',body.context)
 
             //if current ! found
-            if(userWallets.indexOf(body.walletId) < 0){
-                log.info(tag,"Registering new walelt! walletId:",body.walletId)
+            if(userWallets.indexOf(body.context) < 0){
+                log.info(tag,"Registering new walelt! context:",body.context)
                 //Register wallet! (this ONLY hits when already registered
                 output.newWallet = true
                 let pubkeys = body.data.pubkeys
-                output.result = await pioneer.register(body.username, pubkeys, body.walletId)
+                output.result = await pioneer.register(body.username, pubkeys, body.context)
                 log.info(tag,"resultPioneer: ",output.result)
 
                 //set current context to newly registred wallet
                 //TODO flag to leave context? (silent register new wallet?)
-                //await redis.hset(body.username,'context',body.walletId)
+                //await redis.hset(body.username,'context',body.context)
 
                 //push new wallet to wallets
-                output.updateDBUser = await usersDB.update({},{ $addToSet: { "wallets": body.walletId } })
+                output.updateDBUser = await usersDB.update({},{ $addToSet: { "wallets": body.context } })
                 output.updateDBUser = await usersDB.update({},{ $addToSet: { "walletDescriptions": body.walletDescription } })
             } else {
                 //wallet already known!
-                log.info(tag,"Wallet already known! walletId: ",body.walletId)
+                log.info(tag,"Wallet already known! context: ",body.context)
 
                 //get pubkey array
-                output.result = await pioneer.update(body.username, body.data.pubkeys,body.walletId)
+                output.result = await pioneer.update(body.username, body.data.pubkeys,body.context)
             }
 
             log.info("checkpoint 3")
@@ -1261,8 +1123,8 @@ export class pioneerPrivateController extends Controller {
 
             //if no context, set
             if(!userInfoRedis.context){
-                userInfoRedis.context = body.walletId
-                redis.hset(username,'context',body.walletId)
+                userInfoRedis.context = body.context
+                redis.hset(username,'context',body.context)
             }
             output.context = userInfoRedis.context
             //verify user
@@ -1292,7 +1154,7 @@ export class pioneerPrivateController extends Controller {
      */
 
     @Post('/import')
-    public async import(@Header('Authorization') authorization: string, @Body() body: importBody): Promise<any> {
+    public async import(@Header('Authorization') authorization: string, @Body() body: ImportBody): Promise<any> {
         let tag = TAG + " | import | "
         try{
             let output:any = {}

@@ -33,59 +33,14 @@ let PIONEER_SIGNING_PRIVKEY = process.env['PIONEER_SIGNING_PRIVKEY']
 if(!PIONEER_SIGNING_PUBKEY) throw Error("PIONEER_SIGNING_PUBKEY required to run server!")
 if(!PIONEER_SIGNING_PRIVKEY) throw Error("PIONEER_SIGNING_PRIVKEY required to run server!")
 
+import {
+    InvocationBody,
+    ApiError
+} from "@pioneer-platform/pioneer-types";
+
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
 import * as express from 'express';
-
-//TODO enum for supported types
-interface Invocation {
-    type?:string
-    noBroadcast?:boolean
-    invocationId?:string
-    inboundAddress?:any
-    address?:string,
-    addressTo?:string,
-    memo?:string
-    asset?:any
-    blockchain?:string
-    network?:string
-    coin?:string
-    amount:string
-    context?:string
-    username:string
-
-}
-
-interface InvocationBody {
-    msg?: string;
-    context?: string;
-    type:string
-    username:string,
-    invocation:Invocation
-    invocationId?:string
-    auth?:string
-    service?:string
-    servicePubkey?:string
-    serviceHash?:string
-    mode?:'sync' | 'async'
-}
-
-
-//types
-interface Error{
-    success:boolean
-    tag:string
-    e:any
-}
-
-export class ApiError extends Error {
-    private statusCode: number;
-    constructor(name: string, statusCode: number, message?: string) {
-        super(message);
-        this.name = name;
-        this.statusCode = statusCode;
-    }
-}
 
 //route
 @Tags('Invocation (Payment Requests) Endpoint ')
@@ -233,7 +188,7 @@ export class pioneerInvocationController extends Controller {
 
             return output
         }catch(e){
-            let errorResp:Error = {
+            let errorResp:any = {
                 success:false,
                 tag,
                 e

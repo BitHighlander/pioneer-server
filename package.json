@@ -2,6 +2,6 @@
   "name": "pioneer-server",
   "version": "1.0.0",
   "dependencies": {
-    
+    "@pioneer-platform/pioneer-types": "0.0.4"
   }
 }
