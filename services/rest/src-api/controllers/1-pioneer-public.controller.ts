@@ -1023,6 +1023,9 @@ export class pioneerPublicController extends Controller {
                 log.info(tag,"Release InvocationId: ",body.invocationId)
                 log.info(tag,"Release body.txid: ",body.txid)
                 redis.lpush(body.invocationId,body.txid)
+
+                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{state:'broadcasted'}})
+                log.info(tag,"updateResult: ",updateResult)
             }
 
             //broadcast
@@ -1074,6 +1077,9 @@ export class pioneerPublicController extends Controller {
                     await networks[coin].init()
                     result = await networks[coin].broadcast(body.serialized)
                 }
+
+                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:result}})
+                log.info(tag,"updateResult: ",updateResult)
             } else {
                 result.success = true
                 result.broadcast = false
