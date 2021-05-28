@@ -546,11 +546,12 @@ export class pioneerPrivateController extends Controller {
             //update database
             let updateResult
             if(body.unsignedTx){
-                updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{unsignedTx:body.unsignedTx}})
+                //update state to
+                updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{unsignedTx:body.unsignedTx,state:'builtTx'}})
             }
 
             if(body.signedTx){
-                updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{signedTx:body.signedTx}})
+                updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{signedTx:body.signedTx,state:'signedTx'}})
             }
 
             return(updateResult);
@@ -1129,7 +1130,8 @@ export class pioneerPrivateController extends Controller {
             output.context = userInfoRedis.context
             //verify user
 
-            //get info on context
+            //get
+            // info on context
             output.username = username
             output.success = true
             output.userInfo = userInfoRedis
