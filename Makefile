@@ -18,9 +18,4 @@ push::
 	sh scripts/push-images-$(env).sh
 
 up::
-	ifeq (env,'prod')
-		cd deploy && npm i && node leeroy-sdk.js
-	endif
-	ifeq (env,'local')
-		cd deploy && npm i && node leeroy-sdk.js
-	endif
+	cd deploy && npm i && node leeroy-sdk.js
