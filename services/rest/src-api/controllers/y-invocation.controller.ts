@@ -67,6 +67,7 @@ export class pioneerInvocationController extends Controller {
         let tag = TAG + " | invocation | "
         try{
             log.info(tag,"body: ",body)
+            if(!body.network) throw Error("102: invalid invocation! network required!")
             let output:any = {}
             //mode
             let mode = 'async'
@@ -115,6 +116,7 @@ export class pioneerInvocationController extends Controller {
             let notarySig = sign.sign(notary,invocationSerliazed,PIONEER_SIGNING_PRIVKEY)
 
             //normalize
+            if(!body.invocation.invocationId) body.invocation.invocationId = invocationId
             if(!body.invocation.type) body.invocation.type = body.type
             if(body.invocation.context) body.context = body.invocation.context
 
@@ -129,8 +131,15 @@ export class pioneerInvocationController extends Controller {
                 if(body.invocation.asset === 'ETH') throw Error("105: eth must use smart contract router!")
             }
 
+            //deposit type thorchain only
+            if(body.invocation.type === 'deposit'){
+                //if not ETH throw
+                if(body.invocation.asset !== 'RUNE') throw Error("104: deposit* is a thorchain feature only")
+            }
+
             let entry = {
                 state:'created',
+                network:body.network,
                 type:body.invocation.type,
                 invocationId,
                 username:body.username,

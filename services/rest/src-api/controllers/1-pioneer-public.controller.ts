@@ -355,24 +355,26 @@ export class pioneerPublicController extends Controller {
     /**
      *  getTransaction
      */
-    @Get('{coin}/getTransaction/{txid}/{type}')
-    public async getTransaction(coin:string,txid:string,type?:string) {
+    @Get('{network}/getTransaction/{txid}/{type}')
+    public async getTransaction(network:string,txid:string,type?:string) {
         let tag = TAG + " | getTransaction | "
         try{
             if(!txid) throw Error("102: txid required! ")
 
-            log.info(tag,"coin: ",coin)
+            log.info(tag,"network: ",network)
             log.info(tag,"txid: ",txid)
-            let output
-            output.coin = coin
+            let output:any = {}
+            output.coin = network
+            output.asset = network
+            output.network = network
             output.txid = txid
             if(type) output.type = type
             //if UXTO coin = any
-            if(UTXO_COINS.indexOf(coin) >= 0){
-                output = await networks['ANY'].getTransaction(coin,txid)
+            if(UTXO_COINS.indexOf(network) >= 0){
+                output = await networks['ANY'].getTransaction(network,txid)
             } else {
-                if(!networks[coin]) throw Error("102: coin not supported! coin: "+coin)
-                output = await networks[coin].getTransaction(txid)
+                if(!networks[network]) throw Error("102: coin not supported! coin: "+network)
+                output = await networks[network].getTransaction(txid)
             }
 
             //get midgard info
@@ -1002,11 +1004,8 @@ export class pioneerPublicController extends Controller {
             let result:any = {
                 success:false
             }
-            let coin = body.coin
-            let isTestnet = false
-            if(body.isTestnet){
-                isTestnet = true
-            }
+            let network = body.network
+
             //if(!networks[coin]) throw Error("102: unknown network coin:"+coin)
 
             //if
@@ -1025,15 +1024,18 @@ export class pioneerPublicController extends Controller {
                 redis.lpush(body.invocationId,body.txid)
 
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{state:'broadcasted'}})
-                log.info(tag,"updateResult: ",updateResult)
+                log.info(tag,"invocation updateResult: ",updateResult)
+            } else {
+                log.info(tag,"No invocationId on body.")
             }
 
             //broadcast
             if(!body.noBroadcast){
                 let result
-                if(coin === 'EOS'){
-                    result = await networks[coin].broadcast(body.broadcastBody)
-                } else if(coin === 'FIO'){
+                if(network === 'EOS'){
+                    throw Error("103: EOS not finished!")
+                    //result = await networks[network].broadcast(body.broadcastBody)
+                } else if(network === 'FIO'){
                     let broadcast = {
                         signatures:
                             [ body.signature ],
@@ -1052,7 +1054,7 @@ export class pioneerPublicController extends Controller {
                         case "fioSignAddPubAddressTx":
                             log.info(tag,"checkpoint: fioSignAddPubAddressTx ")
                             log.info(tag,"broadcast: ",broadcast)
-                            result = await networks[coin].broadcastAddPubAddressTx(broadcast)
+                            result = await networks[network].broadcastAddPubAddressTx(broadcast)
                             break;
                         case "fioSignRegisterDomainTx":
                             //TODO
@@ -1063,19 +1065,19 @@ export class pioneerPublicController extends Controller {
                         case "fioSignNewFundsRequestTx":
                             log.info(tag,"checkpoint: broadcastNewFundsRequestTx ")
                             log.info(tag,"broadcast: ",broadcast)
-                            result = await networks[coin].broadcastNewFundsRequestTx(broadcast)
+                            result = await networks[network].broadcastNewFundsRequestTx(broadcast)
                             break;
                         default:
                             throw Error("Type not supported! "+body.type)
                     }
-                } else if(UTXO_COINS.indexOf(coin) >= 0){
+                } else if(UTXO_COINS.indexOf(network) >= 0){
                     //normal broadcast
                     await networks.ANY.init('full')
-                    result = await networks['ANY'].broadcast(coin,body.serialized)
+                    result = await networks['ANY'].broadcast(network,body.serialized)
                 } else {
                     //normal broadcast
-                    await networks[coin].init()
-                    result = await networks[coin].broadcast(body.serialized)
+                    await networks[network].init()
+                    result = await networks[network].broadcast(body.serialized)
                 }
 
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:result}})
@@ -1088,7 +1090,7 @@ export class pioneerPublicController extends Controller {
 
             let mongoEntry:any = body
             //add to txsDB
-            let tags = ['internal',coin,'pending']
+            let tags = ['internal',network,'pending']
             if(invocationInfo.username) tags.push(invocationInfo.username)
             if(invocationInfo.context) tags.push(invocationInfo.context)
             if(invocationInfo.type) tags.push(invocationInfo.type)

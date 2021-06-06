@@ -68,15 +68,16 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "coin": {"dataType":"string"},
+            "network": {"dataType":"string","required":true},
+            "asset": {"dataType":"string"},
             "isTestnet": {"dataType":"boolean"},
             "serialized": {"dataType":"string","required":true},
             "signature": {"dataType":"string"},
             "type": {"dataType":"string"},
             "txid": {"dataType":"string","required":true},
-            "broadcastBody": {"dataType":"any"},
             "noBroadcast": {"dataType":"boolean"},
-            "dscription": {"dataType":"any"},
-            "invocationId": {"dataType":"string"},
+            "description": {"dataType":"any"},
+            "invocationId": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -219,9 +220,9 @@ const models: TsoaRoute.Models = {
             "address": {"dataType":"string"},
             "addressTo": {"dataType":"string"},
             "memo": {"dataType":"string"},
-            "asset": {"dataType":"any"},
+            "asset": {"dataType":"any","required":true},
             "blockchain": {"dataType":"string"},
-            "network": {"dataType":"string"},
+            "network": {"dataType":"string","required":true},
             "coin": {"dataType":"string"},
             "amount": {"dataType":"string","required":true},
             "context": {"dataType":"string"},
@@ -235,6 +236,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "msg": {"dataType":"string"},
             "context": {"dataType":"string"},
+            "network": {"dataType":"string","required":true},
             "type": {"dataType":"string","required":true},
             "username": {"dataType":"string","required":true},
             "invocation": {"ref":"Invocation","required":true},
@@ -243,6 +245,7 @@ const models: TsoaRoute.Models = {
             "service": {"dataType":"string"},
             "servicePubkey": {"dataType":"string"},
             "serviceHash": {"dataType":"string"},
+            "appName": {"dataType":"string"},
             "mode": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["sync"]},{"dataType":"enum","enums":["async"]}]},
         },
         "additionalProperties": false,
@@ -475,10 +478,10 @@ export function RegisterRoutes(app: express.Router) {
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/api/v1/:coin/getTransaction/:txid/:type',
+        app.get('/api/v1/:network/getTransaction/:txid/:type',
             function pioneerPublicController_getTransaction(request: any, response: any, next: any) {
             const args = {
-                    coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
+                    network: {"in":"path","name":"network","required":true,"dataType":"string"},
                     txid: {"in":"path","name":"txid","required":true,"dataType":"string"},
                     type: {"in":"path","name":"type","required":true,"dataType":"string"},
             };
