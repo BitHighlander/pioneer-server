@@ -11,8 +11,9 @@
                 vertical
                 class="text-teal"
         >
-          <q-tab name="search" icon="search" label="Search" />
+          <q-tab name="apps" icon="search" label="Search" />
           <q-tab name="network" icon="public" label="Network" />
+          <q-tab name="wallets" icon="public" label="wallets" />
           <div v-if="isPaired">
             <q-tab name="user" icon="account_circle" label="User" />
             <q-tab name="invocations" icon="auto_fix_high" label="Invocations" />
@@ -62,11 +63,20 @@
           <q-tab-panel name="network">
             <div class="text-h4 q-mb-md"></div>
             users online
+
+            <br/>
+            Launch app <a href="invocation://abc=1">open in pioneer</a>
+
           </q-tab-panel>
 
           <q-tab-panel name="search">
             <div class="text-h4 q-mb-md">search</div>
             asdasdas
+          </q-tab-panel>
+
+          <q-tab-panel name="wallets">
+            <div class="text-h4 q-mb-md">wallets</div>
+
           </q-tab-panel>
 
           <q-tab-panel name="invocations">
