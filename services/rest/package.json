@@ -62,6 +62,8 @@
     "@pioneer-platform/terra-network": "latest",
     "@pioneer-platform/thor-network": "latest",
     "@pioneer-platform/utxo-network": "latest",
+    "bnc-notify": "^1.6.1",
+    "bnc-onboard": "^1.26.0",
     "@quasar/extras": "^1.10.4",
     "@types/node": "^12.20.11",
     "autoprefixer": "^9.8.6",

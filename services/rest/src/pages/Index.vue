@@ -34,16 +34,16 @@
             <div class="q-pa-md">
               <div class="q-gutter-y-md column" style="max-width: 300px">
 
-                <q-input rounded outlined v-model="text">
-                  <template v-slot:append>
-                    <q-avatar>
-                      <img src="https://cdn.quasar.dev/logo/svg/quasar-logo.svg">
-                    </q-avatar>
-                  </template>
-                  <template v-slot:hint>
-                    Field hint
-                  </template>
-                </q-input>
+<!--                <q-input rounded outlined v-model="text">-->
+<!--                  <template v-slot:append>-->
+<!--                    <q-avatar>-->
+<!--                      <img src="https://cdn.quasar.dev/logo/svg/quasar-logo.svg">-->
+<!--                    </q-avatar>-->
+<!--                  </template>-->
+<!--                  <template v-slot:hint>-->
+<!--                    Field hint-->
+<!--                  </template>-->
+<!--                </q-input>-->
 
 <!--                <q-input rounded standout bottom-slots v-model="text" label="Label" counter>-->
 <!--                  <template v-slot:prepend>-->
@@ -90,18 +90,7 @@
 
 <script>
 // import VueGridLayout from 'vue-grid-layout';
-//
-// let testLayout = [
-//   {
-//     "name":"pioneer",
-//     "icon":"assets/GreenCompas.jpeg",
-//     "x":0,
-//     "y":0,
-//     "w":2,
-//     "h":2,
-//     "i":"0"
-//   },
-// ];
+import { initOnboard, initNotify } from '../modules/services'
 
 export default {
   name: 'PageIndex',
@@ -124,12 +113,34 @@ export default {
     }
   },
   mounted: function () {
-    this.index = this.layout.length;
-    this.$nextTick(function () {
-      this.show = true;
+
+    const onboard = initOnboard({
+      address: setAddress,
+      network: setNetwork,
+      balance: setBalance,
+      wallet: wallet => {
+        if (wallet.provider) {
+          setWallet(wallet)
+
+          const ethersProvider = new ethers.providers.Web3Provider(
+                  wallet.provider
+          )
+
+          provider = ethersProvider
+
+          window.localStorage.setItem('selectedWallet', wallet.name)
+        } else {
+          provider = null
+          setWallet({})
+        }
+      }
     })
+
+    console.log("onboard: ",onboard)
+
   },
   methods: {
+
   },
 }
 </script>
