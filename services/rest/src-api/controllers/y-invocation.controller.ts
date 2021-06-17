@@ -123,12 +123,24 @@ export class pioneerInvocationController extends Controller {
             //validate
             if(!body.invocation.type) throw Error("Invocation type required!")
 
+
+            /*
+                transfer:
+                swap:
+                deposit:
+                approve:
+
+             */
+
+            //TODO make this more clear what coins can do what
             //swap type contract only
             if(body.invocation.type === 'swap'){
                 //if not ETH throw
                 if(body.invocation.asset !== 'ETH') throw Error("104: swap* smart contract execution only supported on ETH! asset: "+body.invocation.asset)
             } else {
-                if(body.invocation.asset === 'ETH') throw Error("105: eth must use smart contract router!")
+                if(body.invocation.type !== 'transfer'){
+                    if(body.invocation.asset === 'ETH') throw Error("105: eth must use smart contract router!")
+                }
             }
 
             //deposit type thorchain only
