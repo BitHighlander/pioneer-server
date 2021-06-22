@@ -26,7 +26,6 @@ txsDB.createIndex({txid: 1}, {unique: true})
 utxosDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
-
 txsDB.createIndex({invocationId: 1})
 
 /*
@@ -51,7 +50,6 @@ if(process.env['FEATURE_BITCOINCASH_BLOCKCHAIN']){
 if(process.env['FEATURE_LITECOIN_BLOCKCHAIN']){
     blockchains.push('litecoin')
 }
-
 
 if(process.env['FEATURE_ETHEREUM_BLOCKCHAIN']){
     blockchains.push('ethereum')

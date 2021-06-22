@@ -1032,7 +1032,10 @@ export class pioneerPrivateController extends Controller {
                     } else {
                         log.error(tag,"authInfo.username: ",authInfo.username)
                         log.error(tag,"username: ",body.username)
-                        throw Error("104: username transfers on tokens not supported! owned username:"+username)
+                        output.success = false
+                        output.error = "104: username transfers on tokens not supported! owned username:"+username
+                        output.code = 104
+                        return output
                     }
                 } else {
                     log.info("username available! checkpoint 1a")
