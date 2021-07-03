@@ -1,0 +1,40 @@
+{
+  "name": "pioneer-events-eth-blocks",
+  "version": "1.0.1",
+  "private": true,
+  "scripts": {
+    "npm": "npm i",
+    "start": "node lib/index",
+    "test": "npm run build && node lib/index",
+    "build": "tsc -p .",
+    "dev": "npm run build && npm run start",
+    "prepublish": "npm run build",
+    "docker:build": "docker build -t pioneer/pioneer-events-eth-blocks:latest .",
+    "docker:tag": "docker tag pioneer/pioneer-events-eth-blocks:latest registry.digitalocean.com/pioneer/pioneer/pioneer-events-eth-blocks:latest",
+    "docker:push": "docker push registry.digitalocean.com/pioneer/pioneer/pioneer-events-eth-blocks:latest",
+    "docker:push:all": "npm run docker:build && npm run docker:tag && npm run docker:push"
+  },
+  "dependencies": {
+    "@pioneer-platform/binance-network": "latest",
+    "@pioneer-platform/cosmos-network": "latest",
+    "@pioneer-platform/default-mongo": "latest",
+    "@pioneer-platform/default-redis": "latest",
+    "@pioneer-platform/fio-network": "latest",
+    "@pioneer-platform/loggerdog": "latest",
+    "@pioneer-platform/network": "latest",
+    "@pioneer-platform/redis-queue": "latest",
+    "@pioneer-platform/thor-network": "latest",
+    "@pioneer-platform/utxo-network": "latest",
+    "chai": "^4.3.4",
+    "datadog-metrics": "^0.9.3",
+    "dotenv": "^8.1.0",
+    "wait-promise": "^0.4.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.11",
+    "@types/node": "^13.13.50",
+    "nodemon": "^2.0.7",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.9"
+  }
+}

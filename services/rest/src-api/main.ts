@@ -40,7 +40,7 @@ const rateLimiterRedis = new RateLimiterRedis({
 //TODO handle broke redis
 // ReplyError: MISCONF Redis is configured
 // This is commented because of Too many bug, but its not a too many, its a fucking broke server
-
+//TODO add rate limiting back
 // const WHITELIST_CACHE = []
 // const rateLimiterMiddleware = async (req, res, next) => {
 //     try{
@@ -266,9 +266,9 @@ subscriber.on('message', async function (channel, payloadS) {
                 for(let i =0; i < sockets.length; i++){
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
-                        log.info(tag,"sending message to user!")
                         pairing.type = "pairing"
                         globalSockets[socketid].emit('message', pairing);
+                        log.info(tag,socketid+ " sending message to user! msg: ",pairing)
                     }
                 }
             } else {
@@ -291,16 +291,24 @@ subscriber.on('message', async function (channel, payloadS) {
                 for(let i =0; i < sockets.length; i++){
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
-                        log.info(tag,"sending message to user!")
+                        context.event = 'context'
                         globalSockets[socketid].emit('message', context);
+                        log.info(tag,socketid+ " sending message to user! msg: ",context)
                     }
                 }
             }
-        }else{
-            //TODO dont catchall globals?
-            //globals
+        }
+
+        let globals = [
+            'blocks'
+        ]
+
+        if(channel.indexOf(globals) >= 0){
+            log.info(tag,"Pushing event to global users!")
+            io.emit('message', payloadS);
             io.emit(channel, payloadS);
         }
+
     } catch (e) {
         log.error(tag, e);
         throw e
@@ -321,7 +329,7 @@ subscriber.on('message', async function (channel, payloadS) {
 
 io.on('connection', async function(socket){
     let tag = TAG + ' | io connection | '
-    log.debug(tag,'a user connected', socket.id," user: ",usersByUsername[socket.id]);
+    log.info(tag,'a user connected', socket.id," user: ",usersByUsername[socket.id]);
     redis.sadd("online:users",socket.id)
     redis.hincrby("globals","usersOnline",Object.keys(usersByUsername).length)
 
@@ -330,7 +338,7 @@ io.on('connection', async function(socket){
 
     socket.on('disconnect', function(){
         let username = usersByUsername[socket.id]
-        log.info(tag,username+' disconnected');
+        log.info(tag,socket.id+" username: "+username+' disconnected');
         redis.srem('online',username)
         //remove socket.id from username list
         if(usersByUsername[username])usersByUsername[username].splice(usersByUsername[username].indexOf(socket.id), 1);
@@ -356,6 +364,7 @@ io.on('connection', async function(socket){
                 usersByUsername[msg.username].push(socket.id)
                 redis.sadd('online',msg.username)
                 let subscribePayload = {
+                    socketId:socket.id,
                     success:true,
                     username:msg.username
                 }

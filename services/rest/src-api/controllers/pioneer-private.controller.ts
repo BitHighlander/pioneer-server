@@ -120,7 +120,7 @@ export class pioneerPrivateController extends Controller {
             log.info(tag,"queryKey: ",authorization)
 
             let accountInfo = await redis.hgetall(authorization)
-            if(!accountInfo) {
+            if(Object.keys(accountInfo).length === 0) {
                 return {
                     success:false,
                     error:"QueryKey not registerd!"
@@ -129,10 +129,11 @@ export class pioneerPrivateController extends Controller {
                 log.info(tag,"accountInfo: ",accountInfo)
                 let username = accountInfo.username
                 if(!username){
-
+                    throw Error("103: invalid user info, missing username!")
                 }
                 let userInfo = await redis.hgetall(username)
                 log.info(tag,"userInfo: ",userInfo)
+
                 if(Object.keys(userInfo).length === 0){
                     return {
                         success:false,
@@ -144,9 +145,14 @@ export class pioneerPrivateController extends Controller {
                     if(!userInfoMongo) {
                         throw Error("102: unknown user! username: "+username)
                     }
+                    if(userInfoMongo.context) userInfo.context = userInfoMongo.context
+                    if(userInfoMongo.assetContext) userInfo.assetContext = userInfoMongo.assetContext
                     userInfo.wallets = userInfoMongo.wallets
                     log.info(tag,"userInfoMongo: ",userInfoMongo)
                     log.info(tag,"userInfo: ",userInfo)
+
+                    //asset context
+                    if(!userInfo.assetContext) userInfo.assetContext = 'ETH'
 
                     //context
                     if(!userInfo.context){
@@ -159,9 +165,6 @@ export class pioneerPrivateController extends Controller {
                             throw Error("102: invalid mongo user! ")
                         }
                     }
-
-                    //contextInvoke
-                    //If context revoked, update redis, clear context
 
                     //get value map
                     userInfo.walletDescriptions = []
@@ -178,12 +181,20 @@ export class pioneerPrivateController extends Controller {
                         let walletDescription = {
                             context:walletInfo.context,
                             type:walletInfo.type,
+                            balances:assetBalances,
                             values:valuePortfolio.values,
                             valueUsdContext:valuePortfolio.total
                         }
                         totalValueUsd = totalValueUsd + valuePortfolio.total
                         //walletDescription
                         userInfo.walletDescriptions.push(walletDescription)
+
+                        //if on context set assetContextInfo
+                        if(userInfo.context === walletInfo.context){
+                            userInfo.assetBalanceNativeContext = assetBalances[userInfo.assetContext]
+                            userInfo.assetBalanceUsdValueContext = valuePortfolio.values[userInfo.assetContext]
+                        }
+
                     }
                     userInfo.totalValueUsd = totalValueUsd
 
@@ -1069,9 +1080,6 @@ export class pioneerPrivateController extends Controller {
                 let redisSuccess = await redis.hmset(body.username,userInfo)
                 log.info(tag,"redisSuccess: ",redisSuccess)
 
-                let redisSuccessAuth = await redis.hmset(body.auth,userInfo)
-                log.info(tag,"redisSuccessAuth: ",redisSuccessAuth)
-
                 let redisSuccessKey = await redis.hmset(authorization,userInfo)
                 log.info(tag,"redisSuccessKey: ",redisSuccessKey)
 
@@ -1131,6 +1139,15 @@ export class pioneerPrivateController extends Controller {
                 redis.hset(username,'context',body.context)
             }
             output.context = userInfoRedis.context
+
+            //if no asset context
+            //set bitcoin
+            if(!userInfoRedis.assetContext){
+                userInfoRedis.assetContext = 'ETH'
+                redis.hset(username,'assetContext',userInfoRedis.assetContext)
+            }
+            output.assetContext = userInfoRedis.assetContext
+
             //verify user
 
             //get

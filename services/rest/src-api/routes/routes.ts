@@ -181,7 +181,6 @@ const models: TsoaRoute.Models = {
             "blockchains": {"dataType":"any","required":true},
             "username": {"dataType":"string","required":true},
             "data": {"ref":"RegisterBodyData","required":true},
-            "auth": {"dataType":"string","required":true},
             "walletDescription": {"ref":"WalletDescription","required":true},
             "context": {"dataType":"string","required":true},
             "queryKey": {"dataType":"string"},

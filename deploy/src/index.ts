@@ -1,18 +1,19 @@
 /*
-    Update
+        Leeroy mono-repo deployment
 
  */
+
 require("dotenv").config({path:'./../.env'})
 require("dotenv").config({path:'./../../.env'})
 require("dotenv").config({path:'../../../.env'})
 require("dotenv").config({path:'../../../../.env'})
+
 
 let Leeroy = require("@pioneer-platform/leeroy-sdk")
 let leeroy = new Leeroy({
     publicKey:process.env['LEEROY_API_PUBLIC'],
     privateKey:process.env['LEEROY_API_PRIVATE']
 })
-
 let urlSpec = process.env['LEEROY_SERVER_SPEC']
 
 console.log({urlSpec})
@@ -22,6 +23,9 @@ let rollout = async function(){
 
         let podInfo = await leeroy.rollout()
         console.log("rollout: ",podInfo)
+
+        //for each service register
+
 
     }catch(e){
         console.error(e)

@@ -1,6 +1,18 @@
 {
   "name": "deploy",
   "version": "1.0.0",
+  "main": "./lib/index.js",
+  "types": "./lib/main.d.ts",
+  "scripts": {
+    "npm": "npm i",
+    "test": "npm run build && node __tests__/test-module.js",
+    "lint": "prettier --write '**/**/*.ts'",
+    "create": "npm run build && npm run test",
+    "build": "tsc -p .",
+    "build:watch": "npm run build && onchange 'src/**/*.ts' -- npm run build",
+    "prepublish": "npm run build",
+    "refresh": "rm -rf ./node_modules ./package-lock.json && npm install"
+  },
   "dependencies": {
     "@pioneer-platform/leeroy-sdk": "latest"
   }
