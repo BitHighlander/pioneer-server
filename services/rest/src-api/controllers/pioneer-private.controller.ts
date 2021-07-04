@@ -505,7 +505,7 @@ export class pioneerPrivateController extends Controller {
             log.info(tag,"allWallets: ",allWallets)
             output.wallets = allWallets
             if(allWallets.indexOf(body.context) >= 0){
-                //if conext is not current
+                //if context is not current
                 if(userInfo.context !== body.context) {
                     let contextSwitch = {
                         type:"context",
@@ -518,6 +518,15 @@ export class pioneerPrivateController extends Controller {
                     let updateRedis = await redis.hset(authInfo.username,'context',body.context)
                     output.updateDB = updateRedis
                 } else {
+                    log.info(tag,"DEBUG: publish on false context switch")
+                    let contextSwitch = {
+                        type:"context",
+                        note:"context already "+body.context,
+                        username:userInfo.username,
+                        context:body.context
+                    }
+                    publisher.publish('context',JSON.stringify(contextSwitch))
+                    //TODO debug/removeme
                     output.success = false
                     output.error = 'context already set to body.context:'+body.context
                 }
@@ -542,13 +551,13 @@ export class pioneerPrivateController extends Controller {
     }
 
     /**
-     * Pair an sdk with app
+     * updateInvocation an sdk with app
      * @param request This is an application pairing submission
      */
 
     @Post('/updateInvocation')
     public async updateInvocation(@Body() body: UpdateInvocationBody, @Header() Authorization: any): Promise<any> {
-        let tag = TAG + " | pair | "
+        let tag = TAG + " | updateInvocation | "
         try{
             log.info(tag,"account: ",body)
             log.info(tag,"Authorization: ",Authorization)
@@ -616,7 +625,7 @@ export class pioneerPrivateController extends Controller {
     }
 
     /**
-     * Pair an sdk with app
+     * deleteInvocation an sdk with app
      * @param request This is an application pairing submission
      */
 
@@ -681,6 +690,10 @@ export class pioneerPrivateController extends Controller {
 
                 //push to username cache
                 redis.sadd(userInfo.username+":apps",url)
+
+                //push to pairings
+                redis.sadd(userInfo.username+":pairings",Authorization)
+                redis.sadd(userInfo.username+":pairings",sdkQueryKey)
 
                 //add to userInfo
                 let pushAppMongo = await usersDB.update({ username: userInfo.username },

@@ -280,11 +280,44 @@ subscriber.on('message', async function (channel, payloadS) {
             log.info(tag,"context: ",context)
             log.info(tag,"context: ",context.username)
             log.info(tag,"usersByUsername: ",usersByUsername)
+            log.info(tag,"usersByKey: ",usersByKey)
             //usersBySocketId
             log.info(tag,"usersBySocketId: ",usersBySocketId)
-            log.info(tag,"usersByKey: ",usersByKey)
 
-            //send to user
+            // //DEBUG
+            // //TODO DONT DO THIS
+            // //send to ALL sockets
+            // let allSockets = Object.keys(globalSockets)
+            // for(let i =0; i < allSockets.length; i++){
+            //     let socketid = allSockets[i]
+            //     if(globalSockets[socketid]){
+            //         context.socketid = socketid
+            //         context.event = 'context'
+            //         globalSockets[socketid].emit('message', context);
+            //         log.info(tag,socketid+ " sending message to user! msg: ",context)
+            //     }
+            // }
+
+            //send to keys
+            let queryKeys = await redis.smembers(context.username+":pairings")
+            log.info(tag,"queryKey")
+            for(let i = 0; i < queryKeys.length; i++){
+                let queryKey = queryKeys[i]
+                if(usersByKey[queryKey]){
+                    let sockets = usersByKey[queryKey]
+                    log.info(tag,"sockets: ",sockets)
+                    for(let j =0; j < sockets.length; j++){
+                        let socketid = sockets[j]
+                        if(globalSockets[socketid]){
+                            context.event = 'context'
+                            globalSockets[socketid].emit('message', context);
+                            log.info(tag,socketid+ " sending message to user! msg: ",context)
+                        }
+                    }
+                }
+            }
+
+            //send to users
             if(usersByUsername[context.username]){
                 let sockets = usersByUsername[context.username]
                 log.info(tag,"sockets: ",sockets)
