@@ -284,20 +284,6 @@ subscriber.on('message', async function (channel, payloadS) {
             //usersBySocketId
             log.info(tag,"usersBySocketId: ",usersBySocketId)
 
-            // //DEBUG
-            // //TODO DONT DO THIS
-            // //send to ALL sockets
-            // let allSockets = Object.keys(globalSockets)
-            // for(let i =0; i < allSockets.length; i++){
-            //     let socketid = allSockets[i]
-            //     if(globalSockets[socketid]){
-            //         context.socketid = socketid
-            //         context.event = 'context'
-            //         globalSockets[socketid].emit('message', context);
-            //         log.info(tag,socketid+ " sending message to user! msg: ",context)
-            //     }
-            // }
-
             //send to keys
             let queryKeys = await redis.smembers(context.username+":pairings")
             log.info(tag,"queryKey")

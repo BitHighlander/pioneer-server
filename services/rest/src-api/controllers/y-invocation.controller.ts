@@ -33,6 +33,7 @@ let PIONEER_SIGNING_PRIVKEY = process.env['PIONEER_SIGNING_PRIVKEY']
 if(!PIONEER_SIGNING_PUBKEY) throw Error("PIONEER_SIGNING_PUBKEY required to run server!")
 if(!PIONEER_SIGNING_PRIVKEY) throw Error("PIONEER_SIGNING_PRIVKEY required to run server!")
 
+import { numberToHex } from 'web3-utils'
 import {
     InvocationBody,
     ApiError
@@ -118,12 +119,12 @@ export class pioneerInvocationController extends Controller {
             //normalize
             if(!body.invocation.invocationId) body.invocation.invocationId = invocationId
             if(!body.invocation.type) body.invocation.type = body.type
-            if(body.invocation.context) body.context = body.invocation.context
 
             //validate
+            if(!body.context) throw Error("Invocation context required!")
             if(!body.invocation.type) throw Error("Invocation type required!")
 
-
+            //TODO validate invocation types
             /*
                 transfer:
                 swap:
@@ -149,29 +150,64 @@ export class pioneerInvocationController extends Controller {
                 if(body.invocation.asset !== 'RUNE') throw Error("104: deposit* is a thorchain feature only")
             }
 
-            let entry = {
-                state:'created',
-                network:body.network,
-                type:body.invocation.type,
-                invocationId,
-                username:body.username,
-                tags:[body.username],
-                invocation:body.invocation,
-                notary,
-                notarySig
+            //if type = replace
+            if(body.invocation.type === 'replace'){
+                //get invocation from mongo
+                let invocationInfo = await invocationsDB.findOnce(body.invocationId)
+                if(!invocationInfo) throw Error("103: unable to find invocationId: "+body.invocationId)
+                log.info(tag,"invocationInfo: ",invocationInfo)
+
+                //move signed to "replaced"
+                invocationInfo.replaced = []
+                invocationInfo.replaced.push(invocationInfo.signed)
+                delete invocationInfo.signed
+
+                //update HDwallet payload
+                if(invocationInfo.network === 'ETH'){
+                    //get replace fee info
+                    if(!invocationInfo.invocation.fee) throw Error("101 Fee: required on RBF!")
+                    if(invocationInfo.invocation.fee.value){
+                        //update gasPrice
+                        invocationInfo.unsignedTx.HDwalletPayload.gasPrice = numberToHex(invocationInfo.invocation.fee.value)
+                    } else {
+                        throw Error("104: priority levels not supported")
+                    }
+                } else {
+                    throw Error("102: RBF not supported for network: "+invocationInfo.network)
+                }
+
+                //update invocation
+                let mongoSave = await invocationsDB.update(
+                    {invocationId:body.invocationId},
+                    {$set:{unsignedTx:invocationInfo.unsignedTx,state:'replaced',signed:null}})
+                log.info(tag,"mongoSave: ",mongoSave)
+
+            } else {
+                //not RBF aka new invocation
+                let entry = {
+                    state:'created',
+                    network:body.network,
+                    type:body.invocation.type,
+                    invocationId,
+                    context:body.context,
+                    username:body.username,
+                    tags:[body.username],
+                    invocation:body.invocation,
+                    notary,
+                    notarySig
+                }
+
+                //verify invoke type is known
+
+                //give fee rating/recommendation
+
+
+                //TODO sequence
+                //only accept 1 per username
+                //save to mongo
+                let mongoSave = await invocationsDB.insert(entry)
+                log.info(tag,"mongoSave: ",mongoSave)
             }
-
-            //verify invoke type is known
-
-            //give fee rating/recommendation
-
-            //
-
-            //TODO sequence
-            //only accept 1 per username
-            //save to mongo
-            let mongoSave = await invocationsDB.insert(entry)
-            log.info(tag,"mongoSave: ",mongoSave)
 
             if(onlineUsers.indexOf(body.username) >= 0){
                 body.invocationId = invocationId

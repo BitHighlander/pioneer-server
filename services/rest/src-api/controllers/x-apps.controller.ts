@@ -73,8 +73,6 @@ export class XAppsController extends Controller {
 
     /*
         read
-
-
     */
 
     @Get('/apps')
