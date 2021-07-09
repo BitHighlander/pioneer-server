@@ -184,6 +184,10 @@ export class pioneerInvocationController extends Controller {
 
             } else {
                 //not RBF aka new invocation
+
+                //validate
+                if(!body.invocation.fee) throw Error("104: invalid body missing fee ")
+
                 let entry = {
                     state:'created',
                     network:body.network,
@@ -205,9 +209,13 @@ export class pioneerInvocationController extends Controller {
                 //TODO sequence
                 //only accept 1 per username
                 //save to mongo
+                log.info(tag,"Creating invocation to save: ",entry)
                 let mongoSave = await invocationsDB.insert(entry)
                 log.info(tag,"mongoSave: ",mongoSave)
             }
+
+            //build invocation
+
 
             if(onlineUsers.indexOf(body.username) >= 0){
                 body.invocationId = invocationId

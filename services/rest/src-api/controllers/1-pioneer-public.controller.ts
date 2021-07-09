@@ -290,6 +290,7 @@ export class pioneerPublicController extends Controller {
         try{
             if(!invocationId) throw Error("102: invocationId required! ")
             let output = await invocationsDB.findOne({invocationId})
+            log.info(tag,"invocation MONGO: ",output)
             if(!output){
                 output = {
                     error:true,
