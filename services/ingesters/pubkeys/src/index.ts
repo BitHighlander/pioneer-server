@@ -138,27 +138,31 @@ let do_work = async function(){
                     let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
                     log.info(tag,'blockbookInfo: ',blockbookInfo)
 
-                    for(let i = 0; i < blockbookInfo.txids.length; i++){
-                        let work = {
-                            txid:blockbookInfo.txids[i],
-                            network:'ETH'
-                        }
-                        await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
-                    }
-
                     if(blockbookInfo.totalPages > 1){
                         for(let i = 0; i <= blockbookInfo.totalPages; i++ ){
                             let page = i
                             log.info(tag,"page: ",page)
-                            let blockbookInfoPage = await blockbook.getAddressInfo('ETH',work.pubkey,page)
+                            let blockbookInfoPage = await blockbook.txidsByAddress('ETH',work.pubkey,page)
                             log.info(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
-                            for(let j = 0; j < blockbookInfo.txids.length; j++){
+                            await sleep(10000)
+                            for(let j = 0; j < blockbookInfoPage.txids.length; j++){
+                                log.info(tag,"page: "+page+ " txid: ",blockbookInfoPage.txids[j])
                                 let work = {
-                                    txid:blockbookInfo.txids[j],
+                                    txid:blockbookInfoPage.txids[j],
                                     network:'ETH'
                                 }
+                                //log.info(tag,'work: ',work)
                                 await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
                             }
+                        }
+                    } else {
+                        for(let i = 0; i < blockbookInfo.txids.length; i++){
+                            log.info(tag,"txid: ",blockbookInfo.txids[i])
+                            let work = {
+                                txid:blockbookInfo.txids[i],
+                                network:'ETH'
+                            }
+                            await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
                         }
                     }
 

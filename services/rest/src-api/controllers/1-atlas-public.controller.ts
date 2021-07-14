@@ -162,7 +162,7 @@ export class pioneerPublicController extends Controller {
             output.result = await queue.createWork("pioneer:pubkey:ingest",work)
 
             //track
-            let savedRedis = await redis.hmset(body.pubkey,work)
+            let savedRedis = await redis.hmset(body.pubkey.toLowerCase(),work)
             output.savedRedis = savedRedis
 
             return(output);

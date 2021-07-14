@@ -14,4 +14,4 @@ let work = {
     network:'ETH'
 }
 
-queue.createWork('ETH:transaction:queue:ingest',work)
+queue.createWork('ETH:transaction:queue:ingest:HIGH',work)

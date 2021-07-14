@@ -16,7 +16,7 @@
     "@pioneer-platform/blockbook": "^8.1.20",
     "@pioneer-platform/default-mongo": "^8.1.5",
     "@pioneer-platform/eth-audit": "^8.1.17",
-    "@pioneer-platform/eth-network": "^8.1.20",
+    "@pioneer-platform/eth-network": "^8.1.21",
     "@pioneer-platform/loggerdog": "^8.1.5",
     "@pioneer-platform/redis-queue": "^8.1.5",
     "chai": "^4.2.0",

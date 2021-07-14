@@ -25,19 +25,6 @@ let work = {
     inserted: 1594510142838
 }
 
-// let work = {
-//     coin: 'ETH',
-//     symbol: 'ETH',
-//     network: 'ETH',
-//     blockchain: 'ethereum',
-//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-//     walletId: 'highlander-test-343733331147363327003800',
-//     type:"address",
-//     username: 'test-user-2',
-//     pubkey: "0x27de622cc44c55b53caF299eCedccdAB29aC98A8",
-//     inserted: 1594510142838
-// }
-
 
 // let work = {
 //     coin: 'ETH',

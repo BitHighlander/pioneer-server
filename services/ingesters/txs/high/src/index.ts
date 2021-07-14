@@ -79,13 +79,14 @@ let do_work = async function(){
                 //if contract
                 if(addressInfo.type === 'contract' && txInfo.receipt){
                     //audit
-                    let auditResult = await audit.auditReceipt(work.contractName,txInfo.receipt)
+                    let auditResult = await audit.auditReceipt(addressInfo.username,txInfo.receipt)
                     log.info("auditResult: ",auditResult)
 
                     //save result to mongo
-                    let successMongo = await txsDB.insert(auditResult)
-                    log.info("successMongo: ",successMongo)
-
+                    if(auditResult.Type === 'streamCreate'){
+                        let successMongo = await txsDB.insert(auditResult)
+                        log.info("successMongo: ",successMongo)
+                    }
                 }
             }else{
                 //ignore (un-tracked mempool)
