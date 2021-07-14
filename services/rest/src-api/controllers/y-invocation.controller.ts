@@ -139,7 +139,7 @@ export class pioneerInvocationController extends Controller {
                 //if not ETH throw
                 if(body.invocation.asset !== 'ETH') throw Error("104: swap* smart contract execution only supported on ETH! asset: "+body.invocation.asset)
             } else {
-                if(body.invocation.type !== 'transfer'){
+                if(body.invocation.type !== 'transfer' && body.invocation.type !== 'replace'){
                     if(body.invocation.asset === 'ETH') throw Error("105: eth must use smart contract router!")
                 }
             }
@@ -153,7 +153,7 @@ export class pioneerInvocationController extends Controller {
             //if type = replace
             if(body.invocation.type === 'replace'){
                 //get invocation from mongo
-                let invocationInfo = await invocationsDB.findOnce(body.invocationId)
+                let invocationInfo = await invocationsDB.findOne({invocationId:body.invocationId})
                 if(!invocationInfo) throw Error("103: unable to find invocationId: "+body.invocationId)
                 log.info(tag,"invocationInfo: ",invocationInfo)
 

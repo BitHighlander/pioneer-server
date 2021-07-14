@@ -102,7 +102,7 @@ let UTXO_COINS = [
 //route
 @Tags('Public Endpoints')
 @Route('')
-export class pioneerPublicController extends Controller {
+export class atlasPublicController extends Controller {
 
     /*
      * globals
@@ -453,26 +453,26 @@ export class pioneerPublicController extends Controller {
     /**
      *  Retrieve account info
      */
-    @Get('/listUnspent/{coin}/{xpub}')
-    public async listUnspent(coin:string,xpub:string) {
+    @Get('/listUnspent/{network}/{xpub}')
+    public async listUnspent(network:string,xpub:string) {
         let tag = TAG + " | listUnspent | "
         try{
             let output:any = []
             //TODO if UTXO coin else error
             //TODO does this scale on large xpubs?
-            log.info(tag,"coin: ",coin)
+            log.info(tag,"network: ",network)
             log.info(tag,"xpub: ",xpub)
             await networks.ANY.init()
             //log.info("networks: ",networks)
             //log.info("networks: ",networks.ANY)
-            let inputs = await networks.ANY.utxosByXpub(coin,xpub)
+            let inputs = await networks.ANY.utxosByXpub(network,xpub)
 
             //for each get hex
             for(let i = 0; i < inputs.length; i++){
                 let input = inputs[i]
                 log.info(tag,"input: ",input)
                 //get hex info
-                let rawInfo = await networks.ANY.getTransaction(coin,input.txid)
+                let rawInfo = await networks.ANY.getTransaction(network,input.txid)
                 log.info(tag,"rawInfo: ",rawInfo)
                 log.info(tag,"rawInfo: ",rawInfo.vin[0].addresses)
                 //TODO type from hdwallet-code txInput:
@@ -481,7 +481,7 @@ export class pioneerPublicController extends Controller {
                 let normalized_inputs = []
                 for(let i = 0; i < rawInfo.vin.length; i++){
                     let vin = rawInfo.vin[i]
-                    let rawInfoInput = await networks.ANY.getTransaction(coin,vin.txid)
+                    let rawInfoInput = await networks.ANY.getTransaction(network,vin.txid)
                     log.info(tag,"rawInfoInput: ",JSON.stringify(rawInfoInput))
                     let input = {
                         txid:vin.txid,
@@ -519,7 +519,8 @@ export class pioneerPublicController extends Controller {
                     hex:rawInfo.hex
                 }
                 input.hex = rawInfo.hex
-                input.coin = coin
+                input.coin = network
+                input.network = network
                 output.push(input)
             }
 
@@ -685,13 +686,33 @@ export class pioneerPublicController extends Controller {
     }
 
     /**
+     *  ETH get tx count info (for nonce calculations)
+     */
+    @Get('/eth/txCount/{address}')
+    public async getTxCount(address:string) {
+        let tag = TAG + " | get_tx_count | "
+        try{
+            let accounts = await networks['ETH'].getTxCount(address)
+            return accounts
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /**
      *  ETH get token balance and info
      */
     @Get('/eth/getTokens/{address}')
     public async getTokenInfo(address:string) {
         let tag = TAG + " | getGasPrice | "
         try{
-            let accounts = await networks['ETH'].getTokenInfo(address)
+            let accounts = await networks['ETH'].getAddressInfo(address)
             return accounts
         }catch(e){
             let errorResp:Error = {
@@ -1074,6 +1095,7 @@ export class pioneerPublicController extends Controller {
                     await networks.ANY.init('full')
                     result = await networks['ANY'].broadcast(network,body.serialized)
                 } else {
+                    //All over coins
                     //normal broadcast
                     await networks[network].init()
                     result = await networks[network].broadcast(body.serialized)

@@ -39,6 +39,50 @@ import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Reque
 
 let PIONEER_INFO_CACHE_TIME = process.env['PIONEER_INFO_CACHE_TIME'] || 60 * 5
 
+/*
+    Feature Flags per blockchain
+
+ */
+
+let blockchains = []
+const networks:any = {}
+
+if(process.env['FEATURE_BITCOIN_BLOCKCHAIN']){
+    blockchains.push('bitcoin')
+    //all utxo's share
+    networks['ANY'] = require('@pioneer-platform/utxo-network')
+    networks['ANY'].init('full')
+}
+
+if(process.env['FEATURE_BITCOINCASH_BLOCKCHAIN']){
+    blockchains.push('bitcoincash')
+}
+
+if(process.env['FEATURE_LITECOIN_BLOCKCHAIN']){
+    blockchains.push('litecoin')
+}
+
+if(process.env['FEATURE_ETHEREUM_BLOCKCHAIN']){
+    blockchains.push('ethereum')
+    networks['ETH'] = require('@pioneer-platform/eth-network')
+    networks['ETH'].init()
+}
+
+if(process.env['FEATURE_COSMOS_BLOCKCHAIN']){
+    blockchains.push('cosmos')
+    networks['ATOM'] = require('@pioneer-platform/cosmos-network')
+}
+
+if(process.env['FEATURE_BINANCE_BLOCKCHAIN']){
+    blockchains.push('binance')
+    networks['BNB'] = require('@pioneer-platform/binance-network')
+}
+
+if(process.env['FEATURE_THORCHAIN_BLOCKCHAIN']){
+    blockchains.push('thorchain')
+    networks['RUNE'] = require('@pioneer-platform/thor-network')
+}
+
 import {
     Error,
     ApiError,
@@ -278,6 +322,32 @@ export class pioneerPrivateController extends Controller {
                 }
                 log.info(tag,"assetBalances: ",assetBalances)
                 walletInfo.balances = assetBalances
+
+                //TODO get nfts
+
+                //get streams
+                //search by masterETH
+                //TODO alt paths?
+                let masterEth = walletInfo.masters.ETH.toLowerCase()
+                log.info(tag,"masterEth: ",masterEth)
+                let allStreamInfo = await txsDB.find({ $and: [ {tags:{ $all: [masterEth]}}, {tags:{ $all: ["streamCreate"]}} ] })
+                log.info(tag,"allStreamInfo: ",allStreamInfo)
+
+                for(let i = 0; i < allStreamInfo.length; i++){
+                    let streamInfo = allStreamInfo[i].events[0]
+                    log.info(tag,"streamInfo: ",streamInfo)
+                    streamInfo = streamInfo.stream
+                    log.info(tag,"streamInfo.stream: ",streamInfo)
+                    //getSymbolForContract
+                    let streamAsset = await networks['ETH'].getSymbolFromContract(streamInfo.streamAsset)
+                    assetBalances['stream:'+streamAsset] = streamInfo.streamAmount
+
+                    //get verbose stream info
+                    let verboseInfo = await networks['ETH'].getStreamInfo(streamInfo.saleryId)
+                    if(!walletInfo.streams) walletInfo.streams = []
+                    walletInfo.streams.push(verboseInfo)
+                }
+                log.info(tag,"walletInfo.streams: ",walletInfo.streams)
                 //get value of portfolio
                 let valuePortfolio = await coincap.valuePortfolio(assetBalances)
                 log.info(tag,"valuePortfolio: ",valuePortfolio)

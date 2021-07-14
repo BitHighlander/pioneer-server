@@ -12,15 +12,15 @@ const queue = require("@pioneer-platform/redis-queue")
 //grab bad work from deadletter
 
 //push pairing event
-redis.publish('context', JSON.stringify({
-        type: 'context',
-        username: 'e2e-test-02-a',
-        context: '0xc3affff54122658b89c31183cec4f15514f34624.wallet.json',
-        event: 'context'
-    })
-)
+// redis.publish('context', JSON.stringify({
+//         type: 'context',
+//         username: 'e2e-test-02-a',
+//         context: '0xc3affff54122658b89c31183cec4f15514f34624.wallet.json',
+//         event: 'context'
+//     })
+// )
 
-//push invote event
+//push invoke event
 
 
 // queue.getWork("pioneer:pubkey:ingest:deadletter",100)

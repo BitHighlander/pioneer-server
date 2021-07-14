@@ -17,6 +17,14 @@ const log = require('@pioneer-platform/loggerdog')()
 const {subscriber,publisher,redis,redisQueue} = require('@pioneer-platform/default-redis')
 const blockbook = require('@pioneer-platform/blockbook')
 
+let servers:any = {}
+if(process.env['BTC_BLOCKBOOK_URL']) servers['BTC'] = process.env['BTC_BLOCKBOOK_URL']
+if(process.env['ETH_BLOCKBOOK_URL']) servers['ETH'] = process.env['ETH_BLOCKBOOK_URL']
+if(process.env['DOGE_BLOCKBOOK_URL']) servers['DOGE'] = process.env['DOGE_BLOCKBOOK_URL']
+if(process.env['BCH_BLOCKBOOK_URL']) servers['BCH'] = process.env['BCH_BLOCKBOOK_URL']
+if(process.env['LTC_BLOCKBOOK_URL']) servers['LTC'] = process.env['LTC_BLOCKBOOK_URL']
+blockbook.init(servers)
+
 let queue = require("@pioneer-platform/redis-queue")
 let connection  = require("@pioneer-platform/default-mongo")
 let wait = require('wait-promise');
@@ -79,10 +87,9 @@ let do_work = async function(){
             if(!work.symbol) throw Error("101: invalid work! missing symbol")
             if(!work.username) throw Error("102: invalid work! missing username")
             if(!work.pubkey) throw Error("103: invalid work! missing pubkey")
-            if(!work.blockchain) throw Error("104: invalid work! missing blockchain")
             if(!work.type) throw Error("105: invalid work! missing type")
             if(!work.queueId) throw Error("106: invalid work! missing queueId")
-            if(work.type !== 'address' && work.type !== 'xpub' && work.type !== 'zpub') throw Error("Unknown type! "+work.type)
+            if(work.type !== 'address' && work.type !== 'xpub' && work.type !== 'zpub' && work.type !== 'contract') throw Error("Unknown type! "+work.type)
 
             //TODO lookup last update
             //if < x time, refuse to do work
@@ -113,7 +120,7 @@ let do_work = async function(){
 
                     // get ethPlorer list
                     let ethInfo = await networks['ETH'].getBalanceTokens(work.pubkey)
-                    log.debug(tag,"ethInfo: ",ethInfo)
+                    log.info(tag,"ethInfo: ",ethInfo)
 
                     //forEach
                     let tokens = Object.keys(ethInfo.balances)
@@ -127,15 +134,44 @@ let do_work = async function(){
                         //TODO if change push new balance over socket to user
                     }
 
-                    //blockbook get txids
+                    //blockbookInfo
+                    let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
+                    log.info(tag,'blockbookInfo: ',blockbookInfo)
 
+                    for(let i = 0; i < blockbookInfo.txids.length; i++){
+                        let work = {
+                            txid:blockbookInfo.txids[i],
+                            network:'ETH'
+                        }
+                        await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
+                    }
+
+                    if(blockbookInfo.totalPages > 1){
+                        for(let i = 0; i <= blockbookInfo.totalPages; i++ ){
+                            let page = i
+                            log.info(tag,"page: ",page)
+                            let blockbookInfoPage = await blockbook.getAddressInfo('ETH',work.pubkey,page)
+                            log.info(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
+                            for(let j = 0; j < blockbookInfo.txids.length; j++){
+                                let work = {
+                                    txid:blockbookInfo.txids[j],
+                                    network:'ETH'
+                                }
+                                await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
+                            }
+                        }
+                    }
 
                     //get txid diff from mongo
+                        //push new tx's
 
                     //do lookup on mongo/ find unknown
 
                     //batch lookup unknown txids
 
+                    //get payment streams
+
+                    //get nfts
 
                     // get blockbook tokens
                     // validate ethPlorer
@@ -164,7 +200,36 @@ let do_work = async function(){
                 //if eth get info
                 //TODO if change push new balance over socket to user
 
-            } else {
+            } else if(work.type === "contract"){
+                //blockbookInfo
+                let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
+                log.info(tag,'blockbookInfo: ',blockbookInfo)
+
+                for(let i = 0; i < blockbookInfo.txids.length; i++){
+                    let work = {
+                        txid:blockbookInfo.txids[i],
+                        network:'ETH'
+                    }
+                    await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
+                }
+
+                if(blockbookInfo.totalPages > 1){
+                    for(let i = 0; i <= blockbookInfo.totalPages; i++ ){
+                        let page = i
+                        log.info(tag,"page: ",page)
+                        let blockbookInfoPage = await blockbook.getAddressInfo('ETH',work.pubkey,page)
+                        log.info(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
+                        for(let j = 0; j < blockbookInfo.txids.length; j++){
+                            let work = {
+                                txid:blockbookInfo.txids[j],
+                                network:'ETH'
+                            }
+                            await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
+                        }
+                    }
+                }
+
+            }else {
                 //unhandled work!
                 log.error(work)
             }
