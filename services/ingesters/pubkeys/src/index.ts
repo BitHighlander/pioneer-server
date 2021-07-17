@@ -111,6 +111,7 @@ let do_work = async function(){
                 //TODO if BCH get slp tokens
 
             } else if(work.type === "address") {
+                log.info(tag,"address ingestion")
                 // if ETH get tokens
                 if(work.symbol === 'ETH'){
                     //if eth use master
@@ -197,8 +198,8 @@ let do_work = async function(){
                 if(!networks[work.symbol] || !networks[work.symbol].getBalance) throw Error("102: coin not supported! "+work.symbol)
 
                 let balance = await networks[work.symbol].getBalance(work.pubkey)
-                //
-                log.info(tag,"address ingestion")
+                log.info(tag,"balance: ",balance)
+
                 let updateResult = await redis.hset(work.username+":assets:"+work.walletId,work.symbol,balance)
                 if(updateResult) push_balance_event(work,balance)
                 //if eth get info

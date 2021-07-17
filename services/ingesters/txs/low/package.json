@@ -10,7 +10,10 @@
     "test": "npm run build && node __tests__/test-module.js",
     "prepublish": "rm -R lib && npm run build",
     "refresh": "rm -rf ./node_modules ./package-lock.json && npm install",
-    "docker-build": "docker build -t pioneer/pioneer-eth-block-ingester-high:latest ."
+    "docker:build": "docker build -t pioneer/pioneer-ingester-txs-low:latest .",
+    "docker:tag": "docker tag pioneer/pioneer-ingester-txs-low:latest registry.digitalocean.com/pioneer/pioneer/pioneer-ingester-txs-low:latest",
+    "docker:push": "docker push registry.digitalocean.com/pioneer/pioneer/pioneer-ingester-txs-low:latest",
+    "docker:push:all": "npm run docker:build && npm run docker:tag && npm run docker:push"
   },
   "dependencies": {
     "@pioneer-platform/blockbook": "^8.1.20",

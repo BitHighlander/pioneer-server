@@ -8,22 +8,38 @@ let queue = require("@pioneer-platform/redis-queue")
 let ASSET = "ETH"
 
 
-let work = {
-    coin: 'ETH',
-    symbol: 'ETH',
-    network: 'ETH',
-    blockchain: 'ethereum',
-    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-    walletId: 'atlas-test-343733331147363327003800',
-    type:"address",
-    contract:{
-        name:"sablier (proxy)",
-        tags:['sablier','streams','erc20']
-    },
-    username: 'test-user-2',
-    pubkey: "0xbd6a40Bb904aEa5a49c59050B5395f7484A4203d",
-    inserted: 1594510142838
-}
+
+
+// //Atom
+// let work = {
+//     coin: 'ATOM',
+//     symbol: 'ATOM',
+//     network: 'ATOM',
+//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+//     walletId: 'atom-test-343733331147363327003800',
+//     type:"address",
+//     username: 'test-user-2',
+//     pubkey: "cosmos1fmczm8gl6pepdak8syqf0krlclpwmlzg989ryh",
+//     inserted: 1594510142838
+// }
+
+//atlas
+// let work = {
+//     coin: 'ETH',
+//     symbol: 'ETH',
+//     network: 'ETH',
+//     blockchain: 'ethereum',
+//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+//     walletId: 'atlas-test-343733331147363327003800',
+//     type:"address",
+//     contract:{
+//         name:"sablier (proxy)",
+//         tags:['sablier','streams','erc20']
+//     },
+//     username: 'test-user-2',
+//     pubkey: "0xbd6a40Bb904aEa5a49c59050B5395f7484A4203d",
+//     inserted: 1594510142838
+// }
 
 
 // let work = {
@@ -74,6 +90,18 @@ let work = {
 //     inserted: 1594510142838
 // }
 
+let work = {
+    coin: 'DOGE',
+    type: 'xpub',
+    walletId: 'keepkey-pubkeys-343733331147363327003800',
+    username: 'test-user-2',
+    symbol: 'DOGE',
+    blockchain: "dogecoin",
+    queueId: 'j9ZbcfjasdFy6kqShnupHXLWi',
+    account: 'tesasdasdtaddress',
+    pubkey:"xpub6BgVLrcywjgQrv2SZFLxYbjxAAVbeY5SXmGSDxkT9wobyyETW6De4SFnxQdNgzgNxBPRpWocod2YNMCvnNrh4cZgv6bQMab2WKwbWisv1oY",
+    inserted: 1594510142838
+}
 
 console.log("inserted:",work)
 

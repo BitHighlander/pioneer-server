@@ -1,0 +1,12 @@
+{
+  "apps" : [
+    {
+      "script": "./services/ingesters/pubkeys/lib/index.js",
+      "name": "pioneer-pubkey-ingester",
+      "instances": 1,
+      "exec_mode": "cluster",
+      "log_date_format": "MM-DD-YY HH:mm:ss.SSS",
+      "kill_timeout": 10000
+    }
+  ]
+}

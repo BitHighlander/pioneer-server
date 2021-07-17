@@ -10,6 +10,10 @@ clean::
 build::
 	sh scripts/build.sh
 
+#NOTE the tsoa server requires the swaggar doc to be in a spefic place
+dev::
+	pm2 start process.json && cd services/rest && npm run start
+
 #TODO
 test::
 	echo $(env)
