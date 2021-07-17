@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@pioneer-platform/binance-network": "latest",
-    "@pioneer-platform/blockbook": "^8.1.21",
+    "@pioneer-platform/blockbook": "latest",
     "@pioneer-platform/cosmos-network": "latest",
     "@pioneer-platform/default-mongo": "latest",
     "@pioneer-platform/default-redis": "latest",
