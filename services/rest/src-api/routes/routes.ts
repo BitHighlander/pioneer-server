@@ -43,6 +43,9 @@ const models: TsoaRoute.Models = {
             "network": {"dataType":"string","required":true},
             "symbol": {"dataType":"string"},
             "pioneer": {"dataType":"string"},
+            "queueId": {"dataType":"string"},
+            "type": {"dataType":"string","required":true},
+            "username": {"dataType":"string"},
             "contractName": {"dataType":"string","required":true},
             "contractVerbose": {"dataType":"any"},
             "tags": {"dataType":"any","required":true},
@@ -243,7 +246,7 @@ const models: TsoaRoute.Models = {
             "network": {"dataType":"string","required":true},
             "coin": {"dataType":"string"},
             "amount": {"dataType":"string"},
-            "context": {"dataType":"string"},
+            "context": {"dataType":"string","required":true},
             "username": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
@@ -629,10 +632,10 @@ export function RegisterRoutes(app: express.Router) {
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/api/v1/getAccountInfo/:coin/:address',
+        app.get('/api/v1/getAccountInfo/:network/:address',
             function atlasPublicController_getAccountInfo(request: any, response: any, next: any) {
             const args = {
-                    coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
+                    network: {"in":"path","name":"network","required":true,"dataType":"string"},
                     address: {"in":"path","name":"address","required":true,"dataType":"string"},
             };
 

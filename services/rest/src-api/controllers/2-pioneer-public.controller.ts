@@ -72,6 +72,10 @@ if(process.env['FEATURE_THORCHAIN_BLOCKCHAIN']){
     networks['RUNE'] = require('@pioneer-platform/thor-network')
 }
 
+if(process.env['FEATURE_OSMOSIS_BLOCKCHAIN']){
+    blockchains.push('osmosis')
+    networks['OSMO'] = require('@pioneer-platform/osmosis-network')
+}
 
 //Cache time
 let CACHE_TIME = 1000 * 60 * 1
@@ -539,14 +543,15 @@ export class atlasPublicController extends Controller {
     /**
      *  Retrieve account info
      */
-    @Get('/getAccountInfo/{coin}/{address}')
-    public async getAccountInfo(coin:string,address:string) {
+    @Get('/getAccountInfo/{network}/{address}')
+    public async getAccountInfo(network:string,address:string) {
         let tag = TAG + " | accountsFromPubkey | "
         try{
-            log.info(tag,"coin: ",coin)
+            log.info(tag,"network: ",network)
             log.info(tag,"address: ",address)
             log.info(tag,"networks: ",networks)
-            let accounts = await networks[coin].getAccount(address)
+            if(!networks[network]) throw Error("103: network not supported! network: "+network)
+            let accounts = await networks[network].getAccount(address)
             return accounts
         }catch(e){
             let errorResp:Error = {
@@ -1021,6 +1026,8 @@ export class atlasPublicController extends Controller {
             log.info("************************** CHECKPOINT *******************88 ")
             log.info(tag,"body: ",body)
             if(!body.txid) throw Error("103: must known txid BEFORE broadcast! ")
+            if(!body.network) throw Error("104: network required! ")
+
             let result:any = {
                 success:false
             }

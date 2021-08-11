@@ -22,4 +22,4 @@ push::
 	sh scripts/push-images-$(env).sh
 
 up::
-	cd deploy && npm i && node leeroy-sdk.js
+	cd deploy && npm i && node lib/index

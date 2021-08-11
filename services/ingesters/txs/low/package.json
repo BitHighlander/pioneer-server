@@ -18,7 +18,7 @@
   "dependencies": {
     "@pioneer-platform/blockbook": "latest",
     "@pioneer-platform/default-mongo": "latest",
-    "@pioneer-platform/eth-audit": "latest",
+    "@pioneer-platform/eth-audit": "^8.1.19",
     "@pioneer-platform/eth-network": "latest",
     "@pioneer-platform/loggerdog": "latest",
     "@pioneer-platform/redis-queue": "latest",

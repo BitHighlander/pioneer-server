@@ -33,6 +33,7 @@ let sleep = wait.sleep;
 const networks:any = {
     'ETH' : require('@pioneer-platform/eth-network'),
     'ATOM': require('@pioneer-platform/cosmos-network'),
+    'OSMO': require('@pioneer-platform/osmosis-network'),
     'BNB' : require('@pioneer-platform/binance-network'),
     // 'EOS' : require('@pioneer-platform/eos-network'),
     'FIO' : require('@pioneer-platform/fio-network'),
@@ -53,6 +54,9 @@ txsDB.createIndex({txid: 1}, {unique: true})
 utxosDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 unspentDB.createIndex({txid: 1}, {unique: true})
+
+let FORCE_RESCAN: boolean
+if(process.env['FORCE_RESCAN_PUBKEYS']) FORCE_RESCAN = true
 
 let push_balance_event = async function(work:any,balance:string){
     let tag = TAG+" | push_balance_event | "
@@ -125,45 +129,56 @@ let do_work = async function(){
 
                     //forEach
                     let tokens = Object.keys(ethInfo.balances)
-                    for(let i = 0; i < tokens.length; i++){
-                        let token = tokens[i]
-                        let balance = ethInfo.balances[token]
-                        //update balance cache
-                        let updateResult = await redis.hset(work.username+":assets:"+work.walletId,token,balance)
-                        if(updateResult) push_balance_event(work,balance)
-                        log.info(tag,"updateResult: ",updateResult)
-                        //TODO if change push new balance over socket to user
+                    if(tokens){
+                        for(let i = 0; i < tokens.length; i++){
+                            let token = tokens[i]
+                            let balance = ethInfo.balances[token]
+                            //update balance cache
+                            let updateResult = await redis.hset(work.username+":assets:"+work.walletId,token,balance)
+                            if(updateResult) push_balance_event(work,balance)
+                            log.info(tag,"updateResult: ",updateResult)
+                            //TODO if change push new balance over socket to user
+                        }
                     }
 
                     //blockbookInfo
                     let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
                     log.info(tag,'blockbookInfo: ',blockbookInfo)
 
-                    if(blockbookInfo.totalPages > 1){
-                        for(let i = 0; i <= blockbookInfo.totalPages; i++ ){
-                            let page = i
-                            log.info(tag,"page: ",page)
-                            let blockbookInfoPage = await blockbook.txidsByAddress('ETH',work.pubkey,page)
-                            log.info(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
-                            await sleep(10000)
-                            for(let j = 0; j < blockbookInfoPage.txids.length; j++){
-                                log.info(tag,"page: "+page+ " txid: ",blockbookInfoPage.txids[j])
+                    if(blockbookInfo.txids){
+                        if(blockbookInfo.totalPages > 1){
+                            //get last scanned page cache
+
+                            for(let i = 0; i <= blockbookInfo.totalPages; i++ ){
+                                let page = i
+                                let isNotScanned = await redis.sadd(work.pubkey+":blockbook:ETH:info","page:"+page)
+                                if(isNotScanned || FORCE_RESCAN){
+                                    log.info(tag,"page: ",page)
+                                    let blockbookInfoPage = await blockbook.txidsByAddress('ETH',work.pubkey,page)
+                                    log.info(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
+                                    await sleep(10000)
+                                    for(let j = 0; j < blockbookInfoPage.txids.length; j++){
+                                        log.info(tag,"page: "+page+ " txid: ",blockbookInfoPage.txids[j])
+                                        let work = {
+                                            txid:blockbookInfoPage.txids[j],
+                                            network:'ETH'
+                                        }
+                                        //log.info(tag,'work: ',work)
+                                        let isUnknownTxid = await redis.sadd("cache:txid:",work.txid)
+                                        if(isUnknownTxid || FORCE_RESCAN) await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
+                                    }
+                                }
+                            }
+                        } else {
+                            for(let i = 0; i < blockbookInfo.txids.length; i++){
+                                log.info(tag,"txid: ",blockbookInfo.txids[i])
                                 let work = {
-                                    txid:blockbookInfoPage.txids[j],
+                                    txid:blockbookInfo.txids[i],
                                     network:'ETH'
                                 }
-                                //log.info(tag,'work: ',work)
-                                await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
+                                let isUnknownTxid = await redis.sadd("cache:txid:",work.txid)
+                                if(isUnknownTxid || FORCE_RESCAN) await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
                             }
-                        }
-                    } else {
-                        for(let i = 0; i < blockbookInfo.txids.length; i++){
-                            log.info(tag,"txid: ",blockbookInfo.txids[i])
-                            let work = {
-                                txid:blockbookInfo.txids[i],
-                                network:'ETH'
-                            }
-                            await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
                         }
                     }
 
@@ -191,7 +206,7 @@ let do_work = async function(){
 
                 // if BNB get tokens
 
-                //
+                // TODO get tx history
 
 
                 //get balance

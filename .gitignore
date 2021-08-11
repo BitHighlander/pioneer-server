@@ -21,3 +21,7 @@ monerowallet.keys
 .deploy-env
 .DS_Store
 coverage
+**/**/test-module.js
+**/test-module.js
+*/test-module.js
+test-module.js

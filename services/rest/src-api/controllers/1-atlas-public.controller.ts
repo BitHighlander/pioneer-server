@@ -35,70 +35,11 @@ pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
 
-/*
-    Feature Flags per blockchain
-
- */
-
-let blockchains = []
-const networks:any = {}
-
-if(process.env['FEATURE_BITCOIN_BLOCKCHAIN']){
-    blockchains.push('bitcoin')
-    //all utxo's share
-    networks['ANY'] = require('@pioneer-platform/utxo-network')
-    networks['ANY'].init('full')
-}
-
-if(process.env['FEATURE_BITCOINCASH_BLOCKCHAIN']){
-    blockchains.push('bitcoincash')
-}
-
-if(process.env['FEATURE_LITECOIN_BLOCKCHAIN']){
-    blockchains.push('litecoin')
-}
-
-if(process.env['FEATURE_ETHEREUM_BLOCKCHAIN']){
-    blockchains.push('ethereum')
-    networks['ETH'] = require('@pioneer-platform/eth-network')
-    networks['ETH'].init()
-}
-
-if(process.env['FEATURE_COSMOS_BLOCKCHAIN']){
-    blockchains.push('cosmos')
-    networks['ATOM'] = require('@pioneer-platform/cosmos-network')
-}
-
-if(process.env['FEATURE_BINANCE_BLOCKCHAIN']){
-    blockchains.push('binance')
-    networks['BNB'] = require('@pioneer-platform/binance-network')
-}
-
-if(process.env['FEATURE_THORCHAIN_BLOCKCHAIN']){
-    blockchains.push('thorchain')
-    networks['RUNE'] = require('@pioneer-platform/thor-network')
-}
-
-
-//Cache time
-let CACHE_TIME = 1000 * 60 * 1
-let CACHE_OVERRIDE = true
 //rest-ts
-import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
-// import * as express from 'express';
-
-
-
-//TODO move this to coins module!
-let UTXO_COINS = [
-    'BTC',
-    'BCH',
-    'LTC',
-    'TEST'
-]
+import { Body, Controller, Get, Post, Route, Tags } from 'tsoa';
 
 //route
-@Tags('Public Endpoints')
+@Tags('Atlas Endpoints')
 @Route('')
 export class pioneerPublicController extends Controller {
 

@@ -127,21 +127,10 @@ let usersByUsername = {}
 let usersByKey = {}
 let channel_history_max = 10;
 
-//redis-bridge
-subscriber.subscribe('blocks');
-
-//networks
-subscriber.subscribe('transactions:global:ETH');
-subscriber.subscribe('transactions:global:ATOM');
-subscriber.subscribe('transactions:global:BNB');
-subscriber.subscribe('transactions:global:EOS');
-
 //TODO moveme (payments should go to user by userId)
 //private
 subscriber.subscribe('payments');
-subscriber.subscribe('invocations');
-subscriber.subscribe('pairings');
-subscriber.subscribe('context');
+
 
 subscriber.on('message', async function (channel, payloadS) {
     let tag = TAG + ' | publishToFront | ';

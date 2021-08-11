@@ -42,12 +42,27 @@ let ASSET = "ETH"
 // }
 
 
+let work = {
+    symbol: 'OSMO',
+    asset: 'OSMO',
+    blockchain: "osmosis",
+    walletId: 'keepkey-pubkeys-343733331147363327003800',
+    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+    type:"address",
+    username: 'test-user-2',
+    pubkey: "osmo1qjwdyn56ecagk8rjf7crrzwcyz6775cj07qz9r",
+    inserted: 1594510142838
+}
+
 // let work = {
-//     coin: 'ETH',
+//     symbol: 'ETH',
+//     asset: 'ETH',
+//     blockchain: "ethereum",
+//     walletId: 'keepkey-pubkeys-343733331147363327003800',
 //     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
 //     type:"address",
 //     username: 'test-user-2',
-//     pubkey: "0x33b35c665496ba8e71b22373843376740401f106",
+//     pubkey: "0x36fd52f9e57e1b028e2c62f5e297f3872fd4bb9f",
 //     inserted: 1594510142838
 // }
 
@@ -90,20 +105,20 @@ let ASSET = "ETH"
 //     inserted: 1594510142838
 // }
 
-let work = {
-    coin: 'DOGE',
-    type: 'xpub',
-    walletId: 'keepkey-pubkeys-343733331147363327003800',
-    username: 'test-user-2',
-    symbol: 'DOGE',
-    blockchain: "dogecoin",
-    queueId: 'j9ZbcfjasdFy6kqShnupHXLWi',
-    account: 'tesasdasdtaddress',
-    pubkey:"xpub6BgVLrcywjgQrv2SZFLxYbjxAAVbeY5SXmGSDxkT9wobyyETW6De4SFnxQdNgzgNxBPRpWocod2YNMCvnNrh4cZgv6bQMab2WKwbWisv1oY",
-    inserted: 1594510142838
-}
-
-console.log("inserted:",work)
+// let work = {
+//     coin: 'DOGE',
+//     type: 'xpub',
+//     walletId: 'keepkey-pubkeys-343733331147363327003800',
+//     username: 'test-user-2',
+//     symbol: 'DOGE',
+//     blockchain: "dogecoin",
+//     queueId: 'j9ZbcfjasdFy6kqShnupHXLWi',
+//     account: 'tesasdasdtaddress',
+//     pubkey:"xpub6BgVLrcywjgQrv2SZFLxYbjxAAVbeY5SXmGSDxkT9wobyyETW6De4SFnxQdNgzgNxBPRpWocod2YNMCvnNrh4cZgv6bQMab2WKwbWisv1oY",
+//     inserted: 1594510142838
+// }
+//
+// console.log("inserted:",work)
 
 
 queue.createWork("pioneer:pubkey:ingest",work)

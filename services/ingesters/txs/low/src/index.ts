@@ -247,7 +247,7 @@ let do_work = async function(){
             }
 
         } else {
-            await sleep(1000)
+            await sleep(3000)
         }
 
 

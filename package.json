@@ -2,6 +2,6 @@
   "name": "pioneer-server",
   "version": "1.0.0",
   "dependencies": {
-    "@pioneer-platform/eth-network": "^8.1.22"
+    "@pioneer-platform/osmosis-network": "^8.1.5"
   }
 }

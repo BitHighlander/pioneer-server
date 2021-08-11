@@ -73,6 +73,11 @@ if(process.env['FEATURE_COSMOS_BLOCKCHAIN']){
     networks['ATOM'] = require('@pioneer-platform/cosmos-network')
 }
 
+if(process.env['FEATURE_OSMOSIS_BLOCKCHAIN']){
+    blockchains.push('osmosis')
+    networks['OSMO'] = require('@pioneer-platform/osmosis-network')
+}
+
 if(process.env['FEATURE_BINANCE_BLOCKCHAIN']){
     blockchains.push('binance')
     networks['BNB'] = require('@pioneer-platform/binance-network')
