@@ -239,6 +239,7 @@ const models: TsoaRoute.Models = {
             "inboundAddress": {"dataType":"any"},
             "address": {"dataType":"string"},
             "addressTo": {"dataType":"string"},
+            "validator": {"dataType":"string"},
             "memo": {"dataType":"string"},
             "fee": {"dataType":"any","required":true},
             "asset": {"dataType":"any","required":true},
@@ -588,9 +589,10 @@ export function RegisterRoutes(app: express.Router) {
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/api/v1/getValidators',
+        app.get('/api/v1/:network/getValidators',
             function atlasPublicController_getValidators(request: any, response: any, next: any) {
             const args = {
+                    network: {"in":"path","name":"network","required":true,"dataType":"string"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

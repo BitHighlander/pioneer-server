@@ -130,7 +130,7 @@ let channel_history_max = 10;
 //TODO moveme (payments should go to user by userId)
 //private
 subscriber.subscribe('payments');
-
+subscriber.subscribe('pairings');
 
 subscriber.on('message', async function (channel, payloadS) {
     let tag = TAG + ' | publishToFront | ';

@@ -188,7 +188,7 @@ export class pioneerInvocationController extends Controller {
                 //validate
                 if(!body.invocation.fee) throw Error("104: invalid body missing fee ")
 
-                let entry = {
+                let entry:any = {
                     state:'created',
                     network:body.network,
                     type:body.invocation.type,
@@ -200,7 +200,10 @@ export class pioneerInvocationController extends Controller {
                     notary,
                     notarySig
                 }
-
+                if(body.invocation.validator){
+                    entry.validator = body.invocation.validator
+                    entry.invocation.validator = body.invocation.validator
+                }
                 //verify invoke type is known
 
                 //give fee rating/recommendation

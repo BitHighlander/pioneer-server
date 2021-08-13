@@ -94,14 +94,12 @@ import {
     BodyAllowance
 } from "@pioneer-platform/pioneer-types";
 
+let {
+    PoSchains,
+    UTXO_COINS,
+    COIN_MAP
+} = require('@pioneer-platform/pioneer-coins')
 
-//TODO move this to coins module!
-let UTXO_COINS = [
-    'BTC',
-    'BCH',
-    'LTC',
-    'TEST'
-]
 
 //route
 @Tags('Public Endpoints')
@@ -430,19 +428,27 @@ export class atlasPublicController extends Controller {
 
 
     /**
-     *  Cosmos getValidators
+     *  getValidators
      */
-    @Get('/getValidators/')
-    public async getValidators() {
+    @Get('/{network}/getValidators')
+    public async getValidators(network:string) {
         let tag = TAG + " | getValidators | "
         try{
+            if(PoSchains[network.toLowerCase()] >= 0){
+                //support symbol instead of network
+                if(!networks[network]){
+                    //lookup symbol by long
+                    network = COIN_MAP[network]
+                }
 
-            //TODO supported assets
-            let output = await networks['ATOM'].getValidators()
-            log.debug("getValidators: output:",output)
-            //else error
+                let output = await networks[network].getValidators()
+                log.debug("getValidators: output:",output)
+                //else error
 
-            return(output)
+                return(output)
+            }else{
+                throw Error(network+" is not a PoS chain!")
+            }
         }catch(e){
             let errorResp:Error = {
                 success:false,

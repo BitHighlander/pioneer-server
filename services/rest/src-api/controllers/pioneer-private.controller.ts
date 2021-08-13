@@ -700,8 +700,8 @@ export class pioneerPrivateController extends Controller {
     }
 
     /**
-     * deleteInvocation an sdk with app
-     * @param request This is an application pairing submission
+     * deleteInvocation
+     * @param
      */
 
     @Post('/deleteInvocation')
@@ -782,6 +782,7 @@ export class pioneerPrivateController extends Controller {
                     queryKey: sdkQueryKey,
                     url
                 }
+                log.info(tag,"pairing sdkUser: ",sdkUser)
                 publisher.publish('pairings',JSON.stringify(sdkUser))
 
 
