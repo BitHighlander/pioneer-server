@@ -200,10 +200,22 @@ export class pioneerInvocationController extends Controller {
                     notary,
                     notarySig
                 }
+
+                //Optional fields (custom txs)
                 if(body.invocation.validator){
                     entry.validator = body.invocation.validator
                     entry.invocation.validator = body.invocation.validator
                 }
+
+                if(body.invocation.validatorOld){
+                    entry.validatorOld = body.invocation.validatorOld
+                    entry.invocation.validatorOld = body.invocation.validatorOld
+                }
+
+                //TODO IBC txs
+
+                //TODO runtime type check by tx object?
+
                 //verify invoke type is known
 
                 //give fee rating/recommendation

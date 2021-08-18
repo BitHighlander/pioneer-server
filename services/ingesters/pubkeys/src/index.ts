@@ -208,6 +208,12 @@ let do_work = async function(){
 
                 // TODO get tx history
 
+                // if OSMO get tokens/ibc channels
+                if(work.network === 'OSMO'){
+                    //
+
+                }
+
 
                 //get balance
                 if(!networks[work.symbol] || !networks[work.symbol].getBalance) throw Error("102: coin not supported! "+work.symbol)

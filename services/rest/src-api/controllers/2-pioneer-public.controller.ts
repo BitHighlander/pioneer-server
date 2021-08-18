@@ -461,6 +461,39 @@ export class atlasPublicController extends Controller {
     }
 
     /**
+     *  getValidators
+     */
+    @Get('/{network}/getDelegations/{address}/{validator}')
+    public async getDelegations(network:string,address:string,validator:string) {
+        let tag = TAG + " | getDelegations | "
+        try{
+            if(PoSchains[network.toLowerCase()] >= 0){
+                //support symbol instead of network
+                if(!networks[network]){
+                    //lookup symbol by long
+                    network = COIN_MAP[network]
+                }
+
+                let output = await networks[network].getDelegations(address,validator)
+                log.debug("getValidators: output:",output)
+                //else error
+
+                return(output)
+            }else{
+                throw Error(network+" is not a PoS chain!")
+            }
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /**
      *  Retrieve account info
      */
     @Get('/listUnspent/{network}/{xpub}')

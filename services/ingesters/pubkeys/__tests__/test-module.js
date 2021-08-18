@@ -45,12 +45,13 @@ let ASSET = "ETH"
 let work = {
     symbol: 'OSMO',
     asset: 'OSMO',
+    network: 'OSMO',
     blockchain: "osmosis",
     walletId: 'keepkey-pubkeys-343733331147363327003800',
     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
     type:"address",
     username: 'test-user-2',
-    pubkey: "osmo1qjwdyn56ecagk8rjf7crrzwcyz6775cj07qz9r",
+    pubkey: "osmo1k0kzs2ygjsext3hx7mf00dfrfh8hl3e85s23kn",
     inserted: 1594510142838
 }
 

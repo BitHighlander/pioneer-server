@@ -240,6 +240,7 @@ const models: TsoaRoute.Models = {
             "address": {"dataType":"string"},
             "addressTo": {"dataType":"string"},
             "validator": {"dataType":"string"},
+            "validatorOld": {"dataType":"string"},
             "memo": {"dataType":"string"},
             "fee": {"dataType":"any","required":true},
             "asset": {"dataType":"any","required":true},
@@ -608,6 +609,30 @@ export function RegisterRoutes(app: express.Router) {
 
 
             const promise = controller.getValidators.apply(controller, validatedArgs as any);
+            promiseHandler(controller, promise, response, undefined, next);
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/api/v1/:network/getDelegations/:address/:validator',
+            function atlasPublicController_getDelegations(request: any, response: any, next: any) {
+            const args = {
+                    network: {"in":"path","name":"network","required":true,"dataType":"string"},
+                    address: {"in":"path","name":"address","required":true,"dataType":"string"},
+                    validator: {"in":"path","name":"validator","required":true,"dataType":"string"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+            } catch (err) {
+                return next(err);
+            }
+
+            const controller = new atlasPublicController();
+
+
+            const promise = controller.getDelegations.apply(controller, validatedArgs as any);
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
