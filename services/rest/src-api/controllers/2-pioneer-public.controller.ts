@@ -189,15 +189,17 @@ export class atlasPublicController extends Controller {
     }
 
     /*
-     *     Get block count
+     *     Get block height
      * */
-    @Get('/blockHeight/{coin}')
-    public async blockHeight(coin:string) {
+    @Get('/blockHeight/{network}')
+    public async blockHeight(network:string) {
         let tag = TAG + " | blockHeights | "
         try{
-            if(!networks[coin]) throw Error("102: network not supported! ")
-            if(!networks[coin].getBlockHeight) throw Error("102: getBlockHeight not supported! coin: "+coin)
-            let output:any = await networks[coin].getBlockHeight()
+            //TODO coin to network
+            //stop using asset for network
+            if(!networks[network]) throw Error("102: network not supported! ")
+            if(!networks[network].getBlockHeight) throw Error("102: getBlockHeight not supported! network: "+network)
+            let output:any = await networks[network].getBlockHeight()
 
             return(output)
         }catch(e){
@@ -212,7 +214,7 @@ export class atlasPublicController extends Controller {
     }
 
     /*
-    *
+    * getBlockHeight
     * */
     @Get('/blocks/{coin}/{height}')
     public async getBlockHash(coin:string,height:number) {
@@ -425,6 +427,25 @@ export class atlasPublicController extends Controller {
         }
     }
 
+    @Get('/osmosis/pools')
+    public async getOsmosisPools() {
+        let tag = TAG + " | getOsmosisPools | "
+        try{
+            let output
+            output = await networks['OSMO'].getPools()
+            log.debug("output:",output)
+
+            return(output)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
 
     /**

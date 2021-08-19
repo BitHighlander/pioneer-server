@@ -1,6 +1,7 @@
 .env
-__tests__/test-module.js
 **/**/test-module.js
-**/test-module.js
-*/test-module.js
+__tests__/test-module.js
+**/**/__tests__/test-module.js
+**/__tests__/test-module.js
+*/__tests__/test-module.js
 test-module.js

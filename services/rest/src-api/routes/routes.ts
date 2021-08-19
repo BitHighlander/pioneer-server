@@ -241,11 +241,17 @@ const models: TsoaRoute.Models = {
             "addressTo": {"dataType":"string"},
             "validator": {"dataType":"string"},
             "validatorOld": {"dataType":"string"},
+            "poolId": {"dataType":"string"},
+            "shareOutAmount": {"dataType":"string"},
+            "tokenInMaxs": {"dataType":"any"},
             "memo": {"dataType":"string"},
             "fee": {"dataType":"any","required":true},
             "asset": {"dataType":"any","required":true},
             "blockchain": {"dataType":"string"},
             "network": {"dataType":"string","required":true},
+            "routes": {"dataType":"any"},
+            "tokenIn": {"dataType":"any"},
+            "tokenOutMinAmount": {"dataType":"string"},
             "coin": {"dataType":"string"},
             "amount": {"dataType":"string"},
             "context": {"dataType":"string","required":true},
@@ -432,10 +438,10 @@ export function RegisterRoutes(app: express.Router) {
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/api/v1/blockHeight/:coin',
+        app.get('/api/v1/blockHeight/:network',
             function atlasPublicController_blockHeight(request: any, response: any, next: any) {
             const args = {
-                    coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
+                    network: {"in":"path","name":"network","required":true,"dataType":"string"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -587,6 +593,27 @@ export function RegisterRoutes(app: express.Router) {
 
 
             const promise = controller.getFeeInfo.apply(controller, validatedArgs as any);
+            promiseHandler(controller, promise, response, undefined, next);
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/api/v1/osmosis/pools',
+            function atlasPublicController_getOsmosisPools(request: any, response: any, next: any) {
+            const args = {
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+            } catch (err) {
+                return next(err);
+            }
+
+            const controller = new atlasPublicController();
+
+
+            const promise = controller.getOsmosisPools.apply(controller, validatedArgs as any);
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

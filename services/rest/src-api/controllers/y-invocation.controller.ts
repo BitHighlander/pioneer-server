@@ -202,6 +202,21 @@ export class pioneerInvocationController extends Controller {
                 }
 
                 //Optional fields (custom txs)
+                if(body.invocation.routes){
+                    entry.routes = body.invocation.routes
+                    entry.invocation.routes = body.invocation.routes
+                }
+
+                if(body.invocation.tokenIn){
+                    entry.tokenIn = body.invocation.tokenIn
+                    entry.invocation.tokenIn = body.invocation.tokenIn
+                }
+
+                if(body.invocation.tokenOutMinAmount){
+                    entry.tokenOutMinAmount = body.invocation.tokenOutMinAmount
+                    entry.invocation.tokenOutMinAmount = body.invocation.tokenOutMinAmount
+                }
+
                 if(body.invocation.validator){
                     entry.validator = body.invocation.validator
                     entry.invocation.validator = body.invocation.validator
