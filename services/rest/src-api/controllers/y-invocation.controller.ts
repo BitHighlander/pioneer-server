@@ -202,6 +202,21 @@ export class pioneerInvocationController extends Controller {
                 }
 
                 //Optional fields (custom txs)
+                if(body.invocation.poolId){
+                    entry.poolId = body.invocation.poolId
+                    entry.invocation.poolId = body.invocation.poolId
+                }
+
+                if(body.invocation.shareOutAmount){
+                    entry.shareOutAmount = body.invocation.shareOutAmount
+                    entry.invocation.shareOutAmount = body.invocation.shareOutAmount
+                }
+
+                if(body.invocation.tokenInMaxs){
+                    entry.tokenInMaxs = body.invocation.tokenInMaxs
+                    entry.invocation.tokenInMaxs = body.invocation.tokenInMaxs
+                }
+
                 if(body.invocation.routes){
                     entry.routes = body.invocation.routes
                     entry.invocation.routes = body.invocation.routes
