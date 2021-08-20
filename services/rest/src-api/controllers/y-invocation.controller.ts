@@ -202,6 +202,39 @@ export class pioneerInvocationController extends Controller {
                 }
 
                 //Optional fields (custom txs)
+
+                //ibc
+                if(body.invocation.token){
+                    entry.token = body.invocation.token
+                    entry.invocation.token = body.invocation.token
+                }
+
+                if(body.invocation.sender){
+                    entry.sender = body.invocation.sender
+                    entry.invocation.sender = body.invocation.sender
+                }
+
+                if(body.invocation.receiver){
+                    entry.receiver = body.invocation.receiver
+                    entry.invocation.receiver = body.invocation.receiver
+                }
+
+                if(body.invocation.source_port){
+                    entry.source_port = body.invocation.source_port
+                    entry.invocation.source_port = body.invocation.source_port
+                }
+
+                if(body.invocation.source_channel){
+                    entry.source_channel = body.invocation.source_channel
+                    entry.invocation.source_channel = body.invocation.source_channel
+                }
+
+                if(body.invocation.timeout_height){
+                    entry.timeout_height = body.invocation.timeout_height
+                    entry.invocation.timeout_height = body.invocation.timeout_height
+                }
+
+                //osmosis
                 if(body.invocation.poolId){
                     entry.poolId = body.invocation.poolId
                     entry.invocation.poolId = body.invocation.poolId
