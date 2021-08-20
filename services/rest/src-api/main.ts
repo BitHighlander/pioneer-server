@@ -131,6 +131,7 @@ let channel_history_max = 10;
 //private
 subscriber.subscribe('payments');
 subscriber.subscribe('pairings');
+subscriber.subscribe('invocations');
 
 subscriber.on('message', async function (channel, payloadS) {
     let tag = TAG + ' | publishToFront | ';
