@@ -35,8 +35,12 @@ ETH_BLOCKBOOK_URL=https://indexer.ethereum.fiat.fail
 
 URL_OSMO_RPC=https://rpc-osmosis.keplr.app
 
+#legacy name
 URL_GAIAD=https://lcd-cosmoshub.keplr.app
 URL_GAIACLI=https://lcd-cosmoshub.keplr.app
+#move to this
+URL_COSMOS_LCD=https://lcd-cosmoshub.keplr.app
+URL_COSMOS_RPC=https://rpc-cosmoshub.keplr.app
 
 # https://infura.io/ go get a key
 INFURA_V3_REST=https://mainnet.infura.io/v3/*key
