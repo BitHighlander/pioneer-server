@@ -1,0 +1,49 @@
+DEFAULT_LOG_LEVEL=INFO
+
+#general settings
+API_PORT_PIONEER=9001
+
+PIONEER_INFO_CACHE_TIME=6000
+BLOCKING_TIMEOUT_INVOCATION=20
+
+#for workers/local/remote
+#URL_PIONEER_SPEC=http://127.0.0.1:9001/spec/swagger.json
+#URL_PIONEER_SOCKET="ws://127.0.0.1:9001"
+
+URL_PIONEER_SPEC=https://pioneers.dev/spec/swagger.json
+URL_PIONEER_SOCKET="wss://pioneers.dev"
+
+# Network Feature flag by network
+# DO NOT MARK FALSE!!!! COMMENT OUT
+#javascript sucks
+FEATURE_BITCOIN_BLOCKCHAIN=true
+FEATURE_BITCOINCASH_BLOCKCHAIN=true
+FEATURE_LITECOIN_BLOCKCHAIN=true
+FEATURE_ETHEREUM_BLOCKCHAIN=true
+FEATURE_THORCHAIN_BLOCKCHAIN=true
+FEATURE_COSMOS_BLOCKCHAIN=true
+FEATURE_BINANCE_BLOCKCHAIN=true
+FEATURE_SECRET_BLOCKCHAIN=true
+FEATURE_KAVA_BLOCKCHAIN=true
+FEATURE_TERRA_BLOCKCHAIN=true
+FEATURE_OSMOSIS_BLOCKCHAIN=true
+
+
+# nodes and services
+
+ETH_BLOCKBOOK_URL=https://indexer.ethereum.fiat.fail
+
+URL_OSMO_RPC=https://rpc-osmosis.keplr.app
+
+URL_GAIAD=https://lcd-cosmoshub.keplr.app
+URL_GAIACLI=https://lcd-cosmoshub.keplr.app
+
+# https://infura.io/ go get a key
+INFURA_V3_REST=https://mainnet.infura.io/v3/*key
+INFURA_V3_WS=wss://mainnet.infura.io/ws/v3/*key
+
+
+# get a ket https://ethplorer.io/
+ETHPLORER_API_KEY=public
+
+
