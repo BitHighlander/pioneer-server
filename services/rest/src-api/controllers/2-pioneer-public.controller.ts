@@ -30,7 +30,6 @@ txsDB.createIndex({invocationId: 1})
 
 /*
     Feature Flags per blockchain
-
  */
 
 let blockchains = []

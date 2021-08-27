@@ -11,17 +11,17 @@ let ASSET = "ETH"
 
 
 // //Atom
-// let work = {
-//     coin: 'ATOM',
-//     symbol: 'ATOM',
-//     network: 'ATOM',
-//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-//     walletId: 'atom-test-343733331147363327003800',
-//     type:"address",
-//     username: 'test-user-2',
-//     pubkey: "cosmos1fmczm8gl6pepdak8syqf0krlclpwmlzg989ryh",
-//     inserted: 1594510142838
-// }
+let work = {
+    coin: 'ATOM',
+    symbol: 'ATOM',
+    network: 'ATOM',
+    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+    walletId: 'atom-test-343733331147363327003800',
+    type:"address",
+    username: 'test-user-2',
+    pubkey: "cosmos1fmczm8gl6pepdak8syqf0krlclpwmlzg989ryh",
+    inserted: 1594510142838
+}
 
 //atlas
 // let work = {
@@ -42,18 +42,18 @@ let ASSET = "ETH"
 // }
 
 
-let work = {
-    symbol: 'OSMO',
-    asset: 'OSMO',
-    network: 'OSMO',
-    blockchain: "osmosis",
-    walletId: 'keepkey-pubkeys-343733331147363327003800',
-    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-    type:"address",
-    username: 'test-user-2',
-    pubkey: "osmo1k0kzs2ygjsext3hx7mf00dfrfh8hl3e85s23kn",
-    inserted: 1594510142838
-}
+// let work = {
+//     symbol: 'OSMO',
+//     asset: 'OSMO',
+//     network: 'OSMO',
+//     blockchain: "osmosis",
+//     walletId: 'keepkey-pubkeys-343733331147363327003800',
+//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+//     type:"address",
+//     username: 'test-user-2',
+//     pubkey: "osmo1k0kzs2ygjsext3hx7mf00dfrfh8hl3e85s23kn",
+//     inserted: 1594510142838
+// }
 
 // let work = {
 //     symbol: 'ETH',

@@ -218,6 +218,7 @@ let do_work = async function(){
                 //get balance
                 if(!networks[work.symbol] || !networks[work.symbol].getBalance) throw Error("102: coin not supported! "+work.symbol)
 
+                log.info(tag,"")
                 let balance = await networks[work.symbol].getBalance(work.pubkey)
                 log.info(tag,"balance: ",balance)
 
