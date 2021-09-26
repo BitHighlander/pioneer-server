@@ -75,7 +75,7 @@ let push_balance_event = async function(work:any,balance:string){
 
 let do_work = async function(){
     let tag = TAG+" | do_work | "
-    let work
+    let work:any
     try{
 
         //TODO normalize queue names
@@ -84,6 +84,14 @@ let do_work = async function(){
 
         work = await queue.getWork("pioneer:pubkey:ingest", 1)
         if(work){
+
+            //setTimeout 1s
+            let release = function(){
+                redis.lpush(work.queueId,JSON.stringify({success:true}))
+            }
+            setTimeout(release,1000)
+            //note: this will still update cache on slow coins. but accepts a 0
+
             log.info("work: ",work)
             if(!work.symbol && work.asset) work.symbol = work.asset
             if(!work.type && work.address) work.type = "address"

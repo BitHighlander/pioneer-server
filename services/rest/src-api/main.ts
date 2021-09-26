@@ -378,11 +378,18 @@ io.on('connection', async function(socket){
                     username:msg.username
                 }
                 globalSockets[socket.id].emit('subscribedToUsername', subscribePayload);
-            } else {
+            } else if(queryKeyInfo.username) {
                 log.error(tag,"Failed to join! pubkeyInfo.username: "+queryKeyInfo.username+" msg.username: "+msg.username)
                 let error = {
                     code:6,
-                    msg:"Failed to join! pubkeyInfo.username: "+queryKeyInfo.username+" msg.username: "+msg.username
+                    msg:"(error) Failed to join! pubkeyInfo.username: "+queryKeyInfo.username+" msg.username: "+msg.username
+                }
+                globalSockets[socket.id].emit('errorMessage', error);
+            } else {
+                log.error(tag,"Failed to join! pubkeyInfo.username: "+queryKeyInfo.username+" msg.username: "+msg.username)
+                let error = {
+                    code:7,
+                    msg:"Failed to join! unknown queryKey!"
                 }
                 globalSockets[socket.id].emit('errorMessage', error);
             }

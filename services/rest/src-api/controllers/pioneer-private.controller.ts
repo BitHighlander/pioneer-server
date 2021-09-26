@@ -226,7 +226,7 @@ export class pioneerPrivateController extends Controller {
                         log.info(tag,"assetBalances: ",assetBalances)
                         let valuePortfolio = await coincap.valuePortfolio(assetBalances)
                         log.info(tag,"valuePortfolio: ",valuePortfolio)
-
+                        if(!valuePortfolio.total) valuePortfolio.total = 0
                         let walletDescription = {
                             context:walletInfo.context,
                             type:walletInfo.type,
@@ -552,6 +552,58 @@ export class pioneerPrivateController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
+    /**
+     * Update current account asset context
+     * @param request This is an application pairing submission
+     */
+
+    @Post('/setAssetContext')
+    //TODO bump and add type back
+    public async setAssetContext(@Body() body: any, @Header() Authorization: any): Promise<any> {
+        let tag = TAG + " | setAssetContext | "
+        try{
+            log.info(tag,"account: ",body)
+            log.info(tag,"Authorization: ",Authorization)
+            let output:any = {}
+            // get auth info
+            let authInfo = await redis.hgetall(Authorization)
+            log.info(tag,"authInfo: ",authInfo)
+            if(!authInfo) throw Error("108: unknown token! ")
+            if(!body.asset) throw Error("1011: invalid body missing asset")
+
+            // get user info
+            let userInfo = await redis.hgetall(authInfo.username)
+            if(!userInfo) throw Error("109: unknown username! ")
+            log.info(tag,"userInfo: ",userInfo)
+            output.username = authInfo.username
+
+            if(userInfo.assetContext !== body.asset) {
+                let contextSwitch = {
+                    type:"assetContext",
+                    username:userInfo.username,
+                    asset:body.asset
+                }
+                publisher.publish('context',JSON.stringify(contextSwitch))
+                output.success = true
+                //update Redis to new context
+                let updateRedis = await redis.hset(authInfo.username,'assetContext',body.context)
+                output.updateDB = updateRedis
+            } else {
+                output.success = false
+                output.error = 'context already set to body.context:'+body.context
+            }
+
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
     /**
      * Update current account context
@@ -715,7 +767,7 @@ export class pioneerPrivateController extends Controller {
             //update database
             let updateResult = await invocationsDB.remove({invocationId:body.invocationId})
 
-            return(updateResult);
+            return({success:true,result:updateResult.result});
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -750,12 +802,62 @@ export class pioneerPrivateController extends Controller {
             let sdkQueryKey = await redis.hget(body.code,"pairing")
             if(sdkQueryKey) {
                 log.info(tag,"sdkQueryKey: ",sdkQueryKey)
+                let userInfoSdk = await redis.hgetall(sdkQueryKey)
+                log.info(tag,"userInfoSdk: ",userInfoSdk)
+
+                //if username sdk
+                if(userInfoSdk.wallets){
+                    //TODO handle if multiple?
+                    let walletId = userInfoSdk.wallets
+                    log.info(tag,"walletId: ",walletId)
+
+                    let userInfoOfSdkKey = await usersDB.findOne({username:userInfoSdk.username})
+                    log.info(tag,"userInfoOfSdkKey: ",userInfoOfSdkKey)
+
+                    //add metamask wallet to user
+                    let updateDBPubkey = await usersDB.update({username:userInfo.username},{ $addToSet: { "wallets": walletId } })
+                    log.info(tag,"updateDBPubkey: ",updateDBPubkey)
+
+                    //for wallet on sdkUserInfo
+                    for(let i = 0; i < userInfoOfSdkKey.walletDescriptions.length; i++){
+                        //add metamask description to walletDescriptions
+                        let updateDBuser = await usersDB.update({username:userInfo.username},{ $addToSet: { "walletDescriptions": userInfoOfSdkKey.walletDescriptions[i] } })
+                        log.info(tag,"updateDBuser: ",updateDBuser)
+                    }
+
+                    //add wallet to user
+
+
+                    //if owned by username
+                    let pubkeysOwnedBySdk = await pubkeysDB.find({tags:{ $all: [userInfoSdk.username]}})
+                    log.info(tag,"pubkeysOwnedBySdk: ",pubkeysOwnedBySdk)
+
+                    for(let i = 0; i < pubkeysOwnedBySdk.length; i++){
+                        let pubkey = pubkeysOwnedBySdk[i]
+                        log.info(tag,"pubkey: ",pubkey)
+                        let updateDBPubkey = await pubkeysDB.update({pubkey:pubkey.pubkey},{ $addToSet: { "tags": userInfo.username } })
+                        log.info(tag,"updateDBPubkey: ",updateDBPubkey)
+
+                        //push app username to pubkey
+
+                    }
+
+                    //register to username
+                    //push username change to sdk
+                }
+                //get username wallet info from mongo
+
+                //add pairing username to pubkeys
+
+                //add context to app username
 
                 // get url
                 let url = await redis.hget(body.code,"url")
 
                 // if in whitelist
                 let isWhitelisted = await redis.sismember('serviceUrls',url)
+
+
 
                 // let app = {
                 //     added:new Date().getTime(),
@@ -1207,8 +1309,8 @@ export class pioneerPrivateController extends Controller {
                 //await redis.hset(body.username,'context',body.context)
 
                 //push new wallet to wallets
-                output.updateDBUser = await usersDB.update({},{ $addToSet: { "wallets": body.context } })
-                output.updateDBUser = await usersDB.update({},{ $addToSet: { "walletDescriptions": body.walletDescription } })
+                output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "wallets": body.context } })
+                output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "walletDescriptions": body.walletDescription } })
             } else {
                 //wallet already known!
                 log.info(tag,"Wallet already known! context: ",body.context)

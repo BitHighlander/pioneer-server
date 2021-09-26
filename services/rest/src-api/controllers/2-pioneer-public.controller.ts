@@ -516,6 +516,86 @@ export class atlasPublicController extends Controller {
     /**
      *  Retrieve account info
      */
+    @Get('/getChangeAddress/{network}/{xpub}')
+    public async getChangeAddress(network:string,xpub:string) {
+        let tag = TAG + " | listUnspent | "
+        try{
+            let output:any = []
+
+            return true
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /**
+     *  Retrieve account info
+     */
+    @Get('/getNewAddress/{network}/{xpub}')
+    public async getNewAddress(network:string,xpub:string) {
+        let tag = TAG + " | listUnspent | "
+        try{
+            let output:any = []
+            //TODO if UTXO coin else error
+
+            log.info(tag,"network: ",network)
+            log.info(tag,"xpub: ",xpub)
+            await networks.ANY.init()
+            //log.info("networks: ",networks)
+            //log.info("networks: ",networks.ANY)
+            let data = await networks.ANY.getPubkeyInfo(network,xpub)
+
+            let changeIndex: number | null = null
+            let receiveIndex: number | null = null
+
+            //iterate
+            if (data.tokens) {
+                for (let i = data.tokens.length - 1; i >= 0 && (changeIndex === null || receiveIndex === null); i--) {
+                    const splitPath = data.tokens[i].path?.split('/') || []
+                    const [, , , , change, index] = splitPath
+
+                    if (change === '0') {
+                        if (receiveIndex === null) {
+                            receiveIndex = Number(index) + 1
+                        } else {
+                            if (receiveIndex < Number(index)) {
+                                receiveIndex = Number(index) + 1
+                            }
+                        }
+                    }
+                    if (change === '1') {
+                        if (changeIndex === null) {
+                            changeIndex = Number(index) + 1
+                        } else {
+                            if (changeIndex < Number(index)) {
+                                changeIndex = Number(index) + 1
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /**
+     *  Retrieve account info
+     */
     @Get('/listUnspent/{network}/{xpub}')
     public async listUnspent(network:string,xpub:string) {
         let tag = TAG + " | listUnspent | "
@@ -1189,6 +1269,7 @@ export class atlasPublicController extends Controller {
             try{
                 result.saveTx = await txsDB.insert(mongoEntry)
             }catch(e){
+                log.error(tag,"e: ",e)
                 //duplicate
             }
 
