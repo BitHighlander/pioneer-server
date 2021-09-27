@@ -55,7 +55,7 @@
     "@pioneer-platform/network": "latest",
     "@pioneer-platform/osmosis-network": "^8.1.23",
     "@pioneer-platform/pioneer-client": "latest",
-    "@pioneer-platform/pioneer-coins": "latest",
+    "@pioneer-platform/pioneer-coins": "^8.1.34",
     "@pioneer-platform/pioneer-invoke": "latest",
     "@pioneer-platform/pioneer-sdk": "latest",
     "@pioneer-platform/pioneer-types": "latest",

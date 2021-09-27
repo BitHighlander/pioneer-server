@@ -96,7 +96,8 @@ import {
 let {
     PoSchains,
     UTXO_COINS,
-    COIN_MAP
+    COIN_MAP,
+    get_address_from_xpub
 } = require('@pioneer-platform/pioneer-coins')
 
 
@@ -520,9 +521,46 @@ export class atlasPublicController extends Controller {
     public async getChangeAddress(network:string,xpub:string) {
         let tag = TAG + " | listUnspent | "
         try{
-            let output:any = []
+            log.info(tag,"network: ",network)
+            log.info(tag,"xpub: ",xpub)
+            await networks.ANY.init()
+            //log.info("networks: ",networks)
+            //log.info("networks: ",networks.ANY)
+            let data = await networks.ANY.getPubkeyInfo(network,xpub)
 
-            return true
+            let changeIndex: number = 0
+            let receiveIndex: number = 0
+
+            //iterate
+            if (data.tokens) {
+                for (let i = data.tokens.length - 1; i >= 0 && (changeIndex === null || receiveIndex === null); i--) {
+                    const splitPath = data.tokens[i].path?.split('/') || []
+                    const [, , , , change, index] = splitPath
+
+                    if (change === '0') {
+                        if (receiveIndex === null) {
+                            receiveIndex = Number(index) + 1
+                        } else {
+                            if (receiveIndex < Number(index)) {
+                                receiveIndex = Number(index) + 1
+                            }
+                        }
+                    }
+                    if (change === '1') {
+                        if (changeIndex === null) {
+                            changeIndex = Number(index) + 1
+                        } else {
+                            if (changeIndex < Number(index)) {
+                                changeIndex = Number(index) + 1
+                            }
+                        }
+                    }
+                }
+            }
+
+            return {
+                changeIndex
+            }
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -581,7 +619,9 @@ export class atlasPublicController extends Controller {
                 }
             }
 
-            return true
+            return {
+                receiveIndex
+            }
         }catch(e){
             let errorResp:Error = {
                 success:false,
