@@ -227,6 +227,26 @@ export class pioneerPrivateController extends Controller {
                         let valuePortfolio = await coincap.valuePortfolio(assetBalances)
                         log.info(tag,"valuePortfolio: ",valuePortfolio)
                         if(!valuePortfolio.total) valuePortfolio.total = 0
+
+                        /*
+                            "chainId": 1,
+                            "address": "0x41efc0253ee7ea44400abb5f907fdbfdebc82bec",
+                            "name": " AAPL",
+                            "symbol": "AAPL",
+                            "decimals": 18,
+                            "logoURI": "https://assets.coingecko.com/coins/images/12367/thumb/oF1_9R1K_400x400.jpg?1599345463"
+
+                            //thorchain
+                            network
+                            asset
+
+                            //new
+                            context
+                            blockchain
+                            balance
+                            valueUsd
+                         */
+
                         let walletDescription = {
                             context:walletInfo.context,
                             type:walletInfo.type,
@@ -842,12 +862,8 @@ export class pioneerPrivateController extends Controller {
 
                     }
 
-                    //register to username
-                    //push username change to sdk
-                }
-                //get username wallet info from mongo
 
-                //add pairing username to pubkeys
+                }
 
                 //add context to app username
 

@@ -11,17 +11,17 @@ let ASSET = "ETH"
 
 
 // //Atom
-let work = {
-    coin: 'ATOM',
-    symbol: 'ATOM',
-    network: 'ATOM',
-    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-    walletId: 'atom-test-343733331147363327003800',
-    type:"address",
-    username: 'test-user-2',
-    pubkey: "cosmos1fmczm8gl6pepdak8syqf0krlclpwmlzg989ryh",
-    inserted: 1594510142838
-}
+// let work = {
+//     coin: 'ATOM',
+//     symbol: 'ATOM',
+//     network: 'ATOM',
+//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+//     walletId: 'atom-test-343733331147363327003800',
+//     type:"address",
+//     username: 'test-user-2',
+//     pubkey: "cosmos1fmczm8gl6pepdak8syqf0krlclpwmlzg989ryh",
+//     inserted: 1594510142838
+// }
 
 //atlas
 // let work = {
@@ -55,17 +55,17 @@ let work = {
 //     inserted: 1594510142838
 // }
 
-// let work = {
-//     symbol: 'ETH',
-//     asset: 'ETH',
-//     blockchain: "ethereum",
-//     walletId: 'keepkey-pubkeys-343733331147363327003800',
-//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-//     type:"address",
-//     username: 'test-user-2',
-//     pubkey: "0x36fd52f9e57e1b028e2c62f5e297f3872fd4bb9f",
-//     inserted: 1594510142838
-// }
+let work = {
+    symbol: 'ETH',
+    asset: 'ETH',
+    blockchain: "ethereum",
+    walletId: 'keepkey-pubkeys-343733331147363327003800',
+    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+    type:"address",
+    username: 'test-user-2',
+    pubkey: "0x33b35c665496bA8E71B22373843376740401F106",
+    inserted: 1594510142838
+}
 
 
 // let work = {

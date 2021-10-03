@@ -144,47 +144,47 @@ let get_and_rescan_pubkeys = async function (username:string) {
     }
 }
 
-let fix_pubkey = async function (username:string, pubkey:any, walletId:string) {
-    let tag = TAG + " | register_address | "
-    try {
-        let output:any = {}
-        //get pubkey from mongo
-        let pubkeyInfoMongo = await pubkeysDB.findOne({pubkey:pubkey.pubkey})
-
-        if(pubkeyInfoMongo){
-            //verify tags
-            let tags = pubkeyInfoMongo.tags
-            if(tags.indexOf(username) < 0){
-                let pushTagMongo = await pubkeysDB.update({pubkey:pubkey.pubkey},
-                    { $addToSet: { tags: username } })
-                output.pushTagMongoUsername = pushTagMongo
-            }
-            if(tags.indexOf(walletId) < 0){
-                let pushTagMongo = await pubkeysDB.update({pubkey:pubkey.pubkey},
-                    { $addToSet: { tags: walletId } })
-                output.pushTagMongoWalletId = pushTagMongo
-            }
-        } else {
-            log.info(tag,"pubkey NOT found in mongo! adding!")
-            log.info(tag,"pubkey: ",pubkey)
-            if(pubkey.tags.indexOf(username) < 0){
-                pubkey.tags.push(username)
-            }
-            if(pubkey.tags.indexOf(walletId) < 0){
-                pubkey.tags.push(walletId)
-            }
-            let resultFix = await pubkeysDB.insert(pubkey)
-            log.info(tag,"resultFix: ",resultFix)
-            output.insertPubkey = resultFix
-        }
-
-        return output
-    } catch (e) {
-        console.error(tag, "e: ", e)
-        throw e
-    }
-}
-
+// let fix_pubkey = async function (username:string, pubkey:any, walletId:string) {
+//     let tag = TAG + " | register_address | "
+//     try {
+//         let output:any = {}
+//         //get pubkey from mongo
+//         let pubkeyInfoMongo = await pubkeysDB.findOne({pubkey:pubkey.pubkey})
+//
+//         if(pubkeyInfoMongo){
+//             //verify tags
+//             let tags = pubkeyInfoMongo.tags
+//             if(tags.indexOf(username) < 0){
+//                 let pushTagMongo = await pubkeysDB.update({pubkey:pubkey.pubkey},
+//                     { $addToSet: { tags: username } })
+//                 output.pushTagMongoUsername = pushTagMongo
+//             }
+//             if(tags.indexOf(walletId) < 0){
+//                 let pushTagMongo = await pubkeysDB.update({pubkey:pubkey.pubkey},
+//                     { $addToSet: { tags: walletId } })
+//                 output.pushTagMongoWalletId = pushTagMongo
+//             }
+//         } else {
+//             log.info(tag,"pubkey NOT found in mongo! adding!")
+//             log.info(tag,"pubkey: ",pubkey)
+//             if(pubkey.tags.indexOf(username) < 0){
+//                 pubkey.tags.push(username)
+//             }
+//             if(pubkey.tags.indexOf(walletId) < 0){
+//                 pubkey.tags.push(walletId)
+//             }
+//             let resultFix = await pubkeysDB.insert(pubkey)
+//             log.info(tag,"resultFix: ",resultFix)
+//             output.insertPubkey = resultFix
+//         }
+//
+//         return output
+//     } catch (e) {
+//         console.error(tag, "e: ", e)
+//         throw e
+//     }
+// }
+//
 
 let get_and_verify_pubkeys = async function (username:string, walletId:string) {
     let tag = TAG + " | get_and_verify_pubkeys | "
@@ -408,6 +408,13 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
                 //hack
                 if (!pubkeyInfo.symbol) pubkeyInfo.symbol = nativeAsset
 
+                //hack clean up tags
+                if(typeof(walletId) !== 'string') {
+                    //
+                    log.error("invalid walletId!",walletId)
+                    throw Error("Bad walletID!")
+                }
+
                 //save to mongo
                 let entryMongo:any = {
                     blockchain:pubkeyInfo.blockchain,
@@ -462,7 +469,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
                     //push wallet to tags
                     //add to tags
                     let pushTagMongo = await pubkeysDB.update({pubkey:entryMongo.pubkey},
-                        { $addToSet: { tags: [walletId,username] } })
+                        { $addToSet: { tags: { $each:[walletId,username] } } })
                     log.info(tag,"pushTagMongo: ",pushTagMongo)
                 }else{
                     // saveActions.push({insertOne: entryMongo})
@@ -608,7 +615,8 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 //push wallet to tags
                 //add to tags
                 let pushTagMongo = await pubkeysDB.update({pubkey:entryMongo.pubkey},
-                    { $addToSet: { tags: [walletId,username] } })
+                    { $addToSet: { tags: { $each:[walletId,username] } } })
+
                 log.info(tag,"pushTagMongo: ",pushTagMongo)
             }else{
                 let saveMongo = await pubkeysDB.insert(entryMongo)

@@ -106,12 +106,22 @@ let do_work = async function(){
             //TODO lookup last update
             //if < x time, refuse to do work
 
-            //if xpub
+            //pubkey Balance
+            let balances:any = []
+
             if(work.type === "xpub" || work.type === "zpub"){
 
                 //get balance
                 let balance = await blockbook.getBalanceByXpub(work.symbol,work.pubkey)
                 log.info(tag,work.username + " Balance ("+work.symbol+"): ",balance)
+
+                balances.push({
+                    network:work.symbol,
+                    asset:work.symbol,
+                    isToken:false,
+                    lastUpdated:new Date().getTime(),
+                    balance
+                })
 
                 //update balance cache
                 let updateResult = await redis.hset(work.username+":assets:"+work.walletId,work.symbol,balance)
@@ -141,11 +151,27 @@ let do_work = async function(){
                         for(let i = 0; i < tokens.length; i++){
                             let token = tokens[i]
                             let balance = ethInfo.balances[token]
-                            //update balance cache
-                            let updateResult = await redis.hset(work.username+":assets:"+work.walletId,token,balance)
-                            if(updateResult) push_balance_event(work,balance)
-                            log.info(tag,"updateResult: ",updateResult)
-                            //TODO if change push new balance over socket to user
+                            if(token === 'ETH'){
+                                balances.push({
+                                    network:"ETH",
+                                    asset:"ETH",
+                                    isToken:false,
+                                    lastUpdated:new Date().getTime(),
+                                    balance,
+                                    source:"ethplorer"
+                                })
+                            }else{
+                                balances.push({
+                                    network:"ETH",
+                                    asset:"token",
+                                    contract:ethInfo.coinInfo[token].address,
+                                    isToken:true,
+                                    protocal:'erc20',
+                                    lastUpdated:new Date().getTime(),
+                                    balance,
+                                    source:"ethplorer" //TODO get this network module
+                                })
+                            }
                         }
                     }
 
@@ -210,9 +236,9 @@ let do_work = async function(){
 
                 }
 
-                // if BSC get tokens
+                // TODO if BSC get tokens
 
-                // if BNB get tokens
+                // TODO if BNB get tokens
 
                 // TODO get tx history
 
@@ -226,9 +252,18 @@ let do_work = async function(){
                 //get balance
                 if(!networks[work.symbol] || !networks[work.symbol].getBalance) throw Error("102: coin not supported! "+work.symbol)
 
-                log.info(tag,"")
+                log.info(tag,"getBalance: ")
                 let balance = await networks[work.symbol].getBalance(work.pubkey)
                 log.info(tag,"balance: ",balance)
+
+                balances.push({
+                    network:work.symbol,
+                    asset:work.symbol,
+                    isToken:false,
+                    lastUpdated:new Date().getTime(),
+                    balance,
+                    source:"network"
+                })
 
                 let updateResult = await redis.hset(work.username+":assets:"+work.walletId,work.symbol,balance)
                 if(updateResult) push_balance_event(work,balance)
@@ -236,6 +271,7 @@ let do_work = async function(){
                 //TODO if change push new balance over socket to user
 
             } else if(work.type === "contract"){
+                //TODO non ETH network contracts
                 //blockbookInfo
                 let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
                 log.info(tag,'blockbookInfo: ',blockbookInfo)
@@ -267,6 +303,49 @@ let do_work = async function(){
             }else {
                 //unhandled work!
                 log.error(work)
+            }
+
+            log.info(tag,"balances: ",balances)
+
+            let pubkeyInfo = await pubkeysDB.findOne({pubkey:work.pubkey})
+            if(!pubkeyInfo.balances) pubkeyInfo.balances = []
+            log.info(tag,"pubkeyInfo: ",pubkeyInfo)
+            log.info(tag,"pubkeyInfo: ",pubkeyInfo.balances)
+            let saveActions = []
+            for(let i = 0; i < balances.length; i++){
+                let balance = balances[i]
+
+                //find balance with symbol
+                let balanceMongo = pubkeyInfo.balances.filter((e:any) => e.symbol === balance.symbol)
+                log.info(tag,"balanceMongo: ",balanceMongo)
+
+                //if update
+                if(balanceMongo.length > 0){
+                    //if value is diff
+                    log.info(tag,"balanceMongo: ",balanceMongo[0])
+                    log.info(tag,"balance: ",balance)
+                    if(balanceMongo[0].balance !== balance.balance){
+                        //TODO events
+                        //push_balance_event(work,balance)
+                        //push event
+                        saveActions.push({updateOne: {
+                                "filter": {pubkey:work.pubkey},
+                                "update": {$addToSet: { balances: balance }}
+                            }})
+                    }
+                } else {
+                    //if new push
+                    saveActions.push({updateOne: {
+                            "filter": {pubkey:work.pubkey},
+                            "update": {$addToSet: { balances: balance }}
+                    }})
+                }
+            }
+
+            if(saveActions.length > 0){
+                log.info(tag,"saveActions: ",saveActions)
+                let updateSuccess = await pubkeysDB.bulkWrite(saveActions,{ordered:false})
+                log.info(tag,"updateSuccess: ",updateSuccess)
             }
 
             //release
