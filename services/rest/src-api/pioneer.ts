@@ -564,6 +564,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 script_type: pubkeyInfo.script_type,
                 network: pubkeyInfo.blockchain,
                 created: new Date().getTime(),
+                isSyncing: true,
                 tags: [username, pubkeyInfo.blockchain,pubkeyInfo.symbol, pubkeyInfo.network, walletId],
             }
 
@@ -575,7 +576,6 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 entryMongo.type = 'xpub'
                 entryMongo.master = pubkeyInfo.address
                 entryMongo.address = pubkeyInfo.address
-
                 let queueId = await register_xpub(username, pubkeyInfo, walletId)
 
                 //add to Mutex array for async xpub register option

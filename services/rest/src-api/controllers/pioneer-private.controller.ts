@@ -14,7 +14,7 @@ const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/de
 const connection  = require("@pioneer-platform/default-mongo")
 const queue = require("@pioneer-platform/redis-queue")
 const randomstring = require("randomstring");
-const coincap = require('@pioneer-platform/coincap')
+const markets = require('@pioneer-platform/markets')
 const usersDB = connection.get('users')
 const pubkeysDB = connection.get('pubkeys')
 const txsDB = connection.get('transactions')
@@ -218,53 +218,29 @@ export class pioneerPrivateController extends Controller {
                     //get value map
                     userInfo.walletDescriptions = []
                     let totalValueUsd = 0
-                    for(let i = 0; i < userInfoMongo.walletDescriptions.length; i++){
-                        let walletInfo = userInfoMongo.walletDescriptions[i]
-                        //get portfolio from cache
-                        //get asset balances
-                        let assetBalances = await redis.hgetall(username+":assets:"+walletInfo.context)
-                        log.info(tag,"assetBalances: ",assetBalances)
-                        let valuePortfolio = await coincap.valuePortfolio(assetBalances)
-                        log.info(tag,"valuePortfolio: ",valuePortfolio)
-                        if(!valuePortfolio.total) valuePortfolio.total = 0
-
-                        /*
-                            "chainId": 1,
-                            "address": "0x41efc0253ee7ea44400abb5f907fdbfdebc82bec",
-                            "name": " AAPL",
-                            "symbol": "AAPL",
-                            "decimals": 18,
-                            "logoURI": "https://assets.coingecko.com/coins/images/12367/thumb/oF1_9R1K_400x400.jpg?1599345463"
-
-                            //thorchain
-                            network
-                            asset
-
-                            //new
-                            context
-                            blockchain
-                            balance
-                            valueUsd
-                         */
-
+                    for(let i = 0; i < userInfoMongo.wallets.length; i++){
+                        let context = userInfoMongo.wallets[i]
+                        let walletInfo:any = {}
+                        let { pubkeys } = await pioneer.getPubkeys(username,context)
+                        log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
+                        //build wallet info
+                        walletInfo.pubkeys = pubkeys
+                        if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
+                        //hydrate market data for all pubkeys
+                        log.info(tag,"pubkeys: ",pubkeys)
+                        let hydratedPubkeys = await markets.hydratePubkeys(pubkeys)
+                        log.info(tag,"hydratedPubkeys: ",hydratedPubkeys)
                         let walletDescription = {
                             context:walletInfo.context,
                             type:walletInfo.type,
-                            balances:assetBalances,
-                            values:valuePortfolio.values,
-                            valueUsdContext:valuePortfolio.total
+                            pubkeys:hydratedPubkeys.pubkeys,
+                            valueUsdContext:hydratedPubkeys.total
                         }
-                        totalValueUsd = totalValueUsd + valuePortfolio.total
+                        totalValueUsd = totalValueUsd + totalValueUsd
                         //walletDescription
                         userInfo.walletDescriptions.push(walletDescription)
-
-                        //if on context set assetContextInfo
-                        if(userInfo.context === walletInfo.context){
-                            userInfo.assetBalanceNativeContext = assetBalances[userInfo.assetContext]
-                            userInfo.assetBalanceUsdValueContext = valuePortfolio.values[userInfo.assetContext]
-                        }
-
                     }
+
                     userInfo.totalValueUsd = totalValueUsd
 
 
@@ -321,12 +297,17 @@ export class pioneerPrivateController extends Controller {
 
                 let { pubkeys, masters } = await pioneer.getPubkeys(username,context)
                 //build wallet info
-                walletInfo.pubkeys = pubkeys
                 walletInfo.masters = masters
-                if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
-                if(!walletInfo.masters) throw Error("103: pioneer failed to collect masters!")
-
-                //wallets
+                //hydrate market data for all pubkeys
+                log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
+                let hydratedPubkeys = await markets.hydratePubkeys(pubkeys)
+                log.info(tag,"hydratedPubkeys: ",hydratedPubkeys)
+                walletInfo.pubkeys = hydratedPubkeys.pubkeys
+                walletInfo.totalValueUsd = hydratedPubkeys.total
+                walletInfo.username = username
+                walletInfo.context = context
+                walletInfo.apps = await redis.smembers(username+":apps")
+                //Hydrate userInfo
                 let userInfoMongo = await usersDB.findOne({username})
                 log.info(tag,"userInfoMongo: ",userInfoMongo)
                 //migrations
@@ -334,53 +315,6 @@ export class pioneerPrivateController extends Controller {
                 if(!userInfoMongo.walletDescriptions) throw Error("Invalid user! missing walletDescriptions")
                 walletInfo.wallets = userInfoMongo.wallets
                 walletInfo.blockchains = userInfoMongo.blockchains
-
-                //get asset balances
-                let assetBalances = await redis.hgetall(username+":assets:"+context)
-                if(!assetBalances) throw Error("User Asset Balance Cache missing!")
-
-                //fill in 0's
-                let allAssets = Object.keys(walletInfo.masters)
-                for(let i = 0; i < allAssets.length; i++){
-                    let asset = allAssets[i]
-                    if(!assetBalances[asset]) assetBalances[asset] = '0'
-                }
-                log.info(tag,"assetBalances: ",assetBalances)
-                walletInfo.balances = assetBalances
-
-                //TODO get nfts
-
-                //get streams
-                //search by masterETH
-                //TODO alt paths?
-                let masterEth = walletInfo.masters.ETH.toLowerCase()
-                log.info(tag,"masterEth: ",masterEth)
-                let allStreamInfo = await txsDB.find({ $and: [ {tags:{ $all: [masterEth]}}, {tags:{ $all: ["streamCreate"]}} ] })
-                log.info(tag,"allStreamInfo: ",allStreamInfo)
-
-                for(let i = 0; i < allStreamInfo.length; i++){
-                    let streamInfo = allStreamInfo[i].events[0]
-                    log.info(tag,"streamInfo: ",streamInfo)
-                    streamInfo = streamInfo.stream
-                    log.info(tag,"streamInfo.stream: ",streamInfo)
-                    //getSymbolForContract
-                    let streamAsset = await networks['ETH'].getSymbolFromContract(streamInfo.streamAsset)
-                    assetBalances['stream:'+streamAsset] = streamInfo.streamAmount
-
-                    //get verbose stream info
-                    let verboseInfo = await networks['ETH'].getStreamInfo(streamInfo.saleryId)
-                    if(!walletInfo.streams) walletInfo.streams = []
-                    walletInfo.streams.push(verboseInfo)
-                }
-                log.info(tag,"walletInfo.streams: ",walletInfo.streams)
-                //get value of portfolio
-                let valuePortfolio = await coincap.valuePortfolio(assetBalances)
-                log.info(tag,"valuePortfolio: ",valuePortfolio)
-                walletInfo.valueUsds = valuePortfolio.values
-                walletInfo.totalValueUsd = valuePortfolio.total
-                walletInfo.username = username
-                walletInfo.context = context
-                walletInfo.apps = await redis.smembers(username+":apps")
 
                 return walletInfo
             }else{

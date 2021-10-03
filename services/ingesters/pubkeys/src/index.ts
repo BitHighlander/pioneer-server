@@ -138,8 +138,8 @@ let do_work = async function(){
                 if(work.symbol === 'ETH'){
                     //if eth use master
 
-                    //     //register to blocknative
-                    //     blocknative.submitAddress("ETH", pubkeyInfo.master)
+                    //register to blocknative
+                    //blocknative.submitAddress("ETH", pubkeyInfo.master)
 
                     // get ethPlorer list
                     let ethInfo = await networks['ETH'].getBalanceTokens(work.pubkey)
