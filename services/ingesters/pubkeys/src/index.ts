@@ -151,16 +151,7 @@ let do_work = async function(){
                         for(let i = 0; i < tokens.length; i++){
                             let token = tokens[i]
                             let balance = ethInfo.balances[token]
-                            if(token === 'ETH'){
-                                balances.push({
-                                    network:"ETH",
-                                    asset:"ETH",
-                                    isToken:false,
-                                    lastUpdated:new Date().getTime(),
-                                    balance,
-                                    source:"ethplorer"
-                                })
-                            }else{
+                            if(token !== 'ETH'){
                                 balances.push({
                                     network:"ETH",
                                     asset:"token",

@@ -51,7 +51,7 @@
     "@pioneer-platform/fio-network": "latest",
     "@pioneer-platform/kava-network": "latest",
     "@pioneer-platform/loggerdog": "latest",
-    "@pioneer-platform/markets": "^8.1.17",
+    "@pioneer-platform/markets": "^8.1.19",
     "@pioneer-platform/midgard-client": "latest",
     "@pioneer-platform/network": "latest",
     "@pioneer-platform/osmosis-network": "^8.1.23",

@@ -1142,7 +1142,7 @@ export class pioneerPrivateController extends Controller {
      *
      *
      *  Output:
-     *      QueryToken: (SUBSCRIBE/INFO permissions)
+     *      QueryToken: (SUBSCRIBE permissions)
      *          Blockchain and payment info
      *
      *  Auth providers may issue/revoke Query tokens
