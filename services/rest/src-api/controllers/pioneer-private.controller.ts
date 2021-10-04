@@ -207,7 +207,7 @@ export class pioneerPrivateController extends Controller {
                     if(!userInfo.context){
                         if(userInfoMongo.wallets && userInfoMongo.wallets.length > 0){
                             userInfo.context = userInfoMongo.wallets[0]
-                        }else{
+                        } else {
                             log.info(tag,"Invalid Mongo userInfoMongo: ",userInfoMongo.wallets)
                             log.info(tag,"Invalid Mongo userInfoMongo: ",typeof(userInfoMongo.wallets))
                             log.error(tag,"Invalid Mongo entry: ",userInfoMongo)
@@ -220,7 +220,9 @@ export class pioneerPrivateController extends Controller {
                     let totalValueUsd = 0
                     for(let i = 0; i < userInfoMongo.wallets.length; i++){
                         let context = userInfoMongo.wallets[i]
-                        let walletInfo:any = {}
+                        let walletInfo:any = userInfoMongo.walletDescriptions[i]
+                        log.info(tag,"walletDescription: ",walletInfo)
+                        log.info(tag,"building walletDescription for context: ",context)
                         let { pubkeys } = await pioneer.getPubkeys(username,context)
                         log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
                         //build wallet info
@@ -1356,6 +1358,7 @@ export class pioneerPrivateController extends Controller {
                     let pubkeyInfo:any = body.pubkeys[i]
                     log.debug(tag,"pubkey: ",pubkeyInfo)
 
+                    if(!pubkeyInfo.address) throw Error("105: invalid pubkeyInfo!")
                     let entry = {
                         coin:body.coin,
                         path:pubkeyInfo.path,
@@ -1372,7 +1375,10 @@ export class pioneerPrivateController extends Controller {
                     queue.createWork(body.coin+":address:queue:ingest",work)
 
                     //save all
-                    saveActions.push({insertOne:entry})
+                    if(entry.pubkey){
+                        saveActions.push({insertOne:entry})
+                    }
+
 
                 }
                 output.count = saveActions.length

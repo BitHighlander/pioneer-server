@@ -489,12 +489,6 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
             }
 
             //save pubkeys in mongo
-            // try {
-            //     let result = await pubkeysDB.bulkWrite(saveActions, {ordered: false})
-            //     log.info(tag, "result: ", result)
-            // } catch (e) {
-            //     log.error(tag,"Failed to update pubkeys! e: ",e)
-            // }
 
             if (BALANCE_ON_REGISTER) {
                 output.results = []
@@ -545,6 +539,9 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
             let pubkeyInfo = pubkeys[i]
             let nativeAsset = getNativeAssetForBlockchain(pubkeyInfo.blockchain)
             if(!nativeAsset) throw Error("104: invalid pubkey! unsupported by coins module!")
+            if(!pubkeyInfo.pubkey) throw Error("104: invalid pubkey! missing pubkey!")
+            if(!pubkeyInfo.type) throw Error("104: invalid pubkey! missing type!")
+            //TODO verify type is in enums
             //hack
             if (!pubkeyInfo.symbol) pubkeyInfo.symbol = nativeAsset
 
@@ -557,6 +554,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
 
             //save to mongo
             let entryMongo: any = {
+                pubkey: pubkeyInfo.pubkey,
                 blockchain: pubkeyInfo.blockchain,
                 symbol:nativeAsset,
                 asset: pubkeyInfo.blockchain,
@@ -564,7 +562,6 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 script_type: pubkeyInfo.script_type,
                 network: pubkeyInfo.blockchain,
                 created: new Date().getTime(),
-                isSyncing: true,
                 tags: [username, pubkeyInfo.blockchain,pubkeyInfo.symbol, pubkeyInfo.network, walletId],
             }
 
@@ -608,6 +605,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
 
             //verify write
             log.info(tag,"entryMongo: ",entryMongo)
+            if(!entryMongo.pubkey) throw Error("103: Invalid pubkey! can not save!")
             //check exists
             let keyExists = await pubkeysDB.findOne({pubkey:entryMongo.pubkey})
             if(keyExists){

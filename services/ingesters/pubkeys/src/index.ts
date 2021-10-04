@@ -152,9 +152,11 @@ let do_work = async function(){
                             let token = tokens[i]
                             let balance = ethInfo.balances[token]
                             if(token !== 'ETH'){
+                                log.info("token info: ",ethInfo.coinInfo[token])
                                 balances.push({
                                     network:"ETH",
-                                    asset:"token",
+                                    asset:token,
+                                    symbol:token,
                                     contract:ethInfo.coinInfo[token].address,
                                     isToken:true,
                                     protocal:'erc20',
@@ -250,6 +252,7 @@ let do_work = async function(){
                 balances.push({
                     network:work.symbol,
                     asset:work.symbol,
+                    symbol:work.symbol,
                     isToken:false,
                     lastUpdated:new Date().getTime(),
                     balance,
@@ -303,6 +306,13 @@ let do_work = async function(){
             log.info(tag,"pubkeyInfo: ",pubkeyInfo)
             log.info(tag,"pubkeyInfo: ",pubkeyInfo.balances)
             let saveActions = []
+
+            //push update
+            // saveActions.push({updateOne: {
+            //         "filter": {pubkey:work.pubkey},
+            //         "update": { lastUpdated: new Date().getTime() }
+            //     }})
+
             for(let i = 0; i < balances.length; i++){
                 let balance = balances[i]
 
@@ -315,14 +325,16 @@ let do_work = async function(){
                     //if value is diff
                     log.info(tag,"balanceMongo: ",balanceMongo[0])
                     log.info(tag,"balance: ",balance)
+                    //TODO verify this actually works
                     if(balanceMongo[0].balance !== balance.balance){
                         //TODO events
                         //push_balance_event(work,balance)
                         //push event
-                        saveActions.push({updateOne: {
-                                "filter": {pubkey:work.pubkey},
-                                "update": {$addToSet: { balances: balance }}
-                            }})
+                        //TODO get position in array and force update
+                        // saveActions.push({updateOne: {
+                        //         "filter": {pubkey:work.pubkey},
+                        //         "update": {$Set: { balances: balance }},
+                        //     }})
                     }
                 } else {
                     //if new push
@@ -338,6 +350,7 @@ let do_work = async function(){
                 let updateSuccess = await pubkeysDB.bulkWrite(saveActions,{ordered:false})
                 log.info(tag,"updateSuccess: ",updateSuccess)
             }
+
 
             //release
             redis.lpush(work.queueId,JSON.stringify({success:true}))
