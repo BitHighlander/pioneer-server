@@ -215,6 +215,30 @@ export class pioneerPrivateController extends Controller {
                         }
                     }
 
+                    //get market data from markets
+                    let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+                    let marketCacheCoincap = await redis.get('markets:Coincap')
+
+                    if(!marketCacheCoinGecko){
+                        let marketInfoCoinGecko = await markets.getAssetsCoingecko()
+                        if(marketInfoCoinGecko){
+                            //market info found for
+                            marketInfoCoinGecko.updated = new Date().getTime()
+                            redis.setex('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko),60 * 15)
+                            marketCacheCoinGecko = marketInfoCoinGecko
+                        }
+                    }
+
+                    if(!marketCacheCoincap){
+                        let marketInfoCoincap = await markets.getAssetsCoincap()
+                        if(marketInfoCoincap){
+                            //market info found for
+                            marketInfoCoincap.updated = new Date().getTime()
+                            redis.setex('markets:CoinGecko',JSON.stringify(marketInfoCoincap),60 * 15)
+                            marketCacheCoincap = marketInfoCoincap
+                        }
+                    }
+
                     //get value map
                     userInfo.walletDescriptions = []
                     let totalValueUsd = 0

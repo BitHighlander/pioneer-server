@@ -85,7 +85,7 @@ let do_work = async function(){
         work = await queue.getWork("pioneer:pubkey:ingest", 1)
         if(work){
 
-            //setTimeout 1s
+            //setTimeout 1s TODO only in prod?
             let release = function(){
                 redis.lpush(work.queueId,JSON.stringify({success:true}))
             }
@@ -151,7 +151,7 @@ let do_work = async function(){
                         for(let i = 0; i < tokens.length; i++){
                             let token = tokens[i]
                             let balance = ethInfo.balances[token]
-                            if(token !== 'ETH'){
+                            if(token !== 'ETH' && token){
                                 log.info("token info: ",ethInfo.coinInfo[token])
                                 balances.push({
                                     network:"ETH",
