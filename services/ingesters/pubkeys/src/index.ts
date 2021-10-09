@@ -16,6 +16,7 @@ const TAG = " | "+packageInfo.name+" | "
 const log = require('@pioneer-platform/loggerdog')()
 const {subscriber,publisher,redis,redisQueue} = require('@pioneer-platform/default-redis')
 const blockbook = require('@pioneer-platform/blockbook')
+const {baseAmountToNative,nativeToBaseAmount} = require('@pioneer-platform/pioneer-coins')
 
 let servers:any = {}
 if(process.env['BTC_BLOCKBOOK_URL']) servers['BTC'] = process.env['BTC_BLOCKBOOK_URL']
@@ -86,10 +87,10 @@ let do_work = async function(){
         if(work){
 
             //setTimeout 1s TODO only in prod?
-            let release = function(){
-                redis.lpush(work.queueId,JSON.stringify({success:true}))
-            }
-            setTimeout(release,1000)
+            // let release = function(){
+            //     redis.lpush(work.queueId,JSON.stringify({success:true}))
+            // }
+            // setTimeout(release,1000)
             //note: this will still update cache on slow coins. but accepts a 0
 
             log.info("work: ",work)
@@ -146,31 +147,69 @@ let do_work = async function(){
                     log.info(tag,"ethInfo: ",ethInfo)
 
                     //forEach
-                    let tokens = Object.keys(ethInfo.balances)
-                    if(tokens){
-                        for(let i = 0; i < tokens.length; i++){
-                            let token = tokens[i]
-                            let balance = ethInfo.balances[token]
-                            if(token !== 'ETH' && token){
-                                log.info("token info: ",ethInfo.coinInfo[token])
-                                balances.push({
-                                    network:"ETH",
-                                    asset:token,
-                                    symbol:token,
-                                    contract:ethInfo.coinInfo[token].address,
-                                    isToken:true,
-                                    protocal:'erc20',
-                                    lastUpdated:new Date().getTime(),
-                                    balance,
-                                    source:"ethplorer" //TODO get this network module
-                                })
-                            }
-                        }
-                    }
+                    // let tokens = Object.keys(ethInfo.balances)
+                    // if(tokens){
+                    //     for(let i = 0; i < tokens.length; i++){
+                    //         let token = tokens[i]
+                    //         let balance = ethInfo.balances[token]
+                    //         if(token !== 'ETH' && token){
+                    //             log.info("token: ",token)
+                    //             log.info("token info: ",ethInfo.coinInfo[token])
+                    //             let tokenInfo = ethInfo.coinInfo[token]
+                    //             let balanceInfo:any = {
+                    //                 network:"ETH",
+                    //                 asset:token || tokenInfo.address,
+                    //                 symbol:token || tokenInfo.address,
+                    //                 contract:ethInfo.coinInfo[token].address,
+                    //                 isToken:true,
+                    //                 protocal:'erc20',
+                    //                 lastUpdated:new Date().getTime(),
+                    //                 balance,
+                    //                 source:"ethplorer" //TODO get this network module
+                    //             }
+                    //             if(tokenInfo.holdersCount === 1){
+                    //                 balanceInfo.nft = true
+                    //             }
+                    //
+                    //             balances.push(balanceInfo)
+                    //         }
+                    //     }
+                    // }
 
                     //blockbookInfo
                     let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
                     log.info(tag,'blockbookInfo: ',blockbookInfo)
+                    if(blockbookInfo.tokens){
+                        for(let i = 0; i < blockbookInfo.tokens.length; i++){
+                            let tokenInfo = blockbookInfo.tokens[i]
+                            if(tokenInfo.symbol && tokenInfo.symbol !== 'ETH'){
+                                log.info("tokenInfo.symbol: ",tokenInfo.symbol)
+                                let balanceInfo:any = {
+                                    network:"ETH",
+                                    type:tokenInfo.type,
+                                    asset:tokenInfo.symbol,
+                                    symbol:tokenInfo.symbol,
+                                    name:tokenInfo.name,
+                                    contract:tokenInfo.contract,
+                                    isToken:true,
+                                    protocal:'erc20',
+                                    lastUpdated:new Date().getTime(),
+                                    decimals:tokenInfo.decimals,
+                                    balance:tokenInfo.balance / Math.pow(10, Number(tokenInfo.decimals)),
+                                    balanceNative:tokenInfo.balance / Math.pow(10, Number(tokenInfo.decimals)),
+                                    source:"ethplorer" //TODO get this network module
+                                }
+                                if(tokenInfo.holdersCount === 1){
+                                    balanceInfo.nft = true
+                                }
+
+                                if(balanceInfo.balance > 0){
+                                    balances.push(balanceInfo)
+                                }
+                            }
+                        }
+                    }
+
 
                     if(blockbookInfo.txids){
                         if(blockbookInfo.totalPages > 1){
@@ -302,7 +341,11 @@ let do_work = async function(){
             log.info(tag,"balances: ",balances)
 
             let pubkeyInfo = await pubkeysDB.findOne({pubkey:work.pubkey})
-            if(!pubkeyInfo.balances) pubkeyInfo.balances = []
+            if(!pubkeyInfo || !pubkeyInfo.balances) {
+                pubkeyInfo = {
+                    balances: []
+                }
+            }
             log.info(tag,"pubkeyInfo: ",pubkeyInfo)
             log.info(tag,"pubkeyInfo: ",pubkeyInfo.balances)
             let saveActions = []

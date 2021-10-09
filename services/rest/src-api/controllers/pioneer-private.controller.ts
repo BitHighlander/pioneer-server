@@ -357,6 +357,7 @@ export class pioneerPrivateController extends Controller {
                     }
                 }
 
+                log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
                 let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, context)
                 log.info(tag,"responseMarkets: ",responseMarkets)
                 walletInfo.pubkeys = pubkeys
@@ -1373,7 +1374,7 @@ export class pioneerPrivateController extends Controller {
             }
 
             let { pubkeys, masters } = await pioneer.getPubkeys(username,output.context)
-
+            log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
             let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, output.context)
             log.info(tag,"responseMarkets: ",responseMarkets)
             output.masters = masters

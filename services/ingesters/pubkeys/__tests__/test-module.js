@@ -37,7 +37,7 @@ let ASSET = "ETH"
 //         tags:['sablier','streams','erc20']
 //     },
 //     username: 'test-user-2',
-//     pubkey: "0xbd6a40Bb904aEa5a49c59050B5395f7484A4203d",
+//     pubkey: "0xc3affff54122658b89c31183cec4f15514f34624",
 //     inserted: 1594510142838
 // }
 
@@ -55,29 +55,29 @@ let ASSET = "ETH"
 //     inserted: 1594510142838
 // }
 
-let work = {
-    symbol: 'BNB',
-    asset: 'BNB',
-    blockchain: "binance",
-    walletId: 'keepkey-pubkeys-343733331147363327003800',
-    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-    type:"address",
-    username: 'test-user-2',
-    pubkey: "bnb1ffm69vl732y59tdm69d83ddjz3h4j5lqjaqxnf",
-    inserted: 1594510142838
-}
-
 // let work = {
-//     symbol: 'ETH',
-//     asset: 'ETH',
-//     blockchain: "ethereum",
+//     symbol: 'BNB',
+//     asset: 'BNB',
+//     blockchain: "binance",
 //     walletId: 'keepkey-pubkeys-343733331147363327003800',
 //     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
 //     type:"address",
 //     username: 'test-user-2',
-//     pubkey: "0x33b35c665496bA8E71B22373843376740401F106",
+//     pubkey: "bnb1ffm69vl732y59tdm69d83ddjz3h4j5lqjaqxnf",
 //     inserted: 1594510142838
 // }
+
+let work = {
+    symbol: 'ETH',
+    asset: 'ETH',
+    blockchain: "ethereum",
+    walletId: 'keepkey-pubkeys-343733331147363327003800',
+    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+    type:"address",
+    username: 'test-user-2',
+    pubkey: "0xc3affff54122658b89c31183cec4f15514f34624",
+    inserted: 1594510142838
+}
 
 
 // let work = {
