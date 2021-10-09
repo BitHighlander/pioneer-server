@@ -43,7 +43,7 @@ import { Body, Controller, Get, Post, Route, Tags } from 'tsoa';
 //route
 @Tags('Atlas Endpoints')
 @Route('')
-export class pioneerPublicController extends Controller {
+export class pioneerMarketsController extends Controller {
 
     /*
      * Market Info

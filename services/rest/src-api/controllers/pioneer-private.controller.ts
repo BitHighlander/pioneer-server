@@ -164,7 +164,7 @@ export class pioneerPrivateController extends Controller {
 
     @Get('/user')
     public async user(@Header('Authorization') authorization: string): Promise<any> {
-        let tag = TAG + " | info | "
+        let tag = TAG + " | user | "
         try{
             log.info(tag,"queryKey: ",authorization)
 
@@ -254,13 +254,14 @@ export class pioneerPrivateController extends Controller {
                         if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
                         //hydrate market data for all pubkeys
                         log.info(tag,"pubkeys: ",pubkeys)
-                        let hydratedPubkeys = await markets.hydratePubkeys(pubkeys)
-                        log.info(tag,"hydratedPubkeys: ",hydratedPubkeys)
+                        let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoincap, pubkeys, context)
+                        log.info(tag,"responseMarkets: ",responseMarkets)
                         let walletDescription = {
                             context:walletInfo.context,
                             type:walletInfo.type,
-                            pubkeys:hydratedPubkeys.pubkeys,
-                            valueUsdContext:hydratedPubkeys.total
+                            pubkeys,
+                            balances:responseMarkets.balances,
+                            valueUsdContext:responseMarkets.total
                         }
                         totalValueUsd = totalValueUsd + totalValueUsd
                         //walletDescription
@@ -317,19 +318,50 @@ export class pioneerPrivateController extends Controller {
                     log.error(tag,"invalid accountInfo: ",accountInfo)
                     throw Error("unknown token. token:"+authorization)
                 }
-                //
+                //sismember
                 let isKnownWallet = await redis.sismember(username+':wallets',context)
                 log.info(tag,"isKnownWallet: ",isKnownWallet)
 
+                //TODO add balances
+                //throw error if every balance does NOT have a true > 0  balance AND and icon
+                //verify date on balance, if old mark old
+                //make schema verbose and repetitive, and optimize later
                 let { pubkeys, masters } = await pioneer.getPubkeys(username,context)
                 //build wallet info
                 walletInfo.masters = masters
                 //hydrate market data for all pubkeys
                 log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
-                let hydratedPubkeys = await markets.hydratePubkeys(pubkeys)
-                log.info(tag,"hydratedPubkeys: ",hydratedPubkeys)
-                walletInfo.pubkeys = hydratedPubkeys.pubkeys
-                walletInfo.totalValueUsd = hydratedPubkeys.total
+
+                //
+                //get market data from markets
+                let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+                let marketCacheCoincap = await redis.get('markets:Coincap')
+
+                if(!marketCacheCoinGecko){
+                    let marketInfoCoinGecko = await markets.getAssetsCoingecko()
+                    if(marketInfoCoinGecko){
+                        //market info found for
+                        marketInfoCoinGecko.updated = new Date().getTime()
+                        redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                        marketCacheCoinGecko = marketInfoCoinGecko
+                    }
+                }
+
+                if(!marketCacheCoincap){
+                    let marketInfoCoincap = await markets.getAssetsCoincap()
+                    if(marketInfoCoincap){
+                        //market info found for
+                        marketInfoCoincap.updated = new Date().getTime()
+                        redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
+                        marketCacheCoincap = marketInfoCoincap
+                    }
+                }
+
+                let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, context)
+                log.info(tag,"responseMarkets: ",responseMarkets)
+                walletInfo.pubkeys = pubkeys
+                walletInfo.balances = responseMarkets.balances
+                walletInfo.totalValueUsd = responseMarkets.total
                 walletInfo.username = username
                 walletInfo.context = context
                 walletInfo.apps = await redis.smembers(username+":apps")
@@ -402,7 +434,7 @@ export class pioneerPrivateController extends Controller {
     }
 
     /**
-     Get the balances for a given username
+     Get the refresh on for a given username
      */
     @Get('/refresh')
     public async refresh(@Header('Authorization') authorization): Promise<any> {
@@ -437,7 +469,7 @@ export class pioneerPrivateController extends Controller {
     }
 
     /**
-     Get the balances for a given username
+     Get the context for a given username
      */
     @Get('/context')
     public async context(@Header('Authorization') authorization): Promise<any> {
@@ -475,22 +507,22 @@ export class pioneerPrivateController extends Controller {
     }
 
     /**
-        Get the balances for a given username
+        Get the balances for a given username on current context for asset
      */
-    @Get('/balance/{coin}')
-    public async balance(coin:string,@Header('Authorization') authorization): Promise<any> {
+    @Get('/balance/{asset}')
+    public async balance(asset:string,@Header('Authorization') authorization): Promise<any> {
         let tag = TAG + " | balance | "
         try{
             log.debug(tag,"queryKey: ",authorization)
-            log.debug(tag,"coin: ",coin)
+            log.debug(tag,"asset: ",asset)
 
             let accountInfo = await redis.hgetall(authorization)
             let username = accountInfo.username
             if(!username) throw Error("unknown token! token:"+authorization)
 
             //get cache
-            log.debug(tag,"cache path: ",accountInfo.username+":cache:"+coin+":balance")
-            let balance = await redis.get(accountInfo.username+":cache:"+coin+":balance")
+            log.debug(tag,"cache path: ",accountInfo.username+":cache:"+asset+":balance")
+            let balance = await redis.get(accountInfo.username+":cache:"+asset+":balance")
             log.debug(tag,"balance: ",balance)
             if(balance){
                 return(JSON.parse(balance));
@@ -515,10 +547,10 @@ export class pioneerPrivateController extends Controller {
                     pubkeys
                 })
                 //get wallet info
-                balance = await network.getBalance(coin)
+                balance = await network.getBalance(asset)
 
                 //write to cache
-                await redis.setex(accountInfo.username+":cache:"+coin+":balance",1000 * 5,JSON.stringify(balance))
+                await redis.setex(accountInfo.username+":cache:"+asset+":balance",1000 * 5,JSON.stringify(balance))
             }
 
             return balance
@@ -1273,7 +1305,7 @@ export class pioneerPrivateController extends Controller {
 
             //if current ! found
             if(userWallets.indexOf(body.context) < 0){
-                log.info(tag,"Registering new walelt! context:",body.context)
+                log.info(tag,"Registering new wallet! context:",body.context)
                 //Register wallet! (this ONLY hits when already registered
                 output.newWallet = true
                 let pubkeys = body.data.pubkeys
@@ -1316,6 +1348,38 @@ export class pioneerPrivateController extends Controller {
             output.assetContext = userInfoRedis.assetContext
 
             //verify user
+            //get market data from markets
+            let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+            let marketCacheCoincap = await redis.get('markets:Coincap')
+
+            if(!marketCacheCoinGecko){
+                let marketInfoCoinGecko = await markets.getAssetsCoingecko()
+                if(marketInfoCoinGecko){
+                    //market info found for
+                    marketInfoCoinGecko.updated = new Date().getTime()
+                    redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                    marketCacheCoinGecko = marketInfoCoinGecko
+                }
+            }
+
+            if(!marketCacheCoincap){
+                let marketInfoCoincap = await markets.getAssetsCoincap()
+                if(marketInfoCoincap){
+                    //market info found for
+                    marketInfoCoincap.updated = new Date().getTime()
+                    redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
+                    marketCacheCoincap = marketInfoCoincap
+                }
+            }
+
+            let { pubkeys, masters } = await pioneer.getPubkeys(username,output.context)
+
+            let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, output.context)
+            log.info(tag,"responseMarkets: ",responseMarkets)
+            output.masters = masters
+            output.pubkeys = pubkeys
+            output.balances = responseMarkets.balances
+            output.totalValueUsd = responseMarkets.total
 
             //get
             // info on context

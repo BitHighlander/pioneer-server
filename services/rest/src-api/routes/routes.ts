@@ -11,6 +11,8 @@ import { atlasPublicController } from './../controllers/2-pioneer-public.control
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { streamsPublicController } from './../controllers/3-streams-public.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { pioneerMarketsController } from './../controllers/4-markets.controller';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { pioneerPrivateController } from './../controllers/pioneer-private.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { XAppsController } from './../controllers/x-apps.controller';
@@ -297,6 +299,7 @@ export function RegisterRoutes(app: express.Router) {
     //      Please look into the "controllerPathGlobs" config option described in the readme: https://github.com/lukeautry/tsoa
     // ###########################################################################################################
         app.get('/api/v1/health',
+
             function IndexController_health(request: any, response: any, next: any) {
             const args = {
             };
@@ -318,6 +321,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/atlas/list',
+
             function pioneerPublicController_atlas(request: any, response: any, next: any) {
             const args = {
             };
@@ -339,6 +343,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/atlas/chart',
+
             function pioneerPublicController_chart(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"Chart"},
@@ -361,6 +366,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/globals',
+
             function atlasPublicController_globals(request: any, response: any, next: any) {
             const args = {
             };
@@ -382,6 +388,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/online',
+
             function atlasPublicController_online(request: any, response: any, next: any) {
             const args = {
             };
@@ -403,6 +410,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/coins',
+
             function atlasPublicController_coins(request: any, response: any, next: any) {
             const args = {
             };
@@ -424,6 +432,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/blockHeights',
+
             function atlasPublicController_blockHeights(request: any, response: any, next: any) {
             const args = {
             };
@@ -445,6 +454,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/blockHeight/:network',
+
             function atlasPublicController_blockHeight(request: any, response: any, next: any) {
             const args = {
                     network: {"in":"path","name":"network","required":true,"dataType":"string"},
@@ -467,6 +477,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/blocks/:coin/:height',
+
             function atlasPublicController_getBlockHash(request: any, response: any, next: any) {
             const args = {
                     coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
@@ -490,6 +501,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/username/:username',
+
             function atlasPublicController_username(request: any, response: any, next: any) {
             const args = {
                     username: {"in":"path","name":"username","required":true,"dataType":"string"},
@@ -512,6 +524,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/invocation/:invocationId',
+
             function atlasPublicController_invocation(request: any, response: any, next: any) {
             const args = {
                     invocationId: {"in":"path","name":"invocationId","required":true,"dataType":"string"},
@@ -534,6 +547,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/getPubkeyBalance/:coin/:pubkey',
+
             function atlasPublicController_getPubkeyBalance(request: any, response: any, next: any) {
             const args = {
                     coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
@@ -557,6 +571,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/:network/getTransaction/:txid/:type',
+
             function atlasPublicController_getTransaction(request: any, response: any, next: any) {
             const args = {
                     network: {"in":"path","name":"network","required":true,"dataType":"string"},
@@ -581,6 +596,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/getFeeInfo/:coin',
+
             function atlasPublicController_getFeeInfo(request: any, response: any, next: any) {
             const args = {
                     coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
@@ -603,6 +619,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/osmosis/pools',
+
             function atlasPublicController_getOsmosisPools(request: any, response: any, next: any) {
             const args = {
             };
@@ -624,6 +641,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/:network/getValidators',
+
             function atlasPublicController_getValidators(request: any, response: any, next: any) {
             const args = {
                     network: {"in":"path","name":"network","required":true,"dataType":"string"},
@@ -646,6 +664,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/:network/getDelegations/:address/:validator',
+
             function atlasPublicController_getDelegations(request: any, response: any, next: any) {
             const args = {
                     network: {"in":"path","name":"network","required":true,"dataType":"string"},
@@ -670,6 +689,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/getChangeAddress/:network/:xpub',
+
             function atlasPublicController_getChangeAddress(request: any, response: any, next: any) {
             const args = {
                     network: {"in":"path","name":"network","required":true,"dataType":"string"},
@@ -693,6 +713,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/getNewAddress/:network/:xpub',
+
             function atlasPublicController_getNewAddress(request: any, response: any, next: any) {
             const args = {
                     network: {"in":"path","name":"network","required":true,"dataType":"string"},
@@ -716,6 +737,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/listUnspent/:network/:xpub',
+
             function atlasPublicController_listUnspent(request: any, response: any, next: any) {
             const args = {
                     network: {"in":"path","name":"network","required":true,"dataType":"string"},
@@ -739,6 +761,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/getAccountInfo/:network/:address',
+
             function atlasPublicController_getAccountInfo(request: any, response: any, next: any) {
             const args = {
                     network: {"in":"path","name":"network","required":true,"dataType":"string"},
@@ -762,6 +785,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eos/accountsFromPubkey/:pubkey',
+
             function atlasPublicController_accountsFromEosPubkey(request: any, response: any, next: any) {
             const args = {
                     pubkey: {"in":"path","name":"pubkey","required":true,"dataType":"string"},
@@ -784,6 +808,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eos/accountInfo/:username',
+
             function atlasPublicController_eosAccountInfo(request: any, response: any, next: any) {
             const args = {
                     username: {"in":"path","name":"username","required":true,"dataType":"string"},
@@ -806,6 +831,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eth/getBalanceToken/:address/:token',
+
             function atlasPublicController_getBalanceToken(request: any, response: any, next: any) {
             const args = {
                     address: {"in":"path","name":"address","required":true,"dataType":"string"},
@@ -829,6 +855,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eth/getNonce/:address',
+
             function atlasPublicController_getNonce(request: any, response: any, next: any) {
             const args = {
                     address: {"in":"path","name":"address","required":true,"dataType":"string"},
@@ -851,6 +878,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eth/getGasPrice',
+
             function atlasPublicController_getGasPrice(request: any, response: any, next: any) {
             const args = {
             };
@@ -872,6 +900,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eth/getTransferData/:coin/:address/:amount',
+
             function atlasPublicController_getTransferData(request: any, response: any, next: any) {
             const args = {
                     coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
@@ -896,6 +925,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eth/txCount/:address',
+
             function atlasPublicController_getTxCount(request: any, response: any, next: any) {
             const args = {
                     address: {"in":"path","name":"address","required":true,"dataType":"string"},
@@ -918,6 +948,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eth/getTokens/:address',
+
             function atlasPublicController_getTokenInfo(request: any, response: any, next: any) {
             const args = {
                     address: {"in":"path","name":"address","required":true,"dataType":"string"},
@@ -940,6 +971,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eos/validateEosUsername/:username',
+
             function atlasPublicController_validateEosUsername(request: any, response: any, next: any) {
             const args = {
                     username: {"in":"path","name":"username","required":true,"dataType":"string"},
@@ -962,6 +994,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/eos/getEosAccountsByPubkey/:pubkey',
+
             function atlasPublicController_getEosAccountsByPubkey(request: any, response: any, next: any) {
             const args = {
                     pubkey: {"in":"path","name":"pubkey","required":true,"dataType":"string"},
@@ -984,6 +1017,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/eth/getAllowance',
+
             function atlasPublicController_getAllowance(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"BodyAllowance"},
@@ -1006,6 +1040,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/getFee',
+
             function atlasPublicController_getFee(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"dataType":"any"},
@@ -1028,6 +1063,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/estimateFeesWithGasPricesAndLimits',
+
             function atlasPublicController_estimateFeesWithGasPricesAndLimits(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"dataType":"any"},
@@ -1050,6 +1086,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/estimateFee',
+
             function atlasPublicController_estimateFee(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"EstimateFeeBody"},
@@ -1072,6 +1109,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/getThorchainMemoEncoded',
+
             function atlasPublicController_getThorchainMemoEncoded(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"dataType":"any"},
@@ -1094,6 +1132,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/getFeesWithMemo',
+
             function atlasPublicController_getFeesWithMemo(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"GetFeesWithMemoBody"},
@@ -1116,6 +1155,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/pushTx',
+
             function atlasPublicController_pushTx(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"dataType":"any"},
@@ -1138,6 +1178,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/broadcast',
+
             function atlasPublicController_broadcast(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"BroadcastBody"},
@@ -1160,6 +1201,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/streams/:address',
+
             function streamsPublicController_streams(request: any, response: any, next: any) {
             const args = {
                     address: {"in":"path","name":"address","required":true,"dataType":"string"},
@@ -1181,7 +1223,30 @@ export function RegisterRoutes(app: express.Router) {
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/api/v1/market/top',
+
+            function pioneerMarketsController_market(request: any, response: any, next: any) {
+            const args = {
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+            } catch (err) {
+                return next(err);
+            }
+
+            const controller = new pioneerMarketsController();
+
+
+            const promise = controller.market.apply(controller, validatedArgs as any);
+            promiseHandler(controller, promise, response, undefined, next);
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/forget',
+
             function pioneerPrivateController_forget(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
@@ -1204,6 +1269,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/user',
+
             function pioneerPrivateController_user(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
@@ -1226,6 +1292,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/info/:context',
+
             function pioneerPrivateController_info(request: any, response: any, next: any) {
             const args = {
                     context: {"in":"path","name":"context","required":true,"dataType":"string"},
@@ -1249,6 +1316,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/invocations',
+
             function pioneerPrivateController_invocations(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
@@ -1271,6 +1339,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/refresh',
+
             function pioneerPrivateController_refresh(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"any"},
@@ -1293,6 +1362,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/context',
+
             function pioneerPrivateController_context(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"any"},
@@ -1314,10 +1384,11 @@ export function RegisterRoutes(app: express.Router) {
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/api/v1/balance/:coin',
+        app.get('/api/v1/balance/:asset',
+
             function pioneerPrivateController_balance(request: any, response: any, next: any) {
             const args = {
-                    coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
+                    asset: {"in":"path","name":"asset","required":true,"dataType":"string"},
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"any"},
             };
 
@@ -1338,6 +1409,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/setAssetContext',
+
             function pioneerPrivateController_setAssetContext(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"dataType":"any"},
@@ -1361,6 +1433,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/setContext',
+
             function pioneerPrivateController_setContext(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"SetContextBody"},
@@ -1384,6 +1457,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/updateInvocation',
+
             function pioneerPrivateController_updateInvocation(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"UpdateInvocationBody"},
@@ -1407,6 +1481,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/ignoreShitcoin',
+
             function pioneerPrivateController_ignoreShitcoin(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"IgnoreShitcoins"},
@@ -1430,6 +1505,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/deleteInvocation',
+
             function pioneerPrivateController_deleteInvocation(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"DeleteInvocationBody"},
@@ -1453,6 +1529,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/pair',
+
             function pioneerPrivateController_pair(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"PairBody"},
@@ -1476,6 +1553,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/createPairingCode',
+
             function pioneerPrivateController_createPairingCode(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"CreatePairingCodeBody"},
@@ -1499,6 +1577,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/createApiKey',
+
             function pioneerPrivateController_createApiKey(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"ref":"CreateApiKeyBody"},
@@ -1522,6 +1601,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/utxos',
+
             function pioneerPrivateController_getUtxos(request: any, response: any, next: any) {
             const args = {
                     body: {"in":"body","name":"body","required":true,"dataType":"any"},
@@ -1545,6 +1625,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/transactions',
+
             function pioneerPrivateController_transactions(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
@@ -1568,6 +1649,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/register',
+
             function pioneerPrivateController_register(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
@@ -1591,6 +1673,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/import',
+
             function pioneerPrivateController_import(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
@@ -1614,6 +1697,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/create',
+
             function XAppsController_createApp(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
@@ -1637,6 +1721,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/apps',
+
             function XAppsController_listApps(request: any, response: any, next: any) {
             const args = {
             };
@@ -1658,6 +1743,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/invoke',
+
             function pioneerInvocationController_invoke(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
@@ -1681,6 +1767,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/fio/accountsFromPubkey/:pubkey',
+
             function ZFioPublicController_accountsFromFioPubkey(request: any, response: any, next: any) {
             const args = {
                     pubkey: {"in":"path","name":"pubkey","required":true,"dataType":"string"},
@@ -1703,6 +1790,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/fio/getPubkey/:username',
+
             function ZFioPublicController_getFioPubkey(request: any, response: any, next: any) {
             const args = {
                     username: {"in":"path","name":"username","required":true,"dataType":"string"},
@@ -1725,6 +1813,7 @@ export function RegisterRoutes(app: express.Router) {
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/fio/accountInfo/:username',
+
             function ZFioPublicController_getFioAccountInfo(request: any, response: any, next: any) {
             const args = {
                     username: {"in":"path","name":"username","required":true,"dataType":"string"},
