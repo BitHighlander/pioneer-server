@@ -19,6 +19,11 @@ import { RegisterRoutes } from './routes/routes';  // here
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../api/dist/swagger.json')
 
+const markets = require('@pioneer-platform/markets')
+let connection  = require("@pioneer-platform/default-mongo")
+let marketsDB = connection.get('markets')
+marketsDB.createIndex({id: 1}, {unique: true})
+
 //Rate limiter options
 //https://github.com/animir/node-rate-limiter-flexible/wiki/Overall-example#create-simple-rate-limiter-and-consume-points-on-entry-point
 const { RateLimiterRedis } = require('rate-limiter-flexible');
@@ -82,7 +87,7 @@ const rateLimiterRedis = new RateLimiterRedis({
 //     }
 // };
 
-var corsOptions = {
+let corsOptions = {
     origin: function (origin, callback) {
         if (true) {
             callback(null, true)
@@ -119,7 +124,6 @@ app.use('/spec', express.static('api/dist'));
 //REST API v1
 RegisterRoutes(app);  // and here
 
-
 //globals
 let globalSockets = {}
 let usersBySocketId = {}
@@ -127,7 +131,6 @@ let usersByUsername = {}
 let usersByKey = {}
 let channel_history_max = 10;
 
-//TODO moveme (payments should go to user by userId)
 //private
 subscriber.subscribe('payments');
 subscriber.subscribe('pairings');
@@ -441,6 +444,74 @@ app.use(errorHandler)
 //         return start_server();
 //     }
 // }
+
+/*
+    Markets cache
+        Goal: build a redis cache of non-price data for top 1000 assets
+            + any manually added assets
+
+    onStart()
+
+    get top 1000 from mongo
+        //verify redis cache on mongo info
+
+
+    Get top 1000 assets from coincap
+
+    get top 1000 from coincecko
+
+    //check diff on coincap from mongo
+    //check diff on coingecko from mongo
+
+    //any new assets
+        //save to mongo
+        //save to redis cache
+
+    Follow up
+        track all pubkeys with a user online
+        subscribe to live price data on all assets with users online
+        push price updates to user over socket
+ */
+//build markets cache
+let start_markets_cache = async function () {
+    let tag = " | start_markets_cache | "
+    try {
+        //get pubkeys from mongo with walletId tagged
+        let marketsMongo = await marketsDB.find({},{limit:1000})
+        log.info(tag,"marketsMongo: ",marketsMongo)
+
+        //get market data from markets
+        let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+        let marketCacheCoincap = await redis.get('markets:Coincap')
+
+        if(!marketCacheCoinGecko){
+            let marketInfoCoinGecko = await markets.getAssetsCoingecko()
+            if(marketInfoCoinGecko){
+                //market info found for
+                marketInfoCoinGecko.updated = new Date().getTime()
+                redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko),60 * 15)
+                marketCacheCoinGecko = marketInfoCoinGecko
+            }
+        }
+
+        if(!marketCacheCoincap){
+            let marketInfoCoincap = await markets.getAssetsCoincap()
+            if(marketInfoCoincap){
+                //market info found for
+                marketInfoCoincap.updated = new Date().getTime()
+                redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoincap),60 * 15)
+                marketCacheCoincap = marketInfoCoincap
+            }
+        }
+
+
+        return true
+    } catch (e) {
+        console.error(tag, "e: ", e)
+        throw e
+    }
+}
+//start_markets_cache()
 
 let start_server = async function () {
     let tag = TAG + " | start_server | "

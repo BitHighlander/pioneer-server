@@ -224,7 +224,7 @@ export class pioneerPrivateController extends Controller {
                         if(marketInfoCoinGecko){
                             //market info found for
                             marketInfoCoinGecko.updated = new Date().getTime()
-                            redis.setex('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko),60 * 15)
+                            redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
                             marketCacheCoinGecko = marketInfoCoinGecko
                         }
                     }
@@ -234,7 +234,7 @@ export class pioneerPrivateController extends Controller {
                         if(marketInfoCoincap){
                             //market info found for
                             marketInfoCoincap.updated = new Date().getTime()
-                            redis.setex('markets:CoinGecko',JSON.stringify(marketInfoCoincap),60 * 15)
+                            redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
                             marketCacheCoincap = marketInfoCoincap
                         }
                     }
