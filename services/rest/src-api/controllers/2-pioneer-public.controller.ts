@@ -97,7 +97,8 @@ let {
     PoSchains,
     UTXO_COINS,
     COIN_MAP,
-    get_address_from_xpub
+    get_address_from_xpub,
+    COIN_MAP_LONG
 } = require('@pioneer-platform/pioneer-coins')
 
 
@@ -135,6 +136,42 @@ export class atlasPublicController extends Controller {
         try{
             let online = await redis.smembers('online')
             return(online)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Get('/status')
+    public async status() {
+        let tag = TAG + " | status | "
+        try{
+            let pools = await midgard.getPoolAddress()
+
+            let output:any = {}
+            output.thorchain = []
+            for(let i = 0; i < pools.length; i++){
+                let pool = pools[i]
+                let entry:any = {
+                    blockchain:COIN_MAP_LONG[pool.chain].toLowerCase(),
+                }
+                if(pool.halted === false){
+                    entry.online = true
+                } else {
+                    entry.online = false
+                }
+                output.thorchain.push(entry)
+            }
+            //TODO osmosis status?
+
+            //TODO 0x assets/including tokens?
+
+            return(output)
         }catch(e){
             let errorResp:Error = {
                 success:false,
