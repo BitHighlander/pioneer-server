@@ -190,10 +190,12 @@ export class atlasPublicController extends Controller {
                 pools = JSON.parse(pools)
             }
 
+            //markets
+
             let output:any = {}
             output.thorchain = []
             output.exchanges = {}
-            output.exchanges.thorchain = {}
+            output.exchanges.protocals = ['thorchain','0x','osmosis']
             output.exchanges.assets = []
             for(let i = 0; i < pools.length; i++){
                 let pool = pools[i]
@@ -209,8 +211,98 @@ export class atlasPublicController extends Controller {
                 output.thorchain.push(entry)
             }
 
+            //get rate for every market
+            let markets = await redis.get('thorchain:markets')
+            if(!markets){
+                markets = await midgard.getPools()
+                redis.setex('thorchain:markets',400,JSON.stringify(markets))
+            } else {
+                markets = JSON.parse(markets)
+            }
+
+            let parseThorchainAssetString = function(input){
+                try{
+                    let parts = input.split(".")
+                    let network = parts[0]
+                    let asset
+                    let symbol
+                    let contract
+                    if(parts[1].indexOf("-") >= 0){
+                        //is Token
+                        let parts2 = parts[1].split("-")
+                        contract = parts2[1]
+                        asset = parts2[0]
+                        symbol = parts2[0]
+                    }else{
+                        //is Native asset
+                        asset = parts[0]
+                        symbol = parts[0]
+                    }
+                    return {
+                        asset,
+                        symbol,
+                        network,
+                        contract
+                    }
+                }catch(e){
+                    log.error(e)
+                }
+            }
+            log.info("markets: ",markets)
+
+            //normalize market info
+            let normalizedMarketInfo:any = []
+            for(let i = 0; i < markets.length; i++){
+                let market = markets[i]
+                log.info("market: ",market)
+                market.assetThorchain = market.asset
+                let assetParsed = parseThorchainAssetString(market.asset)
+                let normalized = {...assetParsed,...market}
+                normalizedMarketInfo.push(normalized)
+            }
+
             //add tokens and pairs to exchange map
-            output.exchanges.markets = getPermutations(output.exchanges.assets,2)
+            let allMarketPairs = getPermutations(output.exchanges.assets,2)
+
+            //iterate over markets
+            output.exchanges.markets = []
+            log.info("normalizedMarketInfo: ",normalizedMarketInfo)
+            for(let i = 0; i < allMarketPairs.length; i++){
+                let pair = allMarketPairs[i]
+                log.info(tag,"pair: ",pair)
+                pair = pair.split("_")
+                let inputSymbol = pair[0]
+                let outputSymbol = pair[1]
+                let inputMarketInfo = normalizedMarketInfo.filter((e:any) => e.symbol === inputSymbol)
+                let outputMarketInfo = normalizedMarketInfo.filter((e:any) => e.symbol === outputSymbol)
+                if(inputMarketInfo && outputMarketInfo && inputMarketInfo[0] && outputMarketInfo[0]){
+                    //TODO handle symbol collision
+                    //if network !==
+                    if(inputMarketInfo.length > 1){
+                        //filter out correct ETH
+                    }
+                    //hack
+                    inputMarketInfo = inputMarketInfo[0]
+                    outputMarketInfo = outputMarketInfo[0]
+                    log.info(tag,"inputMarketInfo: ",inputMarketInfo)
+                    log.info(tag,"outputMarketInfo: ",outputMarketInfo)
+                    log.info(tag,"inputMarketInfo: ",inputMarketInfo.assetPriceUSD)
+                    log.info(tag,"outputMarketInfo: ",outputMarketInfo.assetPriceUSD)
+                    //usd value input
+                    //usd value output
+                    //rate of input / output
+                    let rate = inputMarketInfo.assetPriceUSD / outputMarketInfo.assetPriceUSD
+                    log.info(tag,"rate: ",rate)
+                    let market = {
+                        protocal:'thorchain',
+                        pair,
+                        rate
+                    }
+                    output.exchanges.markets.push(market)
+                }
+            }
+
+
 
             //TODO osmosis status?
 
