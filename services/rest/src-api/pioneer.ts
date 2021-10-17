@@ -379,7 +379,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
         //get pubkeys from mongo
         log.info(tag,"allPubkeys: ",allPubkeys)
         let allKnownPubkeys = await pubkeysDB.find({"pubkey" : {"$in" : allPubkeys}})
-        log.info(tag,"allKnownPubkeys: ",allKnownPubkeys)
+        log.info(tag,"allKnownPubkeys: ",allKnownPubkeys.length)
 
         //
         let knownPubkeys = []
@@ -529,7 +529,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
 let register_pubkeys = async function (username: string, pubkeys: any, walletId: string) {
     let tag = TAG + " | register_pubkeys | "
     try {
-        log.info(tag, "input: ", {username, pubkeys, walletId})
+        log.debug(tag, "input: ", {username, pubkeys, walletId})
         let saveActions = []
         //generate addresses
         let output: any = {}

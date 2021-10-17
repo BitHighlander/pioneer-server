@@ -102,6 +102,37 @@ let {
 } = require('@pioneer-platform/pioneer-coins')
 
 
+
+const getPermutations = function(list, maxLen) {
+    // Copy initial values as arrays
+    let perm = list.map(function(val) {
+        return [val];
+    });
+    // Our permutation generator
+    let generate = function(perm, maxLen, currLen) {
+        // Reached desired length
+        if (currLen === maxLen) {
+            return perm;
+        }
+        // For each existing permutation
+        for (let i = 0, len = perm.length; i < len; i++) {
+            let currPerm = perm.shift();
+            // Create new permutation
+            for (let k = 0; k < list.length; k++) {
+                let pair = currPerm.concat(list[k])
+                if(pair[0] !== pair[1]){
+                    perm.push(pair[0]+"_"+pair[1]);
+                }
+            }
+        }
+        // Recurse
+        return generate(perm, maxLen, currLen + 1);
+    };
+    // Start with size 1 because of initial values
+    return generate(perm, maxLen, 1);
+};
+
+
 //route
 @Tags('Public Endpoints')
 @Route('')
@@ -151,12 +182,22 @@ export class atlasPublicController extends Controller {
     public async status() {
         let tag = TAG + " | status | "
         try{
-            let pools = await midgard.getPoolAddress()
+            let pools = await redis.get('thorchain:pools')
+            if(!pools){
+                pools = await midgard.getPoolAddress()
+                redis.setex('thorchain:pools',400,JSON.stringify(pools))
+            } else {
+                pools = JSON.parse(pools)
+            }
 
             let output:any = {}
             output.thorchain = []
+            output.exchanges = {}
+            output.exchanges.thorchain = {}
+            output.exchanges.assets = []
             for(let i = 0; i < pools.length; i++){
                 let pool = pools[i]
+                output.exchanges.assets.push(pool.chain)
                 let entry:any = {
                     blockchain:COIN_MAP_LONG[pool.chain].toLowerCase(),
                 }
@@ -167,6 +208,10 @@ export class atlasPublicController extends Controller {
                 }
                 output.thorchain.push(entry)
             }
+
+            //add tokens and pairs to exchange map
+            output.exchanges.markets = getPermutations(output.exchanges.assets,2)
+
             //TODO osmosis status?
 
             //TODO 0x assets/including tokens?

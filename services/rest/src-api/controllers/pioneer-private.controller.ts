@@ -222,6 +222,7 @@ export class pioneerPrivateController extends Controller {
                     if(!marketCacheCoinGecko){
                         let marketInfoCoinGecko = await markets.getAssetsCoingecko()
                         if(marketInfoCoinGecko){
+                            log.info(tag,"get info coinCap: ")
                             //market info found for
                             marketInfoCoinGecko.updated = new Date().getTime()
                             redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
@@ -232,6 +233,7 @@ export class pioneerPrivateController extends Controller {
                     if(!marketCacheCoincap){
                         let marketInfoCoincap = await markets.getAssetsCoincap()
                         if(marketInfoCoincap){
+                            log.info(tag,"get info coinCap: ")
                             //market info found for
                             marketInfoCoincap.updated = new Date().getTime()
                             redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
@@ -248,14 +250,14 @@ export class pioneerPrivateController extends Controller {
                         log.info(tag,"walletDescription: ",walletInfo)
                         log.info(tag,"building walletDescription for context: ",context)
                         let { pubkeys } = await pioneer.getPubkeys(username,context)
-                        log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
+                        log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
                         //build wallet info
                         walletInfo.pubkeys = pubkeys
                         if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
                         //hydrate market data for all pubkeys
-                        log.info(tag,"pubkeys: ",pubkeys)
+                        log.info(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
                         let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoincap, pubkeys, context)
-                        log.info(tag,"responseMarkets: ",responseMarkets)
+                        log.debug(tag,"responseMarkets: ",responseMarkets)
                         let walletDescription = {
                             context:walletInfo.context,
                             type:walletInfo.type,
@@ -330,7 +332,7 @@ export class pioneerPrivateController extends Controller {
                 //build wallet info
                 walletInfo.masters = masters
                 //hydrate market data for all pubkeys
-                log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
+                log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
 
                 //
                 //get market data from markets
@@ -357,9 +359,10 @@ export class pioneerPrivateController extends Controller {
                     }
                 }
 
-                log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
+                log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
+                log.info(tag,"Checkpoint pre-build balances: (pre)")
                 let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, context)
-                log.info(tag,"responseMarkets: ",responseMarkets)
+                log.debug(tag,"responseMarkets: ",responseMarkets)
                 walletInfo.pubkeys = pubkeys
                 walletInfo.balances = responseMarkets.balances
                 walletInfo.totalValueUsd = responseMarkets.total
@@ -368,7 +371,7 @@ export class pioneerPrivateController extends Controller {
                 walletInfo.apps = await redis.smembers(username+":apps")
                 //Hydrate userInfo
                 let userInfoMongo = await usersDB.findOne({username})
-                log.info(tag,"userInfoMongo: ",userInfoMongo)
+                log.debug(tag,"userInfoMongo: ",userInfoMongo)
                 //migrations
                 if(!userInfoMongo) throw Error("102: unknown user! username: "+username)
                 if(!userInfoMongo.walletDescriptions) throw Error("Invalid user! missing walletDescriptions")
