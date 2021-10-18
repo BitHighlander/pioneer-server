@@ -197,6 +197,7 @@ export class atlasPublicController extends Controller {
             output.exchanges = {}
             output.exchanges.protocals = ['thorchain','0x','osmosis']
             output.exchanges.assets = []
+            output.exchanges.pools = pools
             for(let i = 0; i < pools.length; i++){
                 let pool = pools[i]
                 output.exchanges.assets.push(pool.chain)
@@ -270,9 +271,9 @@ export class atlasPublicController extends Controller {
             for(let i = 0; i < allMarketPairs.length; i++){
                 let pair = allMarketPairs[i]
                 log.info(tag,"pair: ",pair)
-                pair = pair.split("_")
-                let inputSymbol = pair[0]
-                let outputSymbol = pair[1]
+                let pairParts = pair.split("_")
+                let inputSymbol = pairParts[0]
+                let outputSymbol = pairParts[1]
                 let inputMarketInfo = normalizedMarketInfo.filter((e:any) => e.symbol === inputSymbol)
                 let outputMarketInfo = normalizedMarketInfo.filter((e:any) => e.symbol === outputSymbol)
                 if(inputMarketInfo && outputMarketInfo && inputMarketInfo[0] && outputMarketInfo[0]){
