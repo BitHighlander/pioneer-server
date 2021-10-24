@@ -64,7 +64,7 @@ export class pioneerInvocationController extends Controller {
      */
 
     @Post('/invoke')
-    public async invoke(@Header('Authorization') authorization: string, @Body() body: InvocationBody): Promise<any> {
+    public async invoke(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
         let tag = TAG + " | invocation | "
         try{
             log.info(tag,"body: ",body)

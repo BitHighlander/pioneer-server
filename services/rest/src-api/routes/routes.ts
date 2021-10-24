@@ -232,62 +232,6 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "Invocation": {
-        "dataType": "refObject",
-        "properties": {
-            "asset": {"dataType":"any","required":true},
-            "fee": {"dataType":"any","required":true},
-            "network": {"dataType":"string","required":true},
-            "context": {"dataType":"string","required":true},
-            "username": {"dataType":"string","required":true},
-            "type": {"dataType":"string"},
-            "noBroadcast": {"dataType":"boolean"},
-            "invocationId": {"dataType":"string"},
-            "inboundAddress": {"dataType":"any"},
-            "address": {"dataType":"string"},
-            "addressTo": {"dataType":"string"},
-            "validator": {"dataType":"string"},
-            "validatorOld": {"dataType":"string"},
-            "poolId": {"dataType":"string"},
-            "shareOutAmount": {"dataType":"string"},
-            "tokenInMaxs": {"dataType":"any"},
-            "memo": {"dataType":"string"},
-            "blockchain": {"dataType":"string"},
-            "routes": {"dataType":"any"},
-            "tokenIn": {"dataType":"any"},
-            "tokenOutMinAmount": {"dataType":"string"},
-            "coin": {"dataType":"string"},
-            "amount": {"dataType":"string"},
-            "token": {"dataType":"any"},
-            "sender": {"dataType":"string"},
-            "receiver": {"dataType":"string"},
-            "source_port": {"dataType":"string"},
-            "source_channel": {"dataType":"string"},
-            "timeout_height": {"dataType":"any"},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "InvocationBody": {
-        "dataType": "refObject",
-        "properties": {
-            "msg": {"dataType":"string"},
-            "context": {"dataType":"string","required":true},
-            "network": {"dataType":"string","required":true},
-            "type": {"dataType":"string","required":true},
-            "username": {"dataType":"string","required":true},
-            "invocation": {"ref":"Invocation","required":true},
-            "invocationId": {"dataType":"string"},
-            "auth": {"dataType":"string"},
-            "service": {"dataType":"string"},
-            "servicePubkey": {"dataType":"string"},
-            "serviceHash": {"dataType":"string"},
-            "appName": {"dataType":"string"},
-            "mode": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["sync"]},{"dataType":"enum","enums":["async"]}]},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 };
 const validationService = new ValidationService(models);
 
@@ -1769,7 +1713,7 @@ export function RegisterRoutes(app: express.Router) {
             function pioneerInvocationController_invoke(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
-                    body: {"in":"body","name":"body","required":true,"ref":"InvocationBody"},
+                    body: {"in":"body","name":"body","required":true,"dataType":"any"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa

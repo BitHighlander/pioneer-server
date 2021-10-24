@@ -260,6 +260,8 @@ subscriber.on('message', async function (channel, payloadS) {
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
                         pairing.type = "pairing"
+                        //get user context
+                        //let userInfo = await redis.hgetall()
                         globalSockets[socketid].emit('message', pairing);
                         log.info(tag,socketid+ " sending message to user! msg: ",pairing)
                     }

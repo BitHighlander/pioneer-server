@@ -13,7 +13,7 @@ const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/de
 const midgard = require("@pioneer-platform/midgard-client")
 
 let connection  = require("@pioneer-platform/default-mongo")
-
+const markets = require('@pioneer-platform/markets')
 let usersDB = connection.get('users')
 let pubkeysDB = connection.get('pubkeys')
 let txsDB = connection.get('transactions')
@@ -213,12 +213,12 @@ export class atlasPublicController extends Controller {
             }
 
             //get rate for every market
-            let markets = await redis.get('thorchain:markets')
-            if(!markets){
-                markets = await midgard.getPools()
-                redis.setex('thorchain:markets',400,JSON.stringify(markets))
+            let marketsCache = await redis.get('thorchain:markets')
+            if(!marketsCache){
+                marketsCache = await midgard.getPools()
+                redis.setex('thorchain:markets',400,JSON.stringify(marketsCache))
             } else {
-                markets = JSON.parse(markets)
+                marketsCache = JSON.parse(marketsCache)
             }
 
             let parseThorchainAssetString = function(input){
@@ -253,8 +253,8 @@ export class atlasPublicController extends Controller {
 
             //normalize market info
             let normalizedMarketInfo:any = []
-            for(let i = 0; i < markets.length; i++){
-                let market = markets[i]
+            for(let i = 0; i < marketsCache.length; i++){
+                let market = marketsCache[i]
                 log.info("market: ",market)
                 market.assetThorchain = market.asset
                 let assetParsed = parseThorchainAssetString(market.asset)
@@ -302,8 +302,30 @@ export class atlasPublicController extends Controller {
                     output.exchanges.markets.push(market)
                 }
             }
-
-
+            //TODO why did I move this here?
+            //get market data from markets
+            // let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+            // let marketCacheCoincap = await redis.get('markets:Coincap')
+            //
+            // if(!marketCacheCoinGecko){
+            //     let marketInfoCoinGecko = await markets.getAssetsCoingecko()
+            //     if(marketInfoCoinGecko){
+            //         //market info found for
+            //         marketInfoCoinGecko.updated = new Date().getTime()
+            //         redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+            //         marketCacheCoinGecko = marketInfoCoinGecko
+            //     }
+            // }
+            //
+            // if(!marketCacheCoincap){
+            //     let marketInfoCoincap = await markets.getAssetsCoincap()
+            //     if(marketInfoCoincap){
+            //         //market info found for
+            //         marketInfoCoincap.updated = new Date().getTime()
+            //         redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
+            //         marketCacheCoincap = marketInfoCoincap
+            //     }
+            // }
 
             //TODO osmosis status?
 
@@ -460,7 +482,16 @@ export class atlasPublicController extends Controller {
     }
 
     /**
-     *  get public user info
+
+     Status codes
+     ===============
+        -1: errored
+         0: unknown
+         1: built
+         2: broadcasted
+         3: confirmed
+         4: fullfilled (swap completed)
+
      * @param invocation
      */
     @Get('/invocation/{invocationId}')
@@ -470,6 +501,62 @@ export class atlasPublicController extends Controller {
             if(!invocationId) throw Error("102: invocationId required! ")
             let output = await invocationsDB.findOne({invocationId})
             log.info(tag,"invocation MONGO: ",output)
+
+            //if type is swap get blockchain info for fullfillment
+            if(output){
+                if(!output.isConfirmed){
+                    //get confirmation status
+                    if(UTXO_COINS.indexOf(output.network) >= 0){
+                        output = await networks['ANY'].getTransaction(output.network,output.signedTx.txid)
+                    } else {
+                        if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
+                        output = await networks[output.network].getTransaction(output.signedTx.txid)
+                    }
+
+                    if(output && output.txInfo && output.txInfo.blockNumber){
+                        log.info(tag,"Confirmed!")
+                        output.isConfirmed = true
+
+                        //update entry
+                        let mongoSave = await invocationsDB.update(
+                            {invocationId:output.invocationId},
+                            {$set:{isConfirmed:true}})
+                        output.resultUpdate = mongoSave
+                        //push event
+                        publisher.publish('invocationUpdate',JSON.stringify(output))
+                    }
+                }
+
+                if(output.type === 'swap' && output.isConfirmed && !output.isFullfilled){
+                    //txid
+
+                    let midgardInfo = midgard.getTransaction(output.signedTx.txid)
+
+                    if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
+                        let depositInfo = midgardInfo.actions[0].in
+                        log.info(tag,"deposit: ",depositInfo)
+
+                        let fullfillmentInfo = midgardInfo.actions[0]
+                        log.info(tag,"fullfillmentInfo: ",JSON.stringify(fullfillmentInfo))
+
+                        if(fullfillmentInfo.status === 'success'){
+                            log.info(tag,"fullfillmentInfo: ",fullfillmentInfo)
+                            log.info(tag,"fullfillmentInfo: ",fullfillmentInfo.out[0].txID)
+
+
+                            output.isFullfilled = true
+                            output.fullfillmentTxid = fullfillmentInfo.out[0].txID
+
+                            //
+                            let mongoSave = await invocationsDB.update(
+                                {invocationId:output.invocationId},
+                                {$set:{isFullfilled:true,fullfillmentTxid:output.fullfillmentTxid}})
+                            output.resultUpdateFullment = mongoSave
+                        }
+                    }
+                }
+            }
+
             if(!output){
                 output = {
                     error:true,
