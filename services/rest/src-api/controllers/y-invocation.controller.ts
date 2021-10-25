@@ -183,7 +183,7 @@ export class pioneerInvocationController extends Controller {
                 log.info(tag,"mongoSave: ",mongoSave)
 
             } else {
-                //not RBF aka new invocation
+                //not RBF / a new invocation
 
                 //validate
                 if(!body.invocation.fee) throw Error("104: invalid body missing fee ")

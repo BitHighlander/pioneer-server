@@ -503,17 +503,18 @@ export class atlasPublicController extends Controller {
             log.info(tag,"invocation MONGO: ",output)
 
             //if type is swap get blockchain info for fullfillment
-            if(output){
+            if(output && output.state === 'broadcasted'){
                 if(!output.isConfirmed){
                     //get confirmation status
+                    let txInfo
                     if(UTXO_COINS.indexOf(output.network) >= 0){
-                        output = await networks['ANY'].getTransaction(output.network,output.signedTx.txid)
+                        txInfo = await networks['ANY'].getTransaction(output.network,output.signedTx.txid)
                     } else {
                         if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
-                        output = await networks[output.network].getTransaction(output.signedTx.txid)
+                        txInfo = await networks[output.network].getTransaction(output.signedTx.txid)
                     }
 
-                    if(output && output.txInfo && output.txInfo.blockNumber){
+                    if(txInfo && txInfo.txInfo && txInfo.txInfo.blockNumber){
                         log.info(tag,"Confirmed!")
                         output.isConfirmed = true
 
@@ -529,8 +530,9 @@ export class atlasPublicController extends Controller {
 
                 if(output.type === 'swap' && output.isConfirmed && !output.isFullfilled){
                     //txid
-
-                    let midgardInfo = midgard.getTransaction(output.signedTx.txid)
+                    log.info(tag,"output.signedTx.txid: ",output.signedTx.txid)
+                    let midgardInfo = await midgard.getTransaction(output.signedTx.txid)
+                    log.info(tag,"midgardInfo: ",midgardInfo)
 
                     if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
                         let depositInfo = midgardInfo.actions[0].in
@@ -553,6 +555,8 @@ export class atlasPublicController extends Controller {
                                 {$set:{isFullfilled:true,fullfillmentTxid:output.fullfillmentTxid}})
                             output.resultUpdateFullment = mongoSave
                         }
+                    } else {
+                        log.info(tag,"not fullfilled!")
                     }
                 }
             }
@@ -563,6 +567,7 @@ export class atlasPublicController extends Controller {
                     message:"No invocation found with ID: "+invocationId
                 }
             }
+            log.info("output: ",output)
             return(output)
         }catch(e){
             let errorResp:Error = {
@@ -1494,67 +1499,96 @@ export class atlasPublicController extends Controller {
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{state:'broadcasted'}})
                 log.info(tag,"invocation updateResult: ",updateResult)
             } else {
-                log.info(tag,"No invocationId on body.")
+                log.error(tag,"No invocationId on body.")
+                throw Error('invocationId required!')
             }
 
             //broadcast
             if(!body.noBroadcast){
+                log.info(tag,"broadcasting!")
                 let result
-                if(network === 'EOS'){
-                    throw Error("103: EOS not finished!")
-                    //result = await networks[network].broadcast(body.broadcastBody)
-                } else if(network === 'FIO'){
-                    let broadcast = {
-                        signatures:
-                            [ body.signature ],
-                        compression: "none",
-                        packed_context_free_data: '',
-                        packed_trx:
-                        body.serialized
-                    }
-                    if(!body.type) {
-                        log.error(tag,"invalid payload!: ",broadcast)
-                        throw Error("Fio txs require type!")
+                try{
+                    if(network === 'EOS'){
+                        throw Error("103: EOS not finished!")
+                        //result = await networks[network].broadcast(body.broadcastBody)
+                    } else if(network === 'FIO'){
+                        let broadcast = {
+                            signatures:
+                                [ body.signature ],
+                            compression: "none",
+                            packed_context_free_data: '',
+                            packed_trx:
+                            body.serialized
+                        }
+                        if(!body.type) {
+                            log.error(tag,"invalid payload!: ",broadcast)
+                            throw Error("Fio txs require type!")
+                        }
+
+                        //broadcast based on tx
+                        switch(body.type) {
+                            case "fioSignAddPubAddressTx":
+                                log.info(tag,"checkpoint: fioSignAddPubAddressTx ")
+                                log.info(tag,"broadcast: ",broadcast)
+                                result = await networks[network].broadcastAddPubAddressTx(broadcast)
+                                break;
+                            case "fioSignRegisterDomainTx":
+                                //TODO
+                                break;
+                            case "fioSignRegisterFioAddressTx":
+                                //TODO
+                                break;
+                            case "fioSignNewFundsRequestTx":
+                                log.info(tag,"checkpoint: broadcastNewFundsRequestTx ")
+                                log.info(tag,"broadcast: ",broadcast)
+                                result = await networks[network].broadcastNewFundsRequestTx(broadcast)
+                                break;
+                            default:
+                                throw Error("Type not supported! "+body.type)
+                        }
+                    } else if(UTXO_COINS.indexOf(network) >= 0){
+                        //normal broadcast
+                        await networks.ANY.init('full')
+                        try{
+                            result = await networks['ANY'].broadcast(network,body.serialized)
+                        }catch(e){
+                            result = {
+                                error:true,
+                                errorMsg: e.toString()
+                            }
+                        }
+                    } else {
+                        //All over coins
+                        //normal broadcast
+                        await networks[network].init()
+                        try{
+                            result = await networks[network].broadcast(body.serialized)
+                        }catch(e){
+                            result = {
+                                error:true,
+                                errorMsg: e.toString()
+                            }
+                        }
                     }
 
-                    //broadcast based on tx
-                    switch(body.type) {
-                        case "fioSignAddPubAddressTx":
-                            log.info(tag,"checkpoint: fioSignAddPubAddressTx ")
-                            log.info(tag,"broadcast: ",broadcast)
-                            result = await networks[network].broadcastAddPubAddressTx(broadcast)
-                            break;
-                        case "fioSignRegisterDomainTx":
-                            //TODO
-                            break;
-                        case "fioSignRegisterFioAddressTx":
-                            //TODO
-                            break;
-                        case "fioSignNewFundsRequestTx":
-                            log.info(tag,"checkpoint: broadcastNewFundsRequestTx ")
-                            log.info(tag,"broadcast: ",broadcast)
-                            result = await networks[network].broadcastNewFundsRequestTx(broadcast)
-                            break;
-                        default:
-                            throw Error("Type not supported! "+body.type)
-                    }
-                } else if(UTXO_COINS.indexOf(network) >= 0){
-                    //normal broadcast
-                    await networks.ANY.init('full')
-                    result = await networks['ANY'].broadcast(network,body.serialized)
-                } else {
-                    //All over coins
-                    //normal broadcast
-                    await networks[network].init()
-                    result = await networks[network].broadcast(body.serialized)
+
+                }catch(e){
+                    result.error = true
+                    result.errorMsg = e.toString()
                 }
-
-                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:result}})
+                let resultSave:any = {}
+                resultSave.success = true
+                resultSave.broadcast = true
+                resultSave.result = result
+                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:resultSave}})
                 log.info(tag,"updateResult: ",updateResult)
             } else {
+                log.info(tag,"Not broadcasting!")
                 result.success = true
                 result.broadcast = false
                 //result = body.invocationId
+                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:{noBroadCast:true}}})
+                log.info(tag,"updateResult: ",updateResult)
             }
 
             let mongoEntry:any = body
