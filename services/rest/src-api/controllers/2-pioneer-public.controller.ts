@@ -101,7 +101,34 @@ let {
     COIN_MAP_LONG
 } = require('@pioneer-platform/pioneer-coins')
 
-
+const parseThorchainAssetString = function(input:string){
+    try{
+        let parts = input.split(".")
+        let network = parts[0]
+        let asset
+        let symbol
+        let contract
+        if(parts[1].indexOf("-") >= 0){
+            //is Token
+            let parts2 = parts[1].split("-")
+            contract = parts2[1]
+            asset = parts2[0]
+            symbol = parts2[0]
+        }else{
+            //is Native asset
+            asset = parts[0]
+            symbol = parts[0]
+        }
+        return {
+            asset,
+            symbol,
+            network,
+            contract
+        }
+    }catch(e){
+        log.error(e)
+    }
+}
 
 const getPermutations = function(list, maxLen) {
     // Copy initial values as arrays
@@ -193,14 +220,18 @@ export class atlasPublicController extends Controller {
             //markets
 
             let output:any = {}
-            output.thorchain = []
+            output.protocals = ['thorchain','0x','osmosis']
             output.exchanges = {}
-            output.exchanges.protocals = ['thorchain','0x','osmosis']
-            output.exchanges.assets = []
-            output.exchanges.pools = pools
+            output.exchanges.thorchain = {}
+            output.exchanges.thorchain.status = []
+            output.exchanges.thorchain.markets = []
+            output.exchanges.thorchain.assets = []
+            output.exchanges.thorchain.pools = pools
+
+
             for(let i = 0; i < pools.length; i++){
                 let pool = pools[i]
-                output.exchanges.assets.push(pool.chain)
+                output.exchanges.thorchain.assets.push(pool.chain)
                 let entry:any = {
                     blockchain:COIN_MAP_LONG[pool.chain].toLowerCase(),
                 }
@@ -209,7 +240,7 @@ export class atlasPublicController extends Controller {
                 } else {
                     entry.online = false
                 }
-                output.thorchain.push(entry)
+                output.exchanges.thorchain.status.push(entry)
             }
 
             //get rate for every market
@@ -220,36 +251,6 @@ export class atlasPublicController extends Controller {
             } else {
                 marketsCache = JSON.parse(marketsCache)
             }
-
-            let parseThorchainAssetString = function(input){
-                try{
-                    let parts = input.split(".")
-                    let network = parts[0]
-                    let asset
-                    let symbol
-                    let contract
-                    if(parts[1].indexOf("-") >= 0){
-                        //is Token
-                        let parts2 = parts[1].split("-")
-                        contract = parts2[1]
-                        asset = parts2[0]
-                        symbol = parts2[0]
-                    }else{
-                        //is Native asset
-                        asset = parts[0]
-                        symbol = parts[0]
-                    }
-                    return {
-                        asset,
-                        symbol,
-                        network,
-                        contract
-                    }
-                }catch(e){
-                    log.error(e)
-                }
-            }
-            log.info("markets: ",markets)
 
             //normalize market info
             let normalizedMarketInfo:any = []
@@ -263,10 +264,9 @@ export class atlasPublicController extends Controller {
             }
 
             //add tokens and pairs to exchange map
-            let allMarketPairs = getPermutations(output.exchanges.assets,2)
+            let allMarketPairs = getPermutations(output.exchanges.thorchain.assets,2)
 
             //iterate over markets
-            output.exchanges.markets = []
             log.info("normalizedMarketInfo: ",normalizedMarketInfo)
             for(let i = 0; i < allMarketPairs.length; i++){
                 let pair = allMarketPairs[i]
@@ -299,35 +299,51 @@ export class atlasPublicController extends Controller {
                         pair,
                         rate
                     }
-                    output.exchanges.markets.push(market)
+                    output.exchanges.thorchain.markets.push(market)
                 }
             }
-            //TODO why did I move this here?
-            //get market data from markets
-            // let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-            // let marketCacheCoincap = await redis.get('markets:Coincap')
-            //
-            // if(!marketCacheCoinGecko){
-            //     let marketInfoCoinGecko = await markets.getAssetsCoingecko()
-            //     if(marketInfoCoinGecko){
-            //         //market info found for
-            //         marketInfoCoinGecko.updated = new Date().getTime()
-            //         redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
-            //         marketCacheCoinGecko = marketInfoCoinGecko
-            //     }
-            // }
-            //
-            // if(!marketCacheCoincap){
-            //     let marketInfoCoincap = await markets.getAssetsCoincap()
-            //     if(marketInfoCoincap){
-            //         //market info found for
-            //         marketInfoCoincap.updated = new Date().getTime()
-            //         redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
-            //         marketCacheCoincap = marketInfoCoincap
-            //     }
-            // }
 
-            //TODO osmosis status?
+            //osmo
+            if(networks['OSMO']){
+                let poolsOsmosis = await redis.get('osmosis:pools')
+                if(!pools){
+                    poolsOsmosis = await networks['OSMO'].getPools()
+                    redis.setex('osmosis:pools',400,JSON.stringify(poolsOsmosis))
+                } else {
+                    poolsOsmosis = JSON.parse(poolsOsmosis)
+                }
+                log.info(tag,"poolsOsmosis: ",poolsOsmosis)
+                output.exchanges.osmosis = {}
+                output.exchanges.thorchain.status = []
+                output.exchanges.osmosis.markets = []
+                output.exchanges.osmosis.assets = ['OSMO','ATOM']
+                output.exchanges.osmosis.pools = poolsOsmosis
+
+                //force 1 market OSMO_ATOM
+                let market = {
+                    protocal:'osmosis',
+                    pair:"OSMO_ATOM",
+                    rate: '7.036'
+                }
+                output.exchanges.osmosis.markets.push(market)
+
+                //TODO calulateMe pools/permutations/rates
+                // for(let i = 0; i < poolsOsmosis.length; i++){
+                //     let pool = poolsOsmosis[i]
+                //     //get price
+                //     let amountBase = pool.poolAssets[0].token.amount
+                //     let amountQuote = pool.poolAssets[1].token.amount
+                //     let rate = amountBase / amountQuote
+                //     let pair = pool.poolAssets[0].token.denom + "_" + pool.poolAssets[1].token.denom
+                //     let market = {
+                //         protocal:'osmosis',
+                //         pair,
+                //         rate
+                //     }
+                //     output.exchanges.osmosis.markets.push(market)
+                // }
+            }
+
 
             //TODO 0x assets/including tokens?
 
@@ -503,7 +519,7 @@ export class atlasPublicController extends Controller {
             log.info(tag,"invocation MONGO: ",output)
 
             //if type is swap get blockchain info for fullfillment
-            if(output && output.state === 'broadcasted'){
+            if(output && output.state === 'broadcasted' && output.network === 'ETH'){
                 if(!output.isConfirmed){
                     //get confirmation status
                     let txInfo
