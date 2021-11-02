@@ -49,29 +49,29 @@ let do_work = async function(){
 
         //all work
         let allWork = await queue.count(ASSET+":transaction:queue:ingest:"+PRIORITY)
-        if(allWork > 0)log.info(tag,"allWork: ",allWork)
+        if(allWork > 0)log.debug(tag,"allWork: ",allWork)
         metrics.gauge(ASSET+'.txQueue', allWork);
 
         let timeStart = new Date().getTime()
-        log.info(tag,"timeStart: ",timeStart)
+        log.debug(tag,"timeStart: ",timeStart)
         let work = await queue.getWork(ASSET+":transaction:queue:ingest:"+PRIORITY,60)
 
         if(work){
-            log.info(tag,"work: ",work)
+            log.debug(tag,"work: ",work)
 
             if(!work.txid) throw Error("invalid work! missing txid")
 
             let txid = work.txid
-            log.info("unknown tx! looking up info! txid: ",txid)
+            log.debug("unknown tx! looking up info! txid: ",txid)
 
             //new tx
             let txInfo = await network.getTransaction(txid)
             if(!txInfo.txInfo.to) throw Error("Failed to get transaction info!")
-            log.info("txInfo: ",txInfo)
+            log.debug("txInfo: ",txInfo)
 
             let addressInfo
             if(txInfo.txInfo && txInfo.txInfo.to) addressInfo = await redis.hgetall(txInfo.txInfo.to)
-            log.info("addressInfo: ",addressInfo)
+            log.debug("addressInfo: ",addressInfo)
             //if
             if(addressInfo){
                 //known
@@ -80,17 +80,17 @@ let do_work = async function(){
                 if(addressInfo.type === 'contract' && txInfo.receipt){
                     //audit
                     let auditResult = await audit.auditReceipt(addressInfo.username,txInfo.receipt)
-                    log.info("auditResult: ",auditResult)
+                    log.debug("auditResult: ",auditResult)
 
                     //save result to mongo
                     if(auditResult.Type === 'streamCreate'){
                         let successMongo = await txsDB.insert(auditResult)
-                        log.info("successMongo: ",successMongo)
+                        log.debug("successMongo: ",successMongo)
                     }
                 }
             }else{
                 //ignore (un-tracked mempool)
-                log.info("Untracted address (ignore): ",addressInfo)
+                log.debug("Untracted address (ignore): ",addressInfo)
             }
         }
 
@@ -104,5 +104,5 @@ let do_work = async function(){
 }
 
 //start working on install
-log.info(TAG," worker started! ","")
+log.debug(TAG," worker started! ","")
 do_work()

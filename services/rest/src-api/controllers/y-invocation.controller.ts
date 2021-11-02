@@ -67,7 +67,7 @@ export class pioneerInvocationController extends Controller {
     public async invoke(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
         let tag = TAG + " | invocation | "
         try{
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
             if(!body.network) throw Error("102: invalid invocation! network required!")
             let output:any = {}
             //mode
@@ -82,8 +82,8 @@ export class pioneerInvocationController extends Controller {
 
             //is user online?
             let onlineUsers = await redis.smembers("online")
-            log.info(tag,"onlineUsers: ",onlineUsers)
-            log.info(tag,"username: ",body.username)
+            log.debug(tag,"onlineUsers: ",onlineUsers)
+            log.debug(tag,"username: ",body.username)
 
             //else
             //does user exist?
@@ -155,7 +155,7 @@ export class pioneerInvocationController extends Controller {
                 //get invocation from mongo
                 let invocationInfo = await invocationsDB.findOne({invocationId:body.invocationId})
                 if(!invocationInfo) throw Error("103: unable to find invocationId: "+body.invocationId)
-                log.info(tag,"invocationInfo: ",invocationInfo)
+                log.debug(tag,"invocationInfo: ",invocationInfo)
 
                 //move signed to "replaced"
                 invocationInfo.replaced = []
@@ -180,7 +180,7 @@ export class pioneerInvocationController extends Controller {
                 let mongoSave = await invocationsDB.update(
                     {invocationId:body.invocationId},
                     {$set:{unsignedTx:invocationInfo.unsignedTx,state:'replaced',signed:null}})
-                log.info(tag,"mongoSave: ",mongoSave)
+                log.debug(tag,"mongoSave: ",mongoSave)
 
             } else {
                 //not RBF / a new invocation
@@ -287,9 +287,9 @@ export class pioneerInvocationController extends Controller {
                 //TODO sequence
                 //only accept 1 per username
                 //save to mongo
-                log.info(tag,"Creating invocation to save: ",entry)
+                log.debug(tag,"Creating invocation to save: ",entry)
                 let mongoSave = await invocationsDB.insert(entry)
-                log.info(tag,"mongoSave: ",mongoSave)
+                log.debug(tag,"mongoSave: ",mongoSave)
             }
 
             //build invocation
@@ -306,12 +306,12 @@ export class pioneerInvocationController extends Controller {
                 if(mode === 'sync'){
                     // :( but this was cool
                     //block till confirmation
-                    log.info(tag," STARTING BLOCKING INVOKE id: ",invocationId)
+                    log.debug(tag," STARTING BLOCKING INVOKE id: ",invocationId)
                     let timeStart = new Date().getTime()
 
                     let txid = await redisQueue.blpop(invocationId,BLOCKING_TIMEOUT_INVOCATION)
                     let timeEnd = new Date().getTime()
-                    log.info(tag," END BLOCKING INVOKE T: ",(timeEnd - timeStart)/1000)
+                    log.debug(tag," END BLOCKING INVOKE T: ",(timeEnd - timeStart)/1000)
 
                     //if
                     if(!txid[1]) throw Error("Failed to broadcast! timeout!")
@@ -325,7 +325,7 @@ export class pioneerInvocationController extends Controller {
                 }
 
             } else {
-                output.invocationId = invocationId
+                output.success = false
                 output.msg = "User is offline! username:"+body.invocation.username
             }
 

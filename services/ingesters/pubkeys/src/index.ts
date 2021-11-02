@@ -93,7 +93,7 @@ let do_work = async function(){
             setTimeout(release,1000)
             //note: this will still update cache on slow coins. but accepts a 0
 
-            log.info("work: ",work)
+            log.debug("work: ",work)
             if(!work.symbol && work.asset) work.symbol = work.asset
             if(!work.type && work.address) work.type = "address"
             if(!work.walletId) throw Error("100: invalid work! missing walletId")
@@ -114,7 +114,7 @@ let do_work = async function(){
 
                 //get balance
                 let balance = await blockbook.getBalanceByXpub(work.symbol,work.pubkey)
-                log.info(tag,work.username + " Balance ("+work.symbol+"): ",balance)
+                log.debug(tag,work.username + " Balance ("+work.symbol+"): ",balance)
 
                 balances.push({
                     network:work.symbol,
@@ -127,14 +127,14 @@ let do_work = async function(){
                 //update balance cache
                 let updateResult = await redis.hset(work.username+":assets:"+work.walletId,work.symbol,balance)
                 if(updateResult) push_balance_event(work,balance)
-                log.info(tag,"updateResult: ",updateResult)
+                log.debug(tag,"updateResult: ",updateResult)
 
                 //TODO if change push new balance over socket to user
 
                 //TODO if BCH get slp tokens
 
             } else if(work.type === "address") {
-                log.info(tag,"address ingestion")
+                log.debug(tag,"address ingestion")
                 // if ETH get tokens
                 if(work.symbol === 'ETH'){
                     //if eth use master
@@ -144,7 +144,7 @@ let do_work = async function(){
 
                     // get ethPlorer list
                     let ethInfo = await networks['ETH'].getBalanceTokens(work.pubkey)
-                    log.info(tag,"ethInfo: ",ethInfo)
+                    log.debug(tag,"ethInfo: ",ethInfo)
 
                     //forEach
                     // let tokens = Object.keys(ethInfo.balances)
@@ -153,8 +153,8 @@ let do_work = async function(){
                     //         let token = tokens[i]
                     //         let balance = ethInfo.balances[token]
                     //         if(token !== 'ETH' && token){
-                    //             log.info("token: ",token)
-                    //             log.info("token info: ",ethInfo.coinInfo[token])
+                    //             log.debug("token: ",token)
+                    //             log.debug("token info: ",ethInfo.coinInfo[token])
                     //             let tokenInfo = ethInfo.coinInfo[token]
                     //             let balanceInfo:any = {
                     //                 network:"ETH",
@@ -178,12 +178,12 @@ let do_work = async function(){
 
                     //blockbookInfo
                     let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
-                    log.info(tag,'blockbookInfo: ',blockbookInfo)
+                    log.debug(tag,'blockbookInfo: ',blockbookInfo)
                     if(blockbookInfo.tokens){
                         for(let i = 0; i < blockbookInfo.tokens.length; i++){
                             let tokenInfo = blockbookInfo.tokens[i]
                             if(tokenInfo.symbol && tokenInfo.symbol !== 'ETH'){
-                                log.info("tokenInfo.symbol: ",tokenInfo.symbol)
+                                log.debug("tokenInfo.symbol: ",tokenInfo.symbol)
                                 let balanceInfo:any = {
                                     network:"ETH",
                                     type:tokenInfo.type,
@@ -219,17 +219,17 @@ let do_work = async function(){
                                 let page = i
                                 let isNotScanned = await redis.sadd(work.pubkey+":blockbook:ETH:info","page:"+page)
                                 if(isNotScanned || FORCE_RESCAN){
-                                    log.info(tag,"page: ",page)
+                                    log.debug(tag,"page: ",page)
                                     let blockbookInfoPage = await blockbook.txidsByAddress('ETH',work.pubkey,page)
-                                    log.info(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
+                                    log.debug(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
                                     await sleep(10000)
                                     for(let j = 0; j < blockbookInfoPage.txids.length; j++){
-                                        log.info(tag,"page: "+page+ " txid: ",blockbookInfoPage.txids[j])
+                                        log.debug(tag,"page: "+page+ " txid: ",blockbookInfoPage.txids[j])
                                         let work = {
                                             txid:blockbookInfoPage.txids[j],
                                             network:'ETH'
                                         }
-                                        //log.info(tag,'work: ',work)
+                                        //log.debug(tag,'work: ',work)
                                         let isUnknownTxid = await redis.sadd("cache:txid:",work.txid)
                                         if(isUnknownTxid || FORCE_RESCAN) await queue.createWork("ETH:transaction:queue:ingest:HIGH",work)
                                     }
@@ -237,7 +237,7 @@ let do_work = async function(){
                             }
                         } else {
                             for(let i = 0; i < blockbookInfo.txids.length; i++){
-                                log.info(tag,"txid: ",blockbookInfo.txids[i])
+                                log.debug(tag,"txid: ",blockbookInfo.txids[i])
                                 let work = {
                                     txid:blockbookInfo.txids[i],
                                     network:'ETH'
@@ -284,9 +284,9 @@ let do_work = async function(){
                 //get balance
                 if(!networks[work.symbol] || !networks[work.symbol].getBalance) throw Error("102: coin not supported! "+work.symbol)
 
-                log.info(tag,"getBalance: ")
+                log.debug(tag,"getBalance: ")
                 let balance = await networks[work.symbol].getBalance(work.pubkey)
-                log.info(tag,"balance: ",balance)
+                log.debug(tag,"balance: ",balance)
 
                 balances.push({
                     network:work.symbol,
@@ -307,7 +307,7 @@ let do_work = async function(){
                 //TODO non ETH network contracts
                 //blockbookInfo
                 let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
-                log.info(tag,'blockbookInfo: ',blockbookInfo)
+                log.debug(tag,'blockbookInfo: ',blockbookInfo)
 
                 for(let i = 0; i < blockbookInfo.txids.length; i++){
                     let work = {
@@ -320,9 +320,9 @@ let do_work = async function(){
                 if(blockbookInfo.totalPages > 1){
                     for(let i = 0; i <= blockbookInfo.totalPages; i++ ){
                         let page = i
-                        log.info(tag,"page: ",page)
+                        log.debug(tag,"page: ",page)
                         let blockbookInfoPage = await blockbook.getAddressInfo('ETH',work.pubkey,page)
-                        log.info(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
+                        log.debug(tag,'blockbookInfoPage: ',blockbookInfoPage.page)
                         for(let j = 0; j < blockbookInfo.txids.length; j++){
                             let work = {
                                 txid:blockbookInfo.txids[j],
@@ -338,7 +338,7 @@ let do_work = async function(){
                 log.error(work)
             }
 
-            log.info(tag,"balances: ",balances)
+            log.debug(tag,"balances: ",balances)
 
             let pubkeyInfo = await pubkeysDB.findOne({pubkey:work.pubkey})
             if(!pubkeyInfo || !pubkeyInfo.balances) {
@@ -346,8 +346,8 @@ let do_work = async function(){
                     balances: []
                 }
             }
-            log.info(tag,"pubkeyInfo: ",pubkeyInfo)
-            log.info(tag,"pubkeyInfo: ",pubkeyInfo.balances)
+            log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
+            log.debug(tag,"pubkeyInfo: ",pubkeyInfo.balances)
             let saveActions = []
 
             //push update
@@ -361,13 +361,13 @@ let do_work = async function(){
 
                 //find balance with symbol
                 let balanceMongo = pubkeyInfo.balances.filter((e:any) => e.symbol === balance.symbol)
-                log.info(tag,"balanceMongo: ",balanceMongo)
+                log.debug(tag,"balanceMongo: ",balanceMongo)
 
                 //if update
                 if(balanceMongo.length > 0){
                     //if value is diff
-                    log.info(tag,"balanceMongo: ",balanceMongo[0])
-                    log.info(tag,"balance: ",balance)
+                    log.debug(tag,"balanceMongo: ",balanceMongo[0])
+                    log.debug(tag,"balance: ",balance)
                     //TODO verify this actually works
                     if(balanceMongo[0].balance !== balance.balance){
                         //TODO events
@@ -389,9 +389,9 @@ let do_work = async function(){
             }
 
             if(saveActions.length > 0){
-                log.info(tag,"saveActions: ",saveActions)
+                log.debug(tag,"saveActions: ",saveActions)
                 let updateSuccess = await pubkeysDB.bulkWrite(saveActions,{ordered:false})
-                log.info(tag,"updateSuccess: ",updateSuccess)
+                log.debug(tag,"updateSuccess: ",updateSuccess)
             }
 
 
@@ -415,5 +415,5 @@ let do_work = async function(){
 }
 
 //start working on install
-log.info(TAG," worker started! ","")
+log.debug(TAG," worker started! ","")
 do_work()

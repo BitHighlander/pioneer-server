@@ -36,5 +36,5 @@ const check_liveness = async function(){
         process.exit(1)
     }
 }
-log.info(TAG," check isReady begin!")
+log.debug(TAG," check isReady begin!")
 check_liveness()

@@ -68,16 +68,51 @@ let ASSET = "ETH"
 // }
 
 let work = {
-    symbol: 'ETH',
-    asset: 'ETH',
-    blockchain: "ethereum",
+    pubkey: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
+    username: 'test-user-2',
+    blockchain: 'thorchain',
+    symbol: 'RUNE',
+    asset: 'RUNE',
     walletId: 'keepkey-pubkeys-343733331147363327003800',
     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-    type:"address",
-    username: 'test-user-2',
-    pubkey: "0xc3affff54122658b89c31183cec4f15514f34624",
-    inserted: 1594510142838
+    path: "m/44'/931'/0'/0/0",
+    script_type: 'thorchain',
+    network: 'RUNE',
+    created: 1635633471760,
+    tags: [
+        'keepkey:user:keepkey',
+        'thorchain',
+        'RUNE',
+        'thorchain',
+        'keepkey',
+        'kk-test-3800',
+        'keepkey-pubkeys-343733331147363327003800',
+        'keepkey:user:keepkey-pubkeys-343733331147363327003800'
+    ],
+    master: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
+    address: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
+    context: 'keepkey-pubkeys-343733331147363327003800',
+    isToken: false,
+    lastUpdated: 1635633696647,
+    balance: 0,
+    source: 'network',
+    priceUsd: '0',
+    valueUsd: '0',
+    onCoincap: false,
+    image: 'https://static.coincap.io/assets/icons/rune@2x.png'
 }
+
+// let work = {
+//     symbol: 'ETH',
+//     asset: 'ETH',
+//     blockchain: "ethereum",
+//     walletId: 'keepkey-pubkeys-343733331147363327003800',
+//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+//     type:"address",
+//     username: 'test-user-2',
+//     pubkey: "0xc3affff54122658b89c31183cec4f15514f34624",
+//     inserted: 1594510142838
+// }
 
 
 // let work = {

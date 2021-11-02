@@ -86,7 +86,7 @@ const get_transactions = async function(txids:any){
             }
             actions.push(action)
         }
-        //log.info(tag,"actions: ",actions)
+        //log.debug(tag,"actions: ",actions)
         let result:any = await rpcCallBatch(actions)
 
         //covert
@@ -151,7 +151,7 @@ let do_work = async function(){
 
         //all work
         let allWork = await queue.count(ASSET+":transaction:queue:ingest:HIGH")
-        if(allWork > 0)log.info(tag,"allWork: ",allWork)
+        if(allWork > 0)log.debug(tag,"allWork: ",allWork)
         metrics.gauge(ASSET+'.txQueue', allWork);
 
         let timeStart = new Date().getTime()
@@ -198,12 +198,12 @@ let do_work = async function(){
                 if(!txInfo.txInfo) {
                     log.error(tag,"invalid txInfo: ",txInfo)
                 }
-                //log.info("txInfo: ",txInfo)
+                //log.debug("txInfo: ",txInfo)
 
 
                 let addressInfo
                 if(txInfo.txInfo && txInfo.txInfo.to) addressInfo = await redis.hgetall(txInfo.txInfo.to)
-                log.info("txInfo.txInfo.to: ",txInfo.txInfo.to, ' logs: ',txInfo?.receipt?.logs.length)
+                log.debug("txInfo.txInfo.to: ",txInfo.txInfo.to, ' logs: ',txInfo?.receipt?.logs.length)
 
                 //if known
                 if(addressInfo){
@@ -219,8 +219,8 @@ let do_work = async function(){
 
                             let auditResult = await audit.auditReceipt(addressInfo.username,txInfo.receipt)
                             if(auditResult.Type === 'streamCreate'){
-                                log.info("WINNING! *********** ")
-                                log.info("auditResult.events: ",auditResult.events[0].stream.saleryId)
+                                log.debug("WINNING! *********** ")
+                                log.debug("auditResult.events: ",auditResult.events[0].stream.saleryId)
 
                                 //save result to mongo
                                 saveActions.push({insertOne:auditResult})
@@ -228,21 +228,21 @@ let do_work = async function(){
 
                         }catch(e){
                             //TODO failed to audit deadletter
-                            log.info(tag,"Failed work:",e)
+                            log.debug(tag,"Failed work:",e)
                         }
                     }
                 }else{
                     //ignore (un-tracked mempool)
-                    log.info("Untracted address (ignore): ",addressInfo)
+                    log.debug("Untracted address (ignore): ",addressInfo)
                 }
             }
 
             if(saveActions.length > 0){
                 try{
                     let resultSaveDB = await txsDB.bulkWrite(saveActions,{ordered:false})
-                    log.info("resultSaveDB: ",resultSaveDB)
+                    log.debug("resultSaveDB: ",resultSaveDB)
                 }catch(e){
-                    log.info("resultSaveDB (error): ",e)
+                    log.debug("resultSaveDB (error): ",e)
                 }
             }
 
@@ -262,5 +262,5 @@ let do_work = async function(){
 }
 
 //start working on install
-log.info(TAG," worker started! ","")
+log.debug(TAG," worker started! ","")
 do_work()

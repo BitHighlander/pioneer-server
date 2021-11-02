@@ -79,7 +79,7 @@ export class pioneerPublicController extends Controller {
     public async chart(@Body() body: Chart): Promise<any> {
         let tag = TAG + " | pushTx | "
         try{
-            log.info(tag,"mempool tx: ",body)
+            log.debug(tag,"mempool tx: ",body)
             let output:any = {}
             //create queueId
             let queueId = uuid.generate()

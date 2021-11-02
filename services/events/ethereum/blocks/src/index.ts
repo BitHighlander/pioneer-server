@@ -34,7 +34,7 @@ let lastBlock:any
 const subscription = web3.eth.subscribe('newBlockHeaders', async (error:any, blockHeader:any) => {
     if (error) return console.error(error);
     lastBlock = new Date().getTime()
-    log.info(TAG,'ETH BLOCK:', blockHeader.number);
+    log.debug(TAG,'ETH BLOCK:', blockHeader.number);
 
     //force atomic
     let success = await redis.zadd(ASSET+':blocks:scanned',parseInt(blockHeader.number),blockHeader.hash)
@@ -54,7 +54,7 @@ const subscription = web3.eth.subscribe('newBlockHeaders', async (error:any, blo
         event.height = payload.height
         event.payload = payload
         publisher.publish('blocks',JSON.stringify(event))
-        log.info(TAG,"Saving block to queue! height: ",payload.height)
+        log.debug(TAG,"Saving block to queue! height: ",payload.height)
         queue.createWork(ASSET+":queue:block:ingest:high",{coin:ASSET,height:blockHeader.number,hash:blockHeader.hash})
         redis.hset("blockHeights","ETH",blockHeader.number)
     }
@@ -91,4 +91,4 @@ let checkIfStuck = function(){
 }
 
 setInterval(checkIfStuck,3000)
-log.info(TAG," Worker Started!", "")
+log.debug(TAG," Worker Started!", "")

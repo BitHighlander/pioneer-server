@@ -77,7 +77,8 @@ if(process.env['FEATURE_OSMOSIS_BLOCKCHAIN']){
 }
 
 //Cache time
-let CACHE_TIME = 1000 * 60 * 1
+let CACHE_TIME = process.env['CACHE_EXPIRE_TIME'] || 99999999
+if(typeof(CACHE_TIME) === 'string') CACHE_TIME = parseInt(CACHE_TIME)
 let CACHE_OVERRIDE = true
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
@@ -212,7 +213,7 @@ export class atlasPublicController extends Controller {
             let pools = await redis.get('thorchain:pools')
             if(!pools){
                 pools = await midgard.getPoolAddress()
-                redis.setex('thorchain:pools',400,JSON.stringify(pools))
+                redis.setex('thorchain:pools',CACHE_TIME,JSON.stringify(pools))
             } else {
                 pools = JSON.parse(pools)
             }
@@ -247,7 +248,7 @@ export class atlasPublicController extends Controller {
             let marketsCache = await redis.get('thorchain:markets')
             if(!marketsCache){
                 marketsCache = await midgard.getPools()
-                redis.setex('thorchain:markets',400,JSON.stringify(marketsCache))
+                redis.setex('thorchain:markets',CACHE_TIME,JSON.stringify(marketsCache))
             } else {
                 marketsCache = JSON.parse(marketsCache)
             }
@@ -256,7 +257,7 @@ export class atlasPublicController extends Controller {
             let normalizedMarketInfo:any = []
             for(let i = 0; i < marketsCache.length; i++){
                 let market = marketsCache[i]
-                log.info("market: ",market)
+                log.debug("market: ",market)
                 market.assetThorchain = market.asset
                 let assetParsed = parseThorchainAssetString(market.asset)
                 let normalized = {...assetParsed,...market}
@@ -267,10 +268,10 @@ export class atlasPublicController extends Controller {
             let allMarketPairs = getPermutations(output.exchanges.thorchain.assets,2)
 
             //iterate over markets
-            log.info("normalizedMarketInfo: ",normalizedMarketInfo)
+            log.debug("normalizedMarketInfo: ",normalizedMarketInfo)
             for(let i = 0; i < allMarketPairs.length; i++){
                 let pair = allMarketPairs[i]
-                log.info(tag,"pair: ",pair)
+                log.debug(tag,"pair: ",pair)
                 let pairParts = pair.split("_")
                 let inputSymbol = pairParts[0]
                 let outputSymbol = pairParts[1]
@@ -285,15 +286,15 @@ export class atlasPublicController extends Controller {
                     //hack
                     inputMarketInfo = inputMarketInfo[0]
                     outputMarketInfo = outputMarketInfo[0]
-                    log.info(tag,"inputMarketInfo: ",inputMarketInfo)
-                    log.info(tag,"outputMarketInfo: ",outputMarketInfo)
-                    log.info(tag,"inputMarketInfo: ",inputMarketInfo.assetPriceUSD)
-                    log.info(tag,"outputMarketInfo: ",outputMarketInfo.assetPriceUSD)
+                    log.debug(tag,"inputMarketInfo: ",inputMarketInfo)
+                    log.debug(tag,"outputMarketInfo: ",outputMarketInfo)
+                    log.debug(tag,"inputMarketInfo: ",inputMarketInfo.assetPriceUSD)
+                    log.debug(tag,"outputMarketInfo: ",outputMarketInfo.assetPriceUSD)
                     //usd value input
                     //usd value output
                     //rate of input / output
                     let rate = inputMarketInfo.assetPriceUSD / outputMarketInfo.assetPriceUSD
-                    log.info(tag,"rate: ",rate)
+                    log.debug(tag,"rate: ",rate)
                     let market = {
                         protocal:'thorchain',
                         pair,
@@ -308,11 +309,11 @@ export class atlasPublicController extends Controller {
                 let poolsOsmosis = await redis.get('osmosis:pools')
                 if(!pools){
                     poolsOsmosis = await networks['OSMO'].getPools()
-                    redis.setex('osmosis:pools',400,JSON.stringify(poolsOsmosis))
+                    redis.setex('osmosis:pools',CACHE_TIME,JSON.stringify(poolsOsmosis))
                 } else {
                     poolsOsmosis = JSON.parse(poolsOsmosis)
                 }
-                log.info(tag,"poolsOsmosis: ",poolsOsmosis)
+                log.debug(tag,"poolsOsmosis: ",poolsOsmosis)
                 output.exchanges.osmosis = {}
                 output.exchanges.thorchain.status = []
                 output.exchanges.osmosis.markets = []
@@ -461,7 +462,7 @@ export class atlasPublicController extends Controller {
 
             //get from cache
             let accountInfo = await redis.hgetall(username)
-            log.info(tag,"cache info:",accountInfo)
+            log.debug(tag,"cache info:",accountInfo)
 
             if(Object.keys(accountInfo).length === 0){
                 //pioneer domain
@@ -516,7 +517,7 @@ export class atlasPublicController extends Controller {
         try{
             if(!invocationId) throw Error("102: invocationId required! ")
             let output = await invocationsDB.findOne({invocationId})
-            log.info(tag,"invocation MONGO: ",output)
+            log.debug(tag,"invocation MONGO: ",output)
 
             //if type is swap get blockchain info for fullfillment
             if(output && output.state === 'broadcasted' && output.network === 'ETH'){
@@ -531,7 +532,7 @@ export class atlasPublicController extends Controller {
                     }
 
                     if(txInfo && txInfo.txInfo && txInfo.txInfo.blockNumber){
-                        log.info(tag,"Confirmed!")
+                        log.debug(tag,"Confirmed!")
                         output.isConfirmed = true
 
                         //update entry
@@ -546,20 +547,20 @@ export class atlasPublicController extends Controller {
 
                 if(output.type === 'swap' && output.isConfirmed && !output.isFullfilled){
                     //txid
-                    log.info(tag,"output.signedTx.txid: ",output.signedTx.txid)
+                    log.debug(tag,"output.signedTx.txid: ",output.signedTx.txid)
                     let midgardInfo = await midgard.getTransaction(output.signedTx.txid)
-                    log.info(tag,"midgardInfo: ",midgardInfo)
+                    log.debug(tag,"midgardInfo: ",midgardInfo)
 
                     if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
                         let depositInfo = midgardInfo.actions[0].in
-                        log.info(tag,"deposit: ",depositInfo)
+                        log.debug(tag,"deposit: ",depositInfo)
 
                         let fullfillmentInfo = midgardInfo.actions[0]
-                        log.info(tag,"fullfillmentInfo: ",JSON.stringify(fullfillmentInfo))
+                        log.debug(tag,"fullfillmentInfo: ",JSON.stringify(fullfillmentInfo))
 
                         if(fullfillmentInfo.status === 'success'){
-                            log.info(tag,"fullfillmentInfo: ",fullfillmentInfo)
-                            log.info(tag,"fullfillmentInfo: ",fullfillmentInfo.out[0].txID)
+                            log.debug(tag,"fullfillmentInfo: ",fullfillmentInfo)
+                            log.debug(tag,"fullfillmentInfo: ",fullfillmentInfo.out[0].txID)
 
 
                             output.isFullfilled = true
@@ -572,7 +573,7 @@ export class atlasPublicController extends Controller {
                             output.resultUpdateFullment = mongoSave
                         }
                     } else {
-                        log.info(tag,"not fullfilled!")
+                        log.debug(tag,"not fullfilled!")
                     }
                 }
             }
@@ -583,7 +584,7 @@ export class atlasPublicController extends Controller {
                     message:"No invocation found with ID: "+invocationId
                 }
             }
-            log.info("output: ",output)
+            log.debug("output: ",output)
             return(output)
         }catch(e){
             let errorResp:Error = {
@@ -604,7 +605,7 @@ export class atlasPublicController extends Controller {
     public async getPubkeyBalance(coin:string,pubkey:string) {
         let tag = TAG + " | getPubkeyBalance | "
         try{
-            log.info(tag,{coin,pubkey})
+            log.debug(tag,{coin,pubkey})
             let output = await redis.get("cache:balance:"+pubkey+":"+coin)
             networks.ETH.init({testnet:true})
             if(!output || CACHE_OVERRIDE){
@@ -647,8 +648,8 @@ export class atlasPublicController extends Controller {
         try{
             if(!txid) throw Error("102: txid required! ")
 
-            log.info(tag,"network: ",network)
-            log.info(tag,"txid: ",txid)
+            log.debug(tag,"network: ",network)
+            log.debug(tag,"txid: ",txid)
             let output:any = {}
             output.coin = network
             output.asset = network
@@ -804,11 +805,11 @@ export class atlasPublicController extends Controller {
     public async getChangeAddress(network:string,xpub:string) {
         let tag = TAG + " | listUnspent | "
         try{
-            log.info(tag,"network: ",network)
-            log.info(tag,"xpub: ",xpub)
+            log.debug(tag,"network: ",network)
+            log.debug(tag,"xpub: ",xpub)
             await networks.ANY.init()
-            //log.info("networks: ",networks)
-            //log.info("networks: ",networks.ANY)
+            //log.debug("networks: ",networks)
+            //log.debug("networks: ",networks.ANY)
             let data = await networks.ANY.getPubkeyInfo(network,xpub)
 
             let changeIndex: number = 0
@@ -865,11 +866,11 @@ export class atlasPublicController extends Controller {
             let output:any = []
             //TODO if UTXO coin else error
 
-            log.info(tag,"network: ",network)
-            log.info(tag,"xpub: ",xpub)
+            log.debug(tag,"network: ",network)
+            log.debug(tag,"xpub: ",xpub)
             await networks.ANY.init()
-            //log.info("networks: ",networks)
-            //log.info("networks: ",networks.ANY)
+            //log.debug("networks: ",networks)
+            //log.debug("networks: ",networks.ANY)
             let data = await networks.ANY.getPubkeyInfo(network,xpub)
 
             let changeIndex: number | null = null
@@ -926,21 +927,21 @@ export class atlasPublicController extends Controller {
             let output:any = []
             //TODO if UTXO coin else error
             //TODO does this scale on large xpubs?
-            log.info(tag,"network: ",network)
-            log.info(tag,"xpub: ",xpub)
+            log.debug(tag,"network: ",network)
+            log.debug(tag,"xpub: ",xpub)
             await networks.ANY.init()
-            //log.info("networks: ",networks)
-            //log.info("networks: ",networks.ANY)
+            //log.debug("networks: ",networks)
+            //log.debug("networks: ",networks.ANY)
             let inputs = await networks.ANY.utxosByXpub(network,xpub)
 
             //for each get hex
             for(let i = 0; i < inputs.length; i++){
                 let input = inputs[i]
-                log.info(tag,"input: ",input)
+                log.debug(tag,"input: ",input)
                 //get hex info
                 let rawInfo = await networks.ANY.getTransaction(network,input.txid)
-                log.info(tag,"rawInfo: ",rawInfo)
-                log.info(tag,"rawInfo: ",rawInfo.vin[0].addresses)
+                log.debug(tag,"rawInfo: ",rawInfo)
+                log.debug(tag,"rawInfo: ",rawInfo.vin[0].addresses)
                 //TODO type from hdwallet-code txInput:
                 //TODO move this into module
                 //format inputs
@@ -948,7 +949,7 @@ export class atlasPublicController extends Controller {
                 for(let i = 0; i < rawInfo.vin.length; i++){
                     let vin = rawInfo.vin[i]
                     let rawInfoInput = await networks.ANY.getTransaction(network,vin.txid)
-                    log.info(tag,"rawInfoInput: ",JSON.stringify(rawInfoInput))
+                    log.debug(tag,"rawInfoInput: ",JSON.stringify(rawInfoInput))
                     let input = {
                         txid:vin.txid,
                         vout:vin.vout,
@@ -1009,9 +1010,9 @@ export class atlasPublicController extends Controller {
     public async getAccountInfo(network:string,address:string) {
         let tag = TAG + " | accountsFromPubkey | "
         try{
-            log.info(tag,"network: ",network)
-            log.info(tag,"address: ",address)
-            log.info(tag,"networks: ",networks)
+            log.debug(tag,"network: ",network)
+            log.debug(tag,"address: ",address)
+            log.debug(tag,"networks: ",networks)
             if(!networks[network]) throw Error("103: network not supported! network: "+network)
             let accounts = await networks[network].getAccount(address)
             return accounts
@@ -1243,7 +1244,7 @@ export class atlasPublicController extends Controller {
         let tag = TAG + " | getAllowance | "
         try{
 
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
             let result = await networks['ETH'].getAllowance(body.token,body.spender,body.sender)
 
 
@@ -1264,7 +1265,7 @@ export class atlasPublicController extends Controller {
     public async getFee(@Body() body: any): Promise<any> {
         let tag = TAG + " | getFee | "
         try{
-            log.info(tag,"mempool tx: ",body)
+            log.debug(tag,"mempool tx: ",body)
 
             //TODO filter by body.asset.chain
             //if()
@@ -1291,7 +1292,7 @@ export class atlasPublicController extends Controller {
     public async estimateFeesWithGasPricesAndLimits(@Body() body: any): Promise<any> {
         let tag = TAG + " | getFee | "
         try{
-            log.info(tag,"mempool tx: ",body)
+            log.debug(tag,"mempool tx: ",body)
             if(!body.amount) throw Error(" amount field required! ")
             if(!body.asset) throw Error(" asset field required! ")
             if(!body.asset.symbol) throw Error(" asset symbol field required! ")
@@ -1323,7 +1324,7 @@ export class atlasPublicController extends Controller {
         let tag = TAG + " | estimateFee | "
         try{
             let output:any = {}
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
 
             let asset = {
                 chain:"ETH",
@@ -1379,7 +1380,7 @@ export class atlasPublicController extends Controller {
         try{
             //TODO handle mainnet
             networks.ETH.init()
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
 
             let resp = await networks['ETH'].getMemoEncoded(body)
             return(resp)
@@ -1399,12 +1400,12 @@ export class atlasPublicController extends Controller {
         let tag = TAG + " | getFeesWithMemo | "
         try{
             let output:any = {}
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
 
             if(UTXO_COINS.indexOf(body.network) >= 0){
                 //TODO supported assets
                 let resp = await networks['ANY'].getFeesWithRates(body.network,body.memo)
-                log.info("resp:",resp)
+                log.debug("resp:",resp)
                 //else error
                 output = resp
             }else{
@@ -1428,7 +1429,7 @@ export class atlasPublicController extends Controller {
     public async pushTx(@Body() body: any): Promise<any> {
         let tag = TAG + " | pushTx | "
         try{
-            log.info(tag,"mempool tx: ",body)
+            log.debug(tag,"mempool tx: ",body)
 
             //push to redis
             publisher.publish("mempool",JSON.stringify(body))
@@ -1462,7 +1463,7 @@ export class atlasPublicController extends Controller {
     // public async createUnsignedTransaction(@Body() body: UnsignedUtxoRequest): Promise<any> {
     //     let tag = TAG + " | createUnsignedTransaction | "
     //     try{
-    //         log.info(tag,"")
+    //         log.debug(tag,"")
     //
     //         let result = await network.createUnsignedTransaction(body)
     //
@@ -1485,8 +1486,8 @@ export class atlasPublicController extends Controller {
     public async broadcast(@Body() body: BroadcastBody): Promise<any> {
         let tag = TAG + " | broadcast | "
         try{
-            log.info("************************** CHECKPOINT *******************88 ")
-            log.info(tag,"body: ",body)
+            log.debug("************************** CHECKPOINT *******************88 ")
+            log.debug(tag,"body: ",body)
             if(!body.txid) throw Error("103: must known txid BEFORE broadcast! ")
             if(!body.network) throw Error("104: network required! ")
 
@@ -1500,20 +1501,20 @@ export class atlasPublicController extends Controller {
             //if
             let invocationInfo:any = {}
             if(body.invocationId){
-                log.info(tag,"invocationId: ",body.invocationId)
+                log.debug(tag,"invocationId: ",body.invocationId)
                 //get invocation
                 let invocationInfoQuery = await invocationsDB.findOne({invocationId:body.invocationId})
-                log.info(tag,"invocationInfoQuery: ",invocationInfoQuery)
+                log.debug(tag,"invocationInfoQuery: ",invocationInfoQuery)
                 if(invocationInfoQuery){
                     invocationInfo = invocationInfoQuery
                 }
-                log.info(tag,"invocationInfo: ",invocationInfo)
-                log.info(tag,"Release InvocationId: ",body.invocationId)
-                log.info(tag,"Release body.txid: ",body.txid)
+                log.debug(tag,"invocationInfo: ",invocationInfo)
+                log.debug(tag,"Release InvocationId: ",body.invocationId)
+                log.debug(tag,"Release body.txid: ",body.txid)
                 redis.lpush(body.invocationId,body.txid)
 
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{state:'broadcasted'}})
-                log.info(tag,"invocation updateResult: ",updateResult)
+                log.debug(tag,"invocation updateResult: ",updateResult)
             } else {
                 log.error(tag,"No invocationId on body.")
                 throw Error('invocationId required!')
@@ -1521,7 +1522,7 @@ export class atlasPublicController extends Controller {
 
             //broadcast
             if(!body.noBroadcast){
-                log.info(tag,"broadcasting!")
+                log.debug(tag,"broadcasting!")
                 let result
                 try{
                     if(network === 'EOS'){
@@ -1544,8 +1545,8 @@ export class atlasPublicController extends Controller {
                         //broadcast based on tx
                         switch(body.type) {
                             case "fioSignAddPubAddressTx":
-                                log.info(tag,"checkpoint: fioSignAddPubAddressTx ")
-                                log.info(tag,"broadcast: ",broadcast)
+                                log.debug(tag,"checkpoint: fioSignAddPubAddressTx ")
+                                log.debug(tag,"broadcast: ",broadcast)
                                 result = await networks[network].broadcastAddPubAddressTx(broadcast)
                                 break;
                             case "fioSignRegisterDomainTx":
@@ -1555,8 +1556,8 @@ export class atlasPublicController extends Controller {
                                 //TODO
                                 break;
                             case "fioSignNewFundsRequestTx":
-                                log.info(tag,"checkpoint: broadcastNewFundsRequestTx ")
-                                log.info(tag,"broadcast: ",broadcast)
+                                log.debug(tag,"checkpoint: broadcastNewFundsRequestTx ")
+                                log.debug(tag,"broadcast: ",broadcast)
                                 result = await networks[network].broadcastNewFundsRequestTx(broadcast)
                                 break;
                             default:
@@ -1597,14 +1598,14 @@ export class atlasPublicController extends Controller {
                 resultSave.broadcast = true
                 resultSave.result = result
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:resultSave}})
-                log.info(tag,"updateResult: ",updateResult)
+                log.debug(tag,"updateResult: ",updateResult)
             } else {
-                log.info(tag,"Not broadcasting!")
+                log.debug(tag,"Not broadcasting!")
                 result.success = true
                 result.broadcast = false
                 //result = body.invocationId
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:{noBroadCast:true}}})
-                log.info(tag,"updateResult: ",updateResult)
+                log.debug(tag,"updateResult: ",updateResult)
             }
 
             let mongoEntry:any = body

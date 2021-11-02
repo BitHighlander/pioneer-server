@@ -9,7 +9,7 @@ let TAG = ' | API | '
 
 const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
-log.info(TAG,"PIONEER VERSION: ",pjson.version)
+log.debug(TAG,"PIONEER VERSION: ",pjson.version)
 const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
 const connection  = require("@pioneer-platform/default-mongo")
 const queue = require("@pioneer-platform/redis-queue")
@@ -166,7 +166,7 @@ export class pioneerPrivateController extends Controller {
     public async user(@Header('Authorization') authorization: string): Promise<any> {
         let tag = TAG + " | user | "
         try{
-            log.info(tag,"queryKey: ",authorization)
+            log.debug(tag,"queryKey: ",authorization)
 
             let accountInfo = await redis.hgetall(authorization)
             if(Object.keys(accountInfo).length === 0) {
@@ -175,13 +175,13 @@ export class pioneerPrivateController extends Controller {
                     error:"QueryKey not registerd!"
                 }
             } else {
-                log.info(tag,"accountInfo: ",accountInfo)
+                log.debug(tag,"accountInfo: ",accountInfo)
                 let username = accountInfo.username
                 if(!username){
                     throw Error("103: invalid user info, missing username!")
                 }
                 let userInfo = await redis.hgetall(username)
-                log.info(tag,"userInfo: ",userInfo)
+                log.debug(tag,"userInfo: ",userInfo)
 
                 if(Object.keys(userInfo).length === 0){
                     return {
@@ -197,8 +197,8 @@ export class pioneerPrivateController extends Controller {
                     if(userInfoMongo.context) userInfo.context = userInfoMongo.context
                     if(userInfoMongo.assetContext) userInfo.assetContext = userInfoMongo.assetContext
                     userInfo.wallets = userInfoMongo.wallets
-                    log.info(tag,"userInfoMongo: ",userInfoMongo)
-                    log.info(tag,"userInfo: ",userInfo)
+                    log.debug(tag,"userInfoMongo: ",userInfoMongo)
+                    log.debug(tag,"userInfo: ",userInfo)
 
                     //asset context
                     if(!userInfo.assetContext) userInfo.assetContext = 'ETH'
@@ -208,8 +208,8 @@ export class pioneerPrivateController extends Controller {
                         if(userInfoMongo.wallets && userInfoMongo.wallets.length > 0){
                             userInfo.context = userInfoMongo.wallets[0]
                         } else {
-                            log.info(tag,"Invalid Mongo userInfoMongo: ",userInfoMongo.wallets)
-                            log.info(tag,"Invalid Mongo userInfoMongo: ",typeof(userInfoMongo.wallets))
+                            log.debug(tag,"Invalid Mongo userInfoMongo: ",userInfoMongo.wallets)
+                            log.debug(tag,"Invalid Mongo userInfoMongo: ",typeof(userInfoMongo.wallets))
                             log.error(tag,"Invalid Mongo entry: ",userInfoMongo)
                             throw Error("102: invalid mongo user! ")
                         }
@@ -222,7 +222,7 @@ export class pioneerPrivateController extends Controller {
                     if(!marketCacheCoinGecko){
                         let marketInfoCoinGecko = await markets.getAssetsCoingecko()
                         if(marketInfoCoinGecko){
-                            log.info(tag,"get info coinCap: ")
+                            log.debug(tag,"get info coinCap: ")
                             //market info found for
                             marketInfoCoinGecko.updated = new Date().getTime()
                             redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
@@ -233,7 +233,7 @@ export class pioneerPrivateController extends Controller {
                     if(!marketCacheCoincap){
                         let marketInfoCoincap = await markets.getAssetsCoincap()
                         if(marketInfoCoincap){
-                            log.info(tag,"get info coinCap: ")
+                            log.debug(tag,"get info coinCap: ")
                             //market info found for
                             marketInfoCoincap.updated = new Date().getTime()
                             redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
@@ -247,15 +247,15 @@ export class pioneerPrivateController extends Controller {
                     for(let i = 0; i < userInfoMongo.wallets.length; i++){
                         let context = userInfoMongo.wallets[i]
                         let walletInfo:any = userInfoMongo.walletDescriptions[i]
-                        log.info(tag,"walletDescription: ",walletInfo)
-                        log.info(tag,"building walletDescription for context: ",context)
+                        log.debug(tag,"walletDescription: ",walletInfo)
+                        log.debug(tag,"building walletDescription for context: ",context)
                         let { pubkeys } = await pioneer.getPubkeys(username,context)
                         log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
                         //build wallet info
                         walletInfo.pubkeys = pubkeys
                         if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
                         //hydrate market data for all pubkeys
-                        log.info(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
+                        log.debug(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
                         let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoincap, pubkeys, context)
                         log.debug(tag,"responseMarkets: ",responseMarkets)
                         let walletDescription = {
@@ -305,16 +305,16 @@ export class pioneerPrivateController extends Controller {
     public async info(context:string,@Header('Authorization') authorization: string): Promise<any> {
         let tag = TAG + " | info | "
         try{
-            log.info(tag,"queryKey: ",authorization)
+            log.debug(tag,"queryKey: ",authorization)
             if(!context) throw Error("103: context required!")
-            log.info(tag,"context: ",context)
+            log.debug(tag,"context: ",context)
 
             let accountInfo = await redis.hgetall(authorization)
-            log.info(tag,"accountInfo: ",accountInfo)
+            log.debug(tag,"accountInfo: ",accountInfo)
 
             let walletInfo:any = {}
             if(accountInfo){
-                log.info(tag,"accountInfo: ",accountInfo)
+                log.debug(tag,"accountInfo: ",accountInfo)
                 let username = accountInfo.username
                 if(!username){
                     log.error(tag,"invalid accountInfo: ",accountInfo)
@@ -322,7 +322,7 @@ export class pioneerPrivateController extends Controller {
                 }
                 //sismember
                 let isKnownWallet = await redis.sismember(username+':wallets',context)
-                log.info(tag,"isKnownWallet: ",isKnownWallet)
+                log.debug(tag,"isKnownWallet: ",isKnownWallet)
 
                 //TODO add balances
                 //throw error if every balance does NOT have a true > 0  balance AND and icon
@@ -360,7 +360,7 @@ export class pioneerPrivateController extends Controller {
                 }
 
                 log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
-                log.info(tag,"Checkpoint pre-build balances: (pre)")
+                log.debug(tag,"Checkpoint pre-build balances: (pre)")
                 let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, context)
                 log.debug(tag,"responseMarkets: ",responseMarkets)
                 walletInfo.pubkeys = pubkeys
@@ -402,7 +402,7 @@ export class pioneerPrivateController extends Controller {
     public async invocations(@Header('Authorization') authorization: string): Promise<any> {
         let tag = TAG + " | unapproved | "
         try{
-            log.info(tag,"queryKey: ",authorization)
+            log.debug(tag,"queryKey: ",authorization)
 
             let accountInfo = await redis.hgetall(authorization)
             if(!accountInfo) {
@@ -411,10 +411,10 @@ export class pioneerPrivateController extends Controller {
                     error:"QueryKey not registerd!"
                 }
             } else {
-                log.info(tag,"accountInfo: ",accountInfo)
+                log.debug(tag,"accountInfo: ",accountInfo)
                 let username = accountInfo.username
                 let userInfo = await redis.hgetall(username)
-                log.info(tag,"userInfo: ",userInfo)
+                log.debug(tag,"userInfo: ",userInfo)
                 if(Object.keys(userInfo).length === 0){
                     return {
                         success:false,
@@ -449,7 +449,7 @@ export class pioneerPrivateController extends Controller {
 
             let accountInfo = await redis.hgetall(authorization)
             if(!accountInfo) throw Error("unknown token! token:"+authorization)
-            log.info(tag,"accountInfo: ",accountInfo)
+            log.debug(tag,"accountInfo: ",accountInfo)
 
             if(accountInfo){
                 let refreshedTime = await redis.get(accountInfo.username+":lastRefresh")
@@ -484,7 +484,7 @@ export class pioneerPrivateController extends Controller {
 
             let accountInfo = await redis.hgetall(authorization)
             if(!accountInfo) throw Error("unknown token! token:"+authorization)
-            log.info(tag,"accountInfo: ",accountInfo)
+            log.debug(tag,"accountInfo: ",accountInfo)
 
             let walletInfo:any
             if(accountInfo){
@@ -494,7 +494,7 @@ export class pioneerPrivateController extends Controller {
                     throw Error("unknown token. token:"+authorization)
                 }
                 let userInfo = await redis.hgetall(username)
-                log.info(tag,"userInfo: ",userInfo)
+                log.debug(tag,"userInfo: ",userInfo)
                 return userInfo.context
             } else {
                 throw Error("102: invalid auth token!")
@@ -578,19 +578,19 @@ export class pioneerPrivateController extends Controller {
     public async setAssetContext(@Body() body: any, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | setAssetContext | "
         try{
-            log.info(tag,"account: ",body)
-            log.info(tag,"Authorization: ",Authorization)
+            log.debug(tag,"account: ",body)
+            log.debug(tag,"Authorization: ",Authorization)
             let output:any = {}
             // get auth info
             let authInfo = await redis.hgetall(Authorization)
-            log.info(tag,"authInfo: ",authInfo)
+            log.debug(tag,"authInfo: ",authInfo)
             if(!authInfo) throw Error("108: unknown token! ")
             if(!body.asset) throw Error("1011: invalid body missing asset")
 
             // get user info
             let userInfo = await redis.hgetall(authInfo.username)
             if(!userInfo) throw Error("109: unknown username! ")
-            log.info(tag,"userInfo: ",userInfo)
+            log.debug(tag,"userInfo: ",userInfo)
             output.username = authInfo.username
 
             if(userInfo.assetContext !== body.asset) {
@@ -630,22 +630,22 @@ export class pioneerPrivateController extends Controller {
     public async setContext(@Body() body: SetContextBody, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | setContext | "
         try{
-            log.info(tag,"account: ",body)
-            log.info(tag,"Authorization: ",Authorization)
+            log.debug(tag,"account: ",body)
+            log.debug(tag,"Authorization: ",Authorization)
             let output:any = {}
             // get auth info
             let authInfo = await redis.hgetall(Authorization)
-            log.info(tag,"authInfo: ",authInfo)
+            log.debug(tag,"authInfo: ",authInfo)
             if(!authInfo) throw Error("108: unknown token! ")
 
             // get user info
             let userInfo = await redis.hgetall(authInfo.username)
             if(!userInfo) throw Error("109: unknown username! ")
-            log.info(tag,"userInfo: ",userInfo)
+            log.debug(tag,"userInfo: ",userInfo)
             output.username = authInfo.username
             //get wallets
             let allWallets = await redis.smembers(authInfo.username+":wallets")
-            log.info(tag,"allWallets: ",allWallets)
+            log.debug(tag,"allWallets: ",allWallets)
             output.wallets = allWallets
             if(allWallets.indexOf(body.context) >= 0){
                 //if context is not current
@@ -661,7 +661,7 @@ export class pioneerPrivateController extends Controller {
                     let updateRedis = await redis.hset(authInfo.username,'context',body.context)
                     output.updateDB = updateRedis
                 } else {
-                    log.info(tag,"DEBUG: publish on false context switch")
+                    log.debug(tag,"DEBUG: publish on false context switch")
                     let contextSwitch = {
                         type:"context",
                         note:"context already "+body.context,
@@ -702,8 +702,8 @@ export class pioneerPrivateController extends Controller {
     public async updateInvocation(@Body() body: UpdateInvocationBody, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | updateInvocation | "
         try{
-            log.info(tag,"account: ",body)
-            log.info(tag,"Authorization: ",Authorization)
+            log.info(tag,"body: ",body)
+            log.debug(tag,"Authorization: ",Authorization)
             //TODO auth?
 
             //update database
@@ -739,13 +739,13 @@ export class pioneerPrivateController extends Controller {
         let tag = TAG + " | ignoreShitcoin | "
         try{
             let output:any = {}
-            log.info(tag,"account: ",body)
-            log.info(tag,"Authorization: ",Authorization)
+            log.debug(tag,"account: ",body)
+            log.debug(tag,"Authorization: ",Authorization)
             let coins = body.coins || body.shitcoins
 
             // get auth info
             let authInfo = await redis.hgetall(Authorization)
-            log.info(tag,"authInfo: ",authInfo)
+            log.debug(tag,"authInfo: ",authInfo)
             if(!authInfo) throw Error("108: unknown token! ")
 
             if(authInfo.username){
@@ -776,8 +776,8 @@ export class pioneerPrivateController extends Controller {
     public async deleteInvocation(@Body() body: DeleteInvocationBody, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | deleteInvocation | "
         try{
-            log.info(tag,"account: ",body)
-            log.info(tag,"Authorization: ",Authorization)
+            log.debug(tag,"account: ",body)
+            log.debug(tag,"Authorization: ",Authorization)
 
             //TODO auth
             //update database
@@ -804,12 +804,12 @@ export class pioneerPrivateController extends Controller {
     public async pair(@Body() body: PairBody, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | pair | "
         try{
-            log.info(tag,"account: ",body)
-            log.info(tag,"Authorization: ",Authorization)
+            log.debug(tag,"account: ",body)
+            log.debug(tag,"Authorization: ",Authorization)
 
             // get user info
             let userInfo = await redis.hgetall(Authorization)
-            log.info(tag,"userInfo: ",userInfo)
+            log.debug(tag,"userInfo: ",userInfo)
             //if no info throw
             if(!userInfo) throw Error("User not known!")
             if(!userInfo.username) throw Error("invalid user!")
@@ -817,28 +817,28 @@ export class pioneerPrivateController extends Controller {
             // get queryKey for code sdk user
             let sdkQueryKey = await redis.hget(body.code,"pairing")
             if(sdkQueryKey) {
-                log.info(tag,"sdkQueryKey: ",sdkQueryKey)
+                log.debug(tag,"sdkQueryKey: ",sdkQueryKey)
                 let userInfoSdk = await redis.hgetall(sdkQueryKey)
-                log.info(tag,"userInfoSdk: ",userInfoSdk)
+                log.debug(tag,"userInfoSdk: ",userInfoSdk)
 
                 //if username sdk
                 if(userInfoSdk.wallets){
                     //TODO handle if multiple?
                     let walletId = userInfoSdk.wallets
-                    log.info(tag,"walletId: ",walletId)
+                    log.debug(tag,"walletId: ",walletId)
 
                     let userInfoOfSdkKey = await usersDB.findOne({username:userInfoSdk.username})
-                    log.info(tag,"userInfoOfSdkKey: ",userInfoOfSdkKey)
+                    log.debug(tag,"userInfoOfSdkKey: ",userInfoOfSdkKey)
 
                     //add metamask wallet to user
                     let updateDBPubkey = await usersDB.update({username:userInfo.username},{ $addToSet: { "wallets": walletId } })
-                    log.info(tag,"updateDBPubkey: ",updateDBPubkey)
+                    log.debug(tag,"updateDBPubkey: ",updateDBPubkey)
 
                     //for wallet on sdkUserInfo
                     for(let i = 0; i < userInfoOfSdkKey.walletDescriptions.length; i++){
                         //add metamask description to walletDescriptions
                         let updateDBuser = await usersDB.update({username:userInfo.username},{ $addToSet: { "walletDescriptions": userInfoOfSdkKey.walletDescriptions[i] } })
-                        log.info(tag,"updateDBuser: ",updateDBuser)
+                        log.debug(tag,"updateDBuser: ",updateDBuser)
                     }
 
                     //add wallet to user
@@ -846,13 +846,13 @@ export class pioneerPrivateController extends Controller {
 
                     //if owned by username
                     let pubkeysOwnedBySdk = await pubkeysDB.find({tags:{ $all: [userInfoSdk.username]}})
-                    log.info(tag,"pubkeysOwnedBySdk: ",pubkeysOwnedBySdk)
+                    log.debug(tag,"pubkeysOwnedBySdk: ",pubkeysOwnedBySdk)
 
                     for(let i = 0; i < pubkeysOwnedBySdk.length; i++){
                         let pubkey = pubkeysOwnedBySdk[i]
-                        log.info(tag,"pubkey: ",pubkey)
+                        log.debug(tag,"pubkey: ",pubkey)
                         let updateDBPubkey = await pubkeysDB.update({pubkey:pubkey.pubkey},{ $addToSet: { "tags": userInfo.username } })
-                        log.info(tag,"updateDBPubkey: ",updateDBPubkey)
+                        log.debug(tag,"updateDBPubkey: ",updateDBPubkey)
 
                         //push app username to pubkey
 
@@ -887,7 +887,7 @@ export class pioneerPrivateController extends Controller {
                 //add to userInfo
                 let pushAppMongo = await usersDB.update({ username: userInfo.username },
                     { $addToSet: { apps: url } })
-                log.info(tag,"pushAppMongo: ",pushAppMongo)
+                log.debug(tag,"pushAppMongo: ",pushAppMongo)
 
                 // sdkUser
                 let sdkUser = {
@@ -896,7 +896,7 @@ export class pioneerPrivateController extends Controller {
                     queryKey: sdkQueryKey,
                     url
                 }
-                log.info(tag,"pairing sdkUser: ",sdkUser)
+                log.debug(tag,"pairing sdkUser: ",sdkUser)
                 publisher.publish('pairings',JSON.stringify(sdkUser))
 
 
@@ -942,7 +942,7 @@ export class pioneerPrivateController extends Controller {
 
             //is key known
             let userInfo = await redis.hgetall(Authorization)
-            log.info(tag,"userInfo: ",userInfo)
+            log.debug(tag,"userInfo: ",userInfo)
 
             // if known return username (already paired)
 
@@ -952,7 +952,7 @@ export class pioneerPrivateController extends Controller {
             //create random code
             let code = randomstring.generate(6)
             code = code.toUpperCase()
-            log.info(tag,"code: ",code)
+            log.debug(tag,"code: ",code)
 
             //save code to key
             let saveRedis = await redis.hset(code,"pairing",Authorization)
@@ -1045,7 +1045,7 @@ export class pioneerPrivateController extends Controller {
                //TODO filter by coin
 
                let utxos = await utxosDB.find({accounts:{ $all: [accountInfo.username]}})
-               log.info(tag,"utxos: ",utxos)
+               log.debug(tag,"utxos: ",utxos)
 
                return(utxos);
            } else {
@@ -1218,14 +1218,14 @@ export class pioneerPrivateController extends Controller {
         try{
             let output:any = {}
             let newKey
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
             if(!body.context) throw Error("102: context required on body!")
             if(!body.blockchains) throw Error("103: blockchains required on body!")
             if(typeof(body.walletDescription) === 'string') throw Error("104: Invalid Wallet Description!")
 
             //if auth found in redis
             const authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
+            log.debug(tag,"authInfo: ",authInfo)
             let isTestnet = authInfo.isTestnet || false
             if(body.isTestnet && Object.keys(authInfo).length != 0 && !isTestnet) throw Error(" Username already registerd on mainnet! please create a new")
             log.debug(tag,"authInfo: ",authInfo)
@@ -1252,16 +1252,16 @@ export class pioneerPrivateController extends Controller {
                         return output
                     }
                 } else {
-                    log.info("username available! checkpoint 1a")
+                    log.debug("username available! checkpoint 1a")
                 }
             } else {
-                log.info(tag,"checkpoint 1a auth key NOT known")
+                log.debug(tag,"checkpoint 1a auth key NOT known")
                 newKey = true
             }
             if(!username) username = body.username
 
             let userInfoMongo:any = await usersDB.findOne({username})
-            log.info(tag,"userInfoMongo: ",userInfoMongo)
+            log.debug(tag,"userInfoMongo: ",userInfoMongo)
 
             if(newKey){
                 //create user
@@ -1281,17 +1281,17 @@ export class pioneerPrivateController extends Controller {
                 //delete descriptions
                 delete userInfo.walletDescriptions
                 let redisSuccess = await redis.hmset(body.username,userInfo)
-                log.info(tag,"redisSuccess: ",redisSuccess)
+                log.debug(tag,"redisSuccess: ",redisSuccess)
 
                 let redisSuccessKey = await redis.hmset(authorization,userInfo)
-                log.info(tag,"redisSuccessKey: ",redisSuccessKey)
+                log.debug(tag,"redisSuccessKey: ",redisSuccessKey)
 
                 //Continue and register wallet
                 userInfoMongo = userInfo
 
                 //Assume wallet new
                 output.result = await pioneer.register(body.username, body.data.pubkeys,body.context)
-                log.info(tag,"resultPioneer: ",output.result)
+                log.debug(tag,"resultPioneer: ",output.result)
 
                 //set user context to only wallet
                 await redis.hset(body.username,'context',body.context)
@@ -1302,19 +1302,19 @@ export class pioneerPrivateController extends Controller {
 
             //get wallets
             let userWallets = userInfoMongo.wallets
-            if(!userWallets) throw Error("No wallets found!")
+            log.debug(tag,"userWallets: ",userWallets)
 
             //add to wallet set
             await redis.sadd(username+':wallets',body.context)
 
             //if current ! found
             if(userWallets.indexOf(body.context) < 0){
-                log.info(tag,"Registering new wallet! context:",body.context)
+                log.debug(tag,"Registering new wallet! context:",body.context)
                 //Register wallet! (this ONLY hits when already registered
                 output.newWallet = true
                 let pubkeys = body.data.pubkeys
                 output.result = await pioneer.register(body.username, pubkeys, body.context)
-                log.info(tag,"resultPioneer: ",output.result)
+                log.debug(tag,"resultPioneer: ",output.result)
 
                 //set current context to newly registred wallet
                 //TODO flag to leave context? (silent register new wallet?)
@@ -1325,16 +1325,16 @@ export class pioneerPrivateController extends Controller {
                 output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "walletDescriptions": body.walletDescription } })
             } else {
                 //wallet already known!
-                log.info(tag,"Wallet already known! context: ",body.context)
+                log.debug(tag,"Wallet already known! context: ",body.context)
 
                 //get pubkey array
                 output.result = await pioneer.update(body.username, body.data.pubkeys,body.context)
             }
 
-            log.info("checkpoint 3")
+            log.debug("checkpoint 3")
             let userInfoRedis = await redis.hgetall(username)
-            log.info(tag,"userInfoRedis: ",userInfoRedis)
-            log.info("checkpoint 4 final ")
+            log.debug(tag,"userInfoRedis: ",userInfoRedis)
+            log.debug("checkpoint 4 final ")
 
             //if no context, set
             if(!userInfoRedis.context){
@@ -1377,9 +1377,9 @@ export class pioneerPrivateController extends Controller {
             }
 
             let { pubkeys, masters } = await pioneer.getPubkeys(username,output.context)
-            log.info(tag,"pubkeys: ",JSON.stringify(pubkeys))
+            log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
             let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, output.context)
-            log.info(tag,"responseMarkets: ",responseMarkets)
+            log.debug(tag,"responseMarkets: ",responseMarkets)
             output.masters = masters
             output.pubkeys = pubkeys
             output.balances = responseMarkets.balances
@@ -1429,17 +1429,17 @@ export class pioneerPrivateController extends Controller {
                 username = authInfo.username
                 if(!username) throw Error("102: invalid auth data!")
             } else {
-                log.info(tag,"checkpoint 1a auth key NOT known")
+                log.debug(tag,"checkpoint 1a auth key NOT known")
                 newKey = true
             }
             if(!username) throw Error("104: unable to find username!")
 
             let userInfoMongo = await usersDB.findOne({username})
-            log.info(tag,"userInfoMongo: ",userInfoMongo)
+            log.debug(tag,"userInfoMongo: ",userInfoMongo)
 
-            log.info("checkpoint 2 post mongo query!")
+            log.debug("checkpoint 2 post mongo query!")
             if(!userInfoMongo || newKey){
-                log.info("checkpoint 2a no mongo info!")
+                log.debug("checkpoint 2a no mongo info!")
                 throw Error("unable to import until AFTER registered!")
 
             } else {
@@ -1484,10 +1484,10 @@ export class pioneerPrivateController extends Controller {
                 //TODO bulkwrite to postgress finance
             }
 
-            log.info("checkpoint 3")
+            log.debug("checkpoint 3")
             let userInfoRedis = await redis.hgetall(username)
-            log.info(tag,"userInfoRedis: ",userInfoRedis)
-            log.info("checkpoint 4 final ")
+            log.debug(tag,"userInfoRedis: ",userInfoRedis)
+            log.debug("checkpoint 4 final ")
 
             output.success = true
             output.userInfo = userInfoRedis

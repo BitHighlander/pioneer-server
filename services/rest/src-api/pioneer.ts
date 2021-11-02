@@ -97,11 +97,11 @@ let get_and_rescan_pubkeys = async function (username:string) {
     try {
         //get pubkeys from mongo with walletId tagged
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [username]}})
-        log.info(tag,"pubkeysMongo: ",pubkeysMongo)
+        log.debug(tag,"pubkeysMongo: ",pubkeysMongo)
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
-        log.info(tag,"userInfo: ",userInfo)
+        log.debug(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
         if(!userInfo.blockchains) throw Error("Invalid user!")
 
@@ -165,8 +165,8 @@ let get_and_rescan_pubkeys = async function (username:string) {
 //                 output.pushTagMongoWalletId = pushTagMongo
 //             }
 //         } else {
-//             log.info(tag,"pubkey NOT found in mongo! adding!")
-//             log.info(tag,"pubkey: ",pubkey)
+//             log.debug(tag,"pubkey NOT found in mongo! adding!")
+//             log.debug(tag,"pubkey: ",pubkey)
 //             if(pubkey.tags.indexOf(username) < 0){
 //                 pubkey.tags.push(username)
 //             }
@@ -174,7 +174,7 @@ let get_and_rescan_pubkeys = async function (username:string) {
 //                 pubkey.tags.push(walletId)
 //             }
 //             let resultFix = await pubkeysDB.insert(pubkey)
-//             log.info(tag,"resultFix: ",resultFix)
+//             log.debug(tag,"resultFix: ",resultFix)
 //             output.insertPubkey = resultFix
 //         }
 //
@@ -191,11 +191,11 @@ let get_and_verify_pubkeys = async function (username:string, walletId:string) {
     try {
         //get pubkeys from mongo with walletId tagged
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [walletId]}})
-        log.info(tag,"pubkeysMongo: ",pubkeysMongo)
+        log.debug(tag,"pubkeysMongo: ",pubkeysMongo)
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
-        log.info(tag,"userInfo: ",userInfo)
+        log.debug(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
         if(!userInfo.blockchains) throw Error("Invalid user!")
 
@@ -223,7 +223,7 @@ let get_and_verify_pubkeys = async function (username:string, walletId:string) {
 
                 //remove blockchain from supported
                 let pullResult = await usersDB.update({username},{$pull:{blockchains:blockchain}})
-                log.info(tag,"pullResult: ",pullResult)
+                log.debug(tag,"pullResult: ",pullResult)
 
                 // throw Error(" Missing Master for supported blockchain! "+blockchain)
             }
@@ -244,7 +244,7 @@ let register_zpub = async function (username:string, pubkey:any, walletId:string
         if(!pubkey.pubkey) throw Error("103: invalid pubkey! missing pubkey!")
         if(pubkey.pubkey == true) throw Error("104:(zpub) invalid pubkey! == true wtf!")
         if(!pubkey.symbol) throw Error("105: invalid pubkey! missing pubkey!")
-        log.info(tag,"pubkey: ",pubkey)
+        log.debug(tag,"pubkey: ",pubkey)
         //if zpub add zpub
         let queueId = uuid.generate()
 
@@ -252,8 +252,8 @@ let register_zpub = async function (username:string, pubkey:any, walletId:string
         let account = 0
         let index = 0
         let address = await get_address_from_xpub(pubkey.zpub,pubkey.scriptType,pubkey.symbol,account,index,false,false)
-        log.info(tag,"Master(Local): ",address)
-        log.info(tag,"Master(hdwallet): ",pubkey.master)
+        log.debug(tag,"Master(Local): ",address)
+        log.debug(tag,"Master(hdwallet): ",pubkey.master)
         if(address !== pubkey.master){
             log.error(tag,"Local Master NOT VALID!!")
             //revert to pubkey (assume hdwallet right)
@@ -272,7 +272,7 @@ let register_zpub = async function (username:string, pubkey:any, walletId:string
             zpub:pubkey.zpub,
             inserted: new Date().getTime()
         }
-        log.info(tag,"Creating work! ",work)
+        log.debug(tag,"Creating work! ",work)
         await queue.createWork("pioneer:pubkey:ingest",work)
 
         return queueId
@@ -314,7 +314,7 @@ let register_xpub = async function (username:string, pubkey:any, walletId:string
             xpub:pubkey.xpub,
             inserted: new Date().getTime()
         }
-        log.info(tag,"Creating work! ",work)
+        log.debug(tag,"Creating work! ",work)
         await queue.createWork("pioneer:pubkey:ingest",work)
 
 
@@ -346,7 +346,7 @@ let register_address = async function (username:string, pubkey:any, walletId:str
             master:address,
             inserted: new Date().getTime()
         }
-        log.info("adding work: ",work)
+        log.debug("adding work: ",work)
 
         queue.createWork("pioneer:pubkey:ingest",work)
 
@@ -360,7 +360,7 @@ let register_address = async function (username:string, pubkey:any, walletId:str
 let update_pubkeys = async function (username:string, pubkeys:any, walletId:string) {
     let tag = TAG + " | update_pubkeys | "
     try {
-        log.info(tag,"input: ",{username,pubkeys,walletId})
+        log.debug(tag,"input: ",{username,pubkeys,walletId})
         let saveActions = []
         //generate addresses
         let output:any = {}
@@ -377,28 +377,28 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
         allPubkeys = Array.from(new Set(allPubkeys))
 
         //get pubkeys from mongo
-        log.info(tag,"allPubkeys: ",allPubkeys)
+        log.debug(tag,"allPubkeys: ",allPubkeys)
         let allKnownPubkeys = await pubkeysDB.find({"pubkey" : {"$in" : allPubkeys}})
-        log.info(tag,"allKnownPubkeys: ",allKnownPubkeys.length)
+        log.debug(tag,"allKnownPubkeys: ",allKnownPubkeys.length)
 
         //
         let knownPubkeys = []
         for(let i = 0; i < allKnownPubkeys.length; i++){
             knownPubkeys.push(allKnownPubkeys[i].pubkey)
         }
-        log.info(tag,"allKnownPubkeys: ",allKnownPubkeys.length)
-        log.info(tag,"allPubkeys: ",allPubkeys.length)
+        log.debug(tag,"allKnownPubkeys: ",allKnownPubkeys.length)
+        log.debug(tag,"allPubkeys: ",allPubkeys.length)
         if(allPubkeys.length > allKnownPubkeys.length){
             //build diff array known
             let unknown = allPubkeys.filter(x => !knownPubkeys.includes(x));
-            log.info(tag,"unknown: ",unknown)
-            log.info(tag,"Registering pubkeys : ",unknown.length)
+            log.debug(tag,"unknown: ",unknown)
+            log.debug(tag,"Registering pubkeys : ",unknown.length)
 
             //if(BALANCE_ON_REGISTER){} //TODO dont return till work complete
             for(let i = 0; i < unknown.length; i++){
                 let pubkey = unknown[i]
                 let pubkeyInfo = PubkeyMap[pubkey]
-                log.info(tag,"pubkeyInfo: ",pubkeyInfo)
+                log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
                 if(!pubkeyInfo.pubkey) throw Error("102: invalid pubkey! missing pubkey")
                 if(!pubkeyInfo.master) throw Error("102: invalid pubkey! missing master")
                 if(!pubkeyInfo.blockchain) throw Error("103: invalid pubkey! missing blockchain")
@@ -461,16 +461,16 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
 
 
                 //verify write
-                log.info(tag,"entryMongo: ",entryMongo)
+                log.debug(tag,"entryMongo: ",entryMongo)
                 //check exists
                 let keyExists = await pubkeysDB.findOne({pubkey:entryMongo.pubkey})
                 if(keyExists){
-                    log.info(tag,"Key already registered! key: ",entryMongo)
+                    log.debug(tag,"Key already registered! key: ",entryMongo)
                     //push wallet to tags
                     //add to tags
                     let pushTagMongo = await pubkeysDB.update({pubkey:entryMongo.pubkey},
                         { $addToSet: { tags: { $each:[walletId,username] } } })
-                    log.info(tag,"pushTagMongo: ",pushTagMongo)
+                    log.debug(tag,"pushTagMongo: ",pushTagMongo)
                 }else{
                     // saveActions.push({insertOne: entryMongo})
 
@@ -481,7 +481,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
                         throw Error("105: unable to save invalid pubkey!")
                     } else {
                         let resultSave = await pubkeysDB.insert(entryMongo)
-                        log.info(tag,"resultSave: ",resultSave)
+                        log.debug(tag,"resultSave: ",resultSave)
                         //TODO throw if error (better get error then not fail fast)
                     }
 
@@ -493,12 +493,12 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
             if (BALANCE_ON_REGISTER) {
                 output.results = []
                 //verifies balances returned are final
-                log.info(tag, " BALANCE VERIFY ON")
+                log.debug(tag, " BALANCE VERIFY ON")
                 //let isDone
                 let isDone = false
                 while (!isDone) {
                     //block on
-                    log.info(tag, "output.work: ", output.work)
+                    log.debug(tag, "output.work: ", output.work)
                     let promised = []
                     for (let i = 0; i < output.work.length; i++) {
                         let promise = redisQueue.blpop(output.work[i], 30)
@@ -513,12 +513,12 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
 
 
         } else {
-            log.info(tag," No new pubkeys! ")
+            log.debug(tag," No new pubkeys! ")
         }
 
 
 
-        log.info(tag," return object: ",output)
+        log.debug(tag," return object: ",output)
         return output
     } catch (e) {
         console.error(tag, "e: ", e)
@@ -545,7 +545,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
             //hack
             if (!pubkeyInfo.symbol) pubkeyInfo.symbol = nativeAsset
 
-            log.info(tag, "pubkeyInfo: ", pubkeyInfo)
+            log.debug(tag, "pubkeyInfo: ", pubkeyInfo)
             if (!pubkeyInfo.blockchain) throw Error("Invalid pubkey required field: blockchain")
             if (!pubkeyInfo.script_type) throw Error("Invalid pubkey required field: script_type coin:" + pubkeyInfo.blockchain)
             if (!pubkeyInfo.network) throw Error("Invalid pubkey required field: network coin:" + pubkeyInfo.blockchain)
@@ -604,21 +604,21 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
             }
 
             //verify write
-            log.info(tag,"entryMongo: ",entryMongo)
+            log.debug(tag,"entryMongo: ",entryMongo)
             if(!entryMongo.pubkey) throw Error("103: Invalid pubkey! can not save!")
             //check exists
             let keyExists = await pubkeysDB.findOne({pubkey:entryMongo.pubkey})
             if(keyExists){
-                log.info(tag,"Key already registered! key: ",entryMongo)
+                log.debug(tag,"Key already registered! key: ",entryMongo)
                 //push wallet to tags
                 //add to tags
                 let pushTagMongo = await pubkeysDB.update({pubkey:entryMongo.pubkey},
                     { $addToSet: { tags: { $each:[walletId,username] } } })
 
-                log.info(tag,"pushTagMongo: ",pushTagMongo)
+                log.debug(tag,"pushTagMongo: ",pushTagMongo)
             }else{
                 let saveMongo = await pubkeysDB.insert(entryMongo)
-                log.info(tag,"saveMongo: ",saveMongo)
+                log.debug(tag,"saveMongo: ",saveMongo)
             }
 
         }
@@ -627,12 +627,12 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
         if (BALANCE_ON_REGISTER) {
             output.results = []
             //verifies balances returned are final
-            log.info(tag, " BALANCE VERIFY ON")
+            log.debug(tag, " BALANCE VERIFY ON")
             //let isDone
             let isDone = false
             while (!isDone) {
                 //block on
-                log.info(tag, "output.work: ", output.work)
+                log.debug(tag, "output.work: ", output.work)
                 let promised = []
                 for (let i = 0; i < output.work.length; i++) {
                     let promise = redisQueue.blpop(output.work[i], 30)
@@ -645,7 +645,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
         }
 
 
-        log.info(tag, " return object: ", output)
+        log.debug(tag, " return object: ", output)
         return output
     } catch (e) {
         console.error(tag, "e: ", e)

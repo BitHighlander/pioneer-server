@@ -113,10 +113,10 @@ export class streamsPublicController extends Controller {
         let tag = TAG + " | streams | "
         try{
             address = address.toLowerCase()
-            log.info(tag,"address: ",address)
+            log.debug(tag,"address: ",address)
             //Get tracked contracts
             let allStreamInfo = await txsDB.find({ $and: [ {tags:{ $all: [address]}}, {tags:{ $all: ["streamCreate"]}} ] })
-            log.info(tag,"allStreamInfo: ",allStreamInfo)
+            log.debug(tag,"allStreamInfo: ",allStreamInfo)
 
             let output:any = {}
             output.saleryIds = []
@@ -124,10 +124,10 @@ export class streamsPublicController extends Controller {
             output.streamInfo = []
             for(let i = 0; i < allStreamInfo.length; i++){
                 let streamInfo = allStreamInfo[i].events[0]
-                log.info(tag,"streamInfo: ",streamInfo)
+                log.debug(tag,"streamInfo: ",streamInfo)
                 streamInfo = streamInfo.stream
                 output.saleryIds.push(streamInfo.saleryId)
-                log.info(tag,"streamInfo.stream: ",streamInfo)
+                log.debug(tag,"streamInfo.stream: ",streamInfo)
                 //getSymbolForContract
                 let streamAsset = await networks['ETH'].getSymbolFromContract(streamInfo.streamAsset)
                 output.streams['stream:'+streamInfo.streamId+':'+streamAsset] = streamInfo.streamAmount
