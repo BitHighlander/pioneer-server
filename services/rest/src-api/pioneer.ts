@@ -244,7 +244,7 @@ let register_zpub = async function (username:string, pubkey:any, walletId:string
         if(!pubkey.pubkey) throw Error("103: invalid pubkey! missing pubkey!")
         if(pubkey.pubkey == true) throw Error("104:(zpub) invalid pubkey! == true wtf!")
         if(!pubkey.symbol) throw Error("105: invalid pubkey! missing pubkey!")
-        log.debug(tag,"pubkey: ",pubkey)
+        log.info(tag,"pubkey: ",pubkey)
         //if zpub add zpub
         let queueId = uuid.generate()
 
@@ -252,8 +252,8 @@ let register_zpub = async function (username:string, pubkey:any, walletId:string
         let account = 0
         let index = 0
         let address = await get_address_from_xpub(pubkey.zpub,pubkey.scriptType,pubkey.symbol,account,index,false,false)
-        log.debug(tag,"Master(Local): ",address)
-        log.debug(tag,"Master(hdwallet): ",pubkey.master)
+        log.info(tag,"Master(Local): ",address)
+        log.info(tag,"Master(hdwallet): ",pubkey.master)
         if(address !== pubkey.master){
             log.error(tag,"Local Master NOT VALID!!")
             //revert to pubkey (assume hdwallet right)
@@ -288,14 +288,16 @@ let register_xpub = async function (username:string, pubkey:any, walletId:string
         if(!pubkey.pubkey) throw Error("102: invalid pubkey! missing pubkey!")
         if(pubkey.pubkey == true) throw Error("103:(xpub) invalid pubkey! === true wtf!")
         if(!pubkey.symbol) throw Error("104: invalid pubkey! missing symbol!")
-
+        //log.info(tag,"pubkey: ",pubkey)
         //if zpub add zpub
         let queueId = uuid.generate()
 
         //get master
         let account = 0
         let index = 0
-        let address = await get_address_from_xpub(pubkey.xpub,pubkey.scriptType,pubkey.symbol,account,index,false,false)
+        let address = await get_address_from_xpub(pubkey.pubkey,pubkey.scriptType,pubkey.symbol,account,index,false,false)
+        log.info(tag,"Master(Local): ",address)
+        log.info(tag,"Master(hdwallet): ",pubkey.master)
         if(address !== pubkey.master){
             log.error(tag,"Local Master NOT VALID!!")
             //revert to pubkey (assume hdwallet right)

@@ -217,7 +217,7 @@ export class pioneerPrivateController extends Controller {
 
                     //get market data from markets
                     let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-                    let marketCacheCoincap = await redis.get('markets:Coincap')
+                    let marketCacheCoinCap = await redis.get('markets:CoinCap')
 
                     if(!marketCacheCoinGecko){
                         let marketInfoCoinGecko = await markets.getAssetsCoingecko()
@@ -225,19 +225,21 @@ export class pioneerPrivateController extends Controller {
                             log.debug(tag,"get info coinCap: ")
                             //market info found for
                             marketInfoCoinGecko.updated = new Date().getTime()
-                            redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                            // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                            redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko))
                             marketCacheCoinGecko = marketInfoCoinGecko
                         }
                     }
 
-                    if(!marketCacheCoincap){
-                        let marketInfoCoincap = await markets.getAssetsCoincap()
-                        if(marketInfoCoincap){
+                    if(!marketCacheCoinCap){
+                        let marketInfoCoinCap = await markets.getAssetsCoinCap()
+                        if(marketInfoCoinCap){
                             log.debug(tag,"get info coinCap: ")
                             //market info found for
-                            marketInfoCoincap.updated = new Date().getTime()
-                            redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
-                            marketCacheCoincap = marketInfoCoincap
+                            marketInfoCoinCap.updated = new Date().getTime()
+                            // redis.set('markets:CoinCap',60 * 15,JSON.stringify(marketInfoCoinCap))
+                            redis.set('markets:CoinCap',JSON.stringify(marketInfoCoinCap))
+                            marketCacheCoinCap = marketInfoCoinCap
                         }
                     }
 
@@ -256,7 +258,7 @@ export class pioneerPrivateController extends Controller {
                         if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
                         //hydrate market data for all pubkeys
                         log.debug(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
-                        let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoincap, pubkeys, context)
+                        let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinCap, pubkeys, context)
                         log.debug(tag,"responseMarkets: ",responseMarkets)
                         let walletDescription = {
                             context:walletInfo.context,
@@ -337,31 +339,32 @@ export class pioneerPrivateController extends Controller {
                 //
                 //get market data from markets
                 let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-                let marketCacheCoincap = await redis.get('markets:Coincap')
+                let marketCacheCoinCap = await redis.get('markets:CoinCap')
 
                 if(!marketCacheCoinGecko){
                     let marketInfoCoinGecko = await markets.getAssetsCoingecko()
                     if(marketInfoCoinGecko){
                         //market info found for
                         marketInfoCoinGecko.updated = new Date().getTime()
-                        redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                        // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                        redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko))
                         marketCacheCoinGecko = marketInfoCoinGecko
                     }
                 }
 
-                if(!marketCacheCoincap){
-                    let marketInfoCoincap = await markets.getAssetsCoincap()
-                    if(marketInfoCoincap){
+                if(!marketCacheCoinCap){
+                    let marketInfoCoinCap = await markets.getAssetsCoinCap()
+                    if(marketInfoCoinCap){
                         //market info found for
-                        marketInfoCoincap.updated = new Date().getTime()
-                        redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
-                        marketCacheCoincap = marketInfoCoincap
+                        marketInfoCoinCap.updated = new Date().getTime()
+                        redis.set('markets:CoinCap',JSON.stringify(marketInfoCoinCap))
+                        marketCacheCoinCap = marketInfoCoinCap
                     }
                 }
 
                 log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
                 log.debug(tag,"Checkpoint pre-build balances: (pre)")
-                let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, context)
+                let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, context)
                 log.debug(tag,"responseMarkets: ",responseMarkets)
                 walletInfo.pubkeys = pubkeys
                 walletInfo.balances = responseMarkets.balances
@@ -1354,31 +1357,33 @@ export class pioneerPrivateController extends Controller {
             //verify user
             //get market data from markets
             let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-            let marketCacheCoincap = await redis.get('markets:Coincap')
+            let marketCacheCoinCap = await redis.get('markets:CoinCap')
 
             if(!marketCacheCoinGecko){
                 let marketInfoCoinGecko = await markets.getAssetsCoingecko()
                 if(marketInfoCoinGecko){
                     //market info found for
                     marketInfoCoinGecko.updated = new Date().getTime()
-                    redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                    // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                    redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko))
                     marketCacheCoinGecko = marketInfoCoinGecko
                 }
             }
 
-            if(!marketCacheCoincap){
-                let marketInfoCoincap = await markets.getAssetsCoincap()
-                if(marketInfoCoincap){
+            if(!marketCacheCoinCap){
+                let marketInfoCoinCap = await markets.getAssetsCoinCap()
+                if(marketInfoCoinCap){
                     //market info found for
-                    marketInfoCoincap.updated = new Date().getTime()
-                    redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoincap))
-                    marketCacheCoincap = marketInfoCoincap
+                    marketInfoCoinCap.updated = new Date().getTime()
+                    // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinCap))
+                    redis.set('markets:CoinCap',JSON.stringify(marketInfoCoinCap))
+                    marketCacheCoinCap = marketInfoCoinCap
                 }
             }
 
             let { pubkeys, masters } = await pioneer.getPubkeys(username,output.context)
             log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
-            let responseMarkets = await markets.buildBalances(marketCacheCoincap, marketCacheCoinGecko, pubkeys, output.context)
+            let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, output.context)
             log.debug(tag,"responseMarkets: ",responseMarkets)
             output.masters = masters
             output.pubkeys = pubkeys
