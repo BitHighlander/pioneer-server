@@ -517,63 +517,105 @@ export class atlasPublicController extends Controller {
         try{
             if(!invocationId) throw Error("102: invocationId required! ")
             let output = await invocationsDB.findOne({invocationId})
-            log.debug(tag,"invocation MONGO: ",output)
+            log.info(tag,"invocation MONGO: ",output)
+
+            //hack, if a disagreement in txid, use broadcast (bad hash bug) TODO FIXME
+            if(
+                output &&
+                output.signedTx?.txid &&
+                output.broadcast &&
+                output.broadcast?.result?.txid){
+                if(output.signedTx?.txid !== output.broadcast?.result?.txid){
+                    //replace
+                    output.signedTx.txid = output.broadcast?.result?.txid
+                    let mongoSave = await invocationsDB.update(
+                        {invocationId:output.invocationId},
+                        {$set:{signedTx:output.signedTx}})
+                    log.info(tag,"updated incorrect txid: ",mongoSave)
+                }
+                //replace
+                output.signedTx.txid = output.broadcast?.result?.txid
+            }
 
             //if type is swap get blockchain info for fullfillment
-            if(output && output.state === 'broadcasted' && output.network === 'ETH'){
+            if(output && output.state === 'broadcasted'){
                 if(!output.isConfirmed){
                     //get confirmation status
                     let txInfo
-                    if(UTXO_COINS.indexOf(output.network) >= 0){
-                        txInfo = await networks['ANY'].getTransaction(output.network,output.signedTx.txid)
-                    } else {
-                        if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
-                        txInfo = await networks[output.network].getTransaction(output.signedTx.txid)
-                    }
+                    try{
+                        if(UTXO_COINS.indexOf(output.network) >= 0){
+                            txInfo = await networks['ANY'].getTransaction(output.network,output.signedTx.txid)
+                        } else {
+                            if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
 
-                    if(txInfo && txInfo.txInfo && txInfo.txInfo.blockNumber){
-                        log.debug(tag,"Confirmed!")
-                        output.isConfirmed = true
 
-                        //update entry
-                        let mongoSave = await invocationsDB.update(
-                            {invocationId:output.invocationId},
-                            {$set:{isConfirmed:true}})
-                        output.resultUpdate = mongoSave
-                        //push event
-                        publisher.publish('invocationUpdate',JSON.stringify(output))
+                            txInfo = await networks[output.network].getTransaction(output.signedTx.txid)
+                            log.info(tag,"txInfo: ",txInfo)
+                        }
+
+                        if(txInfo && txInfo.height){
+                            log.info(tag,"Confirmed!")
+                            output.isConfirmed = true
+
+                            //update entry
+                            let mongoSave = await invocationsDB.update(
+                                {invocationId:output.invocationId},
+                                {$set:{isConfirmed:true}})
+                            output.resultUpdate = mongoSave
+                            //push event
+                            publisher.publish('invocationUpdate',JSON.stringify(output))
+                        }
+
+                        if(txInfo && txInfo.txInfo && txInfo.txInfo.blockNumber){
+                            log.debug(tag,"Confirmed!")
+                            output.isConfirmed = true
+
+                            //update entry
+                            let mongoSave = await invocationsDB.update(
+                                {invocationId:output.invocationId},
+                                {$set:{isConfirmed:true}})
+                            output.resultUpdate = mongoSave
+                            //push event
+                            publisher.publish('invocationUpdate',JSON.stringify(output))
+                        }
+                    }catch(e){
+                        log.info(tag,"Tx not found!")
                     }
                 }
 
                 if(output.type === 'swap' && output.isConfirmed && !output.isFullfilled){
                     //txid
-                    log.debug(tag,"output.signedTx.txid: ",output.signedTx.txid)
-                    let midgardInfo = await midgard.getTransaction(output.signedTx.txid)
-                    log.debug(tag,"midgardInfo: ",midgardInfo)
+                    try{
+                        log.debug(tag,"output.signedTx.txid: ",output.signedTx.txid)
+                        let midgardInfo = await midgard.getTransaction(output.signedTx.txid)
+                        log.debug(tag,"midgardInfo: ",midgardInfo)
 
-                    if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
-                        let depositInfo = midgardInfo.actions[0].in
-                        log.debug(tag,"deposit: ",depositInfo)
+                        if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
+                            let depositInfo = midgardInfo.actions[0].in
+                            log.debug(tag,"deposit: ",depositInfo)
 
-                        let fullfillmentInfo = midgardInfo.actions[0]
-                        log.debug(tag,"fullfillmentInfo: ",JSON.stringify(fullfillmentInfo))
+                            let fullfillmentInfo = midgardInfo.actions[0]
+                            log.debug(tag,"fullfillmentInfo: ",JSON.stringify(fullfillmentInfo))
 
-                        if(fullfillmentInfo.status === 'success'){
-                            log.debug(tag,"fullfillmentInfo: ",fullfillmentInfo)
-                            log.debug(tag,"fullfillmentInfo: ",fullfillmentInfo.out[0].txID)
+                            if(fullfillmentInfo.status === 'success'){
+                                log.debug(tag,"fullfillmentInfo: ",fullfillmentInfo)
+                                log.debug(tag,"fullfillmentInfo: ",fullfillmentInfo.out[0].txID)
 
 
-                            output.isFullfilled = true
-                            output.fullfillmentTxid = fullfillmentInfo.out[0].txID
+                                output.isFullfilled = true
+                                output.fullfillmentTxid = fullfillmentInfo.out[0].txID
 
-                            //
-                            let mongoSave = await invocationsDB.update(
-                                {invocationId:output.invocationId},
-                                {$set:{isFullfilled:true,fullfillmentTxid:output.fullfillmentTxid}})
-                            output.resultUpdateFullment = mongoSave
+                                //
+                                let mongoSave = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{isFullfilled:true,fullfillmentTxid:output.fullfillmentTxid}})
+                                output.resultUpdateFullment = mongoSave
+                            }
+                        } else {
+                            log.debug(tag,"not fullfilled!")
                         }
-                    } else {
-                        log.debug(tag,"not fullfilled!")
+                    }catch(e){
+                        log.error(" txid Not found!")
                     }
                 }
             }
@@ -1486,10 +1528,11 @@ export class atlasPublicController extends Controller {
     public async broadcast(@Body() body: BroadcastBody): Promise<any> {
         let tag = TAG + " | broadcast | "
         try{
-            log.debug("************************** CHECKPOINT *******************88 ")
-            log.debug(tag,"body: ",body)
+            log.info(tag,"************************** CHECKPOINT *******************88 ")
+            log.info(tag,"body: ",body)
             if(!body.txid) throw Error("103: must known txid BEFORE broadcast! ")
             if(!body.network) throw Error("104: network required! ")
+            if(!body.serialized) throw Error("105: must have serialized payload! ")
 
             let result:any = {
                 success:false
@@ -1600,7 +1643,7 @@ export class atlasPublicController extends Controller {
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:resultSave}})
                 log.debug(tag,"updateResult: ",updateResult)
             } else {
-                log.debug(tag,"Not broadcasting!")
+                log.notice(tag,"Not broadcasting!")
                 result.success = true
                 result.broadcast = false
                 //result = body.invocationId

@@ -200,7 +200,9 @@ export class pioneerInvocationController extends Controller {
                     notary,
                     notarySig
                 }
-
+                if(body.invocation.unsignedTx){
+                    entry.unsignedTx = body.invocation.unsignedTx
+                }
                 //Optional fields (custom txs)
 
                 //ibc
