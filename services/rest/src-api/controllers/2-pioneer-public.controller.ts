@@ -324,7 +324,7 @@ export class atlasPublicController extends Controller {
                 let market = {
                     protocal:'osmosis',
                     pair:"OSMO_ATOM",
-                    rate: '7.036'
+                    rate: '7.036' //TODO dont do this, get rate
                 }
                 output.exchanges.osmosis.markets.push(market)
 
@@ -347,7 +347,7 @@ export class atlasPublicController extends Controller {
 
 
             //TODO 0x assets/including tokens?
-
+            redis.set("cache:status",JSON.stringify(output))
             return(output)
         }catch(e){
             let errorResp:Error = {

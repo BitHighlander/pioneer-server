@@ -84,7 +84,7 @@ module.exports = {
     register: async function (username:string, xpubs:any, walletId:string) {
         return register_pubkeys(username, xpubs, walletId);
     },
-    getPubkeys: async function (username:string, walletId:string) {
+    getPubkeys: async function (username:string, walletId?:string) {
         return get_and_verify_pubkeys(username, walletId);
     },
     update: async function (username:string, xpubs:any, walletId:string) {
@@ -103,7 +103,8 @@ let get_and_rescan_pubkeys = async function (username:string) {
         let userInfo = await usersDB.findOne({username})
         log.debug(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
-        if(!userInfo.blockchains) throw Error("Invalid user!")
+        if(!blockchains) blockchains = []
+        // if(!userInfo.blockchains) throw Error("Invalid user!")
 
         //reformat
         let pubkeys:any = []
@@ -186,10 +187,11 @@ let get_and_rescan_pubkeys = async function (username:string) {
 // }
 //
 
-let get_and_verify_pubkeys = async function (username:string, walletId:string) {
+let get_and_verify_pubkeys = async function (username:string, walletId?:string) {
     let tag = TAG + " | get_and_verify_pubkeys | "
     try {
         //get pubkeys from mongo with walletId tagged
+        if(!walletId) walletId = username
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [walletId]}})
         log.debug(tag,"pubkeysMongo: ",pubkeysMongo)
 
@@ -197,7 +199,8 @@ let get_and_verify_pubkeys = async function (username:string, walletId:string) {
         let userInfo = await usersDB.findOne({username})
         log.debug(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
-        if(!userInfo.blockchains) throw Error("Invalid user!")
+        if(!blockchains) blockchains = []
+        //if(!userInfo.blockchains) throw Error("Invalid user!")
 
         //reformat
         let pubkeys:any = []

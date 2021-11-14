@@ -260,6 +260,36 @@ export class pioneerPrivateController extends Controller {
                         log.debug(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
                         let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinCap, pubkeys, context)
                         log.debug(tag,"responseMarkets: ",responseMarkets)
+
+                        let statusNetwork = await redis.get('cache:status')
+                        if(statusNetwork){
+                            statusNetwork = JSON.parse(statusNetwork)
+                            log.info(tag,"statusNetwork:",statusNetwork)
+
+                            log.info(tag,"thorchain:",statusNetwork.exchanges.thorchain.assets)
+                            //mark swapping protocols for assets
+                            for(let i = 0; i < responseMarkets.balances.length; i++){
+                                let balance = responseMarkets.balances[i]
+                                responseMarkets.balances[i].protocols = []
+                                log.info(tag,"balance: ",balance.symbol)
+                                //thorchain
+                                if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
+                                    responseMarkets.balances[i].protocols.push('thorchain')
+                                }
+                                //osmosis
+                                if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
+                                    responseMarkets.balances[i].protocols.push('osmosis')
+                                }
+                                //0x
+                                if(balance.network === 'ETH'){
+                                    responseMarkets.balances[i].protocols.push('0x')
+                                }
+                                log.info(tag,"balance: ",responseMarkets.balances[i])
+                            }
+                        } else {
+                            log.error(tag,'Missing cache for network status!')
+                        }
+
                         let walletDescription = {
                             context:walletInfo.context,
                             type:walletInfo.type,
@@ -271,10 +301,7 @@ export class pioneerPrivateController extends Controller {
                         //walletDescription
                         userInfo.walletDescriptions.push(walletDescription)
                     }
-
                     userInfo.totalValueUsd = totalValueUsd
-
-
                     return userInfo
                 }
             }
@@ -365,7 +392,36 @@ export class pioneerPrivateController extends Controller {
                 log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
                 log.debug(tag,"Checkpoint pre-build balances: (pre)")
                 let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, context)
-                log.debug(tag,"responseMarkets: ",responseMarkets)
+                log.info(tag,"responseMarkets: ",responseMarkets)
+
+                let statusNetwork = await redis.get('cache:status')
+                if(statusNetwork){
+                    statusNetwork = JSON.parse(statusNetwork)
+                    log.info(tag,"statusNetwork: ",statusNetwork)
+                    //mark swapping protocols for assets
+                    for(let i = 0; i < responseMarkets.balances.length; i++){
+                        let balance = responseMarkets.balances[i]
+                        responseMarkets.balances[i].protocols = []
+
+                        //thorchain
+                        if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
+                            responseMarkets.balances[i].protocols.push('thorchain')
+                        }
+                        //osmosis
+                        if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
+                            responseMarkets.balances[i].protocols.push('osmosis')
+                        }
+                        //0x
+                        if(balance.network === 'ETH'){
+                            responseMarkets.balances[i].protocols.push('0x')
+                        }
+                        log.info(tag,"balance: ",balance)
+                    }
+                } else {
+                    log.error(tag,'Missing cache for network status!')
+                }
+
+
                 walletInfo.pubkeys = pubkeys
                 walletInfo.balances = responseMarkets.balances
                 walletInfo.totalValueUsd = responseMarkets.total
@@ -377,7 +433,6 @@ export class pioneerPrivateController extends Controller {
                 log.debug(tag,"userInfoMongo: ",userInfoMongo)
                 //migrations
                 if(!userInfoMongo) throw Error("102: unknown user! username: "+username)
-                if(!userInfoMongo.walletDescriptions) throw Error("Invalid user! missing walletDescriptions")
                 walletInfo.wallets = userInfoMongo.wallets
                 walletInfo.blockchains = userInfoMongo.blockchains
 
@@ -815,7 +870,7 @@ export class pioneerPrivateController extends Controller {
             log.debug(tag,"userInfo: ",userInfo)
             //if no info throw
             if(!userInfo) throw Error("User not known!")
-            if(!userInfo.username) throw Error("invalid user!")
+            if(!userInfo.username) throw Error("pair: invalid user!")
 
             // get queryKey for code sdk user
             let sdkQueryKey = await redis.hget(body.code,"pairing")
@@ -1215,6 +1270,107 @@ export class pioneerPrivateController extends Controller {
      * @param request This is a user creation
      */
 
+    @Post('/registerUser')
+    public async registerUser(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
+        let tag = TAG + " | register | "
+        try{
+            let output:any = {}
+            let newKey
+            log.debug(tag,"body: ",body)
+
+            //if auth found in redis
+            const authInfo = await redis.hgetall(authorization)
+            log.debug(tag,"authInfo: ",authInfo)
+            let isTestnet = authInfo.isTestnet || false
+            if(body.isTestnet && Object.keys(authInfo).length != 0 && !isTestnet) throw Error(" Username already registerd on mainnet! please create a new")
+            log.debug(tag,"authInfo: ",authInfo)
+
+            let username
+            if(Object.keys(authInfo).length > 0){
+                log.debug(tag,"checkpoint 1 auth key known")
+
+                username = authInfo.username
+                if(!username) throw Error("102: invalid auth data!")
+
+                //does username match register request
+                if(username !== body.username){
+                    //is username taken?
+                    let userInfo = await redis.hgetall(body.username)
+                    if(Object.keys(userInfo).length > 0){
+                        throw Error("103: unable create new user, username taken!")
+                    } else {
+                        log.error(tag,"authInfo.username: ",authInfo.username)
+                        log.error(tag,"username: ",body.username)
+                        output.success = false
+                        output.error = "104: username transfers on tokens not supported! owned username:"+username
+                        output.code = 104
+                        return output
+                    }
+                } else {
+                    log.debug("username available! checkpoint 1a")
+                }
+            } else {
+                log.debug(tag,"checkpoint 1a auth key NOT known")
+                newKey = true
+            }
+            if(!username) username = body.username
+
+            let userInfoMongo:any = await usersDB.findOne({username})
+            log.debug(tag,"userInfoMongo: ",userInfoMongo)
+
+            if(newKey){
+                //create user
+                let userInfo:any = {
+                    registered: new Date().getTime(),
+                    id:"pioneer:"+pjson.version+":"+uuidv4(), //user ID versioning!
+                    username:body.username,
+                    verified:true,
+                }
+                if(!userInfoMongo){
+                    output.resultSaveUserDB = await usersDB.insert(userInfo)
+                }
+                //delete descriptions
+                delete userInfo.walletDescriptions
+                let redisSuccess = await redis.hmset(body.username,userInfo)
+                log.debug(tag,"redisSuccess: ",redisSuccess)
+
+                let redisSuccessKey = await redis.hmset(authorization,userInfo)
+                log.debug(tag,"redisSuccessKey: ",redisSuccessKey)
+
+                //Continue and register wallet
+                userInfoMongo = userInfo
+
+                //set user context to only wallet
+                await redis.hset(body.username,'context',body.context)
+
+                //add to wallet set
+                await redis.sadd(username+':wallets',body.context)
+            }
+
+            log.debug("checkpoint 3")
+            let userInfoRedis = await redis.hgetall(username)
+            log.debug(tag,"userInfoRedis: ",userInfoRedis)
+            log.debug("checkpoint 4 final ")
+            //get
+            // info on context
+            output.username = username
+            output.success = true
+            output.userInfo = userInfoRedis
+
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
+    //TODO rename registerPubkeys
     @Post('/register')
     public async register(@Header('Authorization') authorization: string, @Body() body: RegisterBody): Promise<any> {
         let tag = TAG + " | register | "
@@ -1264,7 +1420,7 @@ export class pioneerPrivateController extends Controller {
             if(!username) username = body.username
 
             let userInfoMongo:any = await usersDB.findOne({username})
-            log.debug(tag,"userInfoMongo: ",userInfoMongo)
+            log.info(tag,"userInfoMongo: ",userInfoMongo)
 
             if(newKey){
                 //create user
@@ -1305,6 +1461,7 @@ export class pioneerPrivateController extends Controller {
 
             //get wallets
             let userWallets = userInfoMongo.wallets
+            if(!userWallets) userWallets = []
             log.debug(tag,"userWallets: ",userWallets)
 
             //add to wallet set
@@ -1381,10 +1538,39 @@ export class pioneerPrivateController extends Controller {
                 }
             }
 
-            let { pubkeys, masters } = await pioneer.getPubkeys(username,output.context)
+            let { pubkeys, masters } = await pioneer.getPubkeys(username)
             log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
             let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, output.context)
             log.debug(tag,"responseMarkets: ",responseMarkets)
+
+            let statusNetwork = await redis.get('cache:status')
+            if(statusNetwork){
+                statusNetwork = JSON.parse(statusNetwork)
+                log.info(tag,"statusNetwork: ",statusNetwork)
+                //mark swapping protocols for assets
+                for(let i = 0; i < responseMarkets.balances.length; i++){
+                    let balance = responseMarkets.balances[i]
+                    responseMarkets.balances[i].protocols = []
+
+                    //thorchain
+                    if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
+                        responseMarkets.balances[i].protocols.push('thorchain')
+                    }
+                    //osmosis
+                    if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
+                        responseMarkets.balances[i].protocols.push('osmosis')
+                    }
+                    //0x
+                    if(balance.network === 'ETH'){
+                        responseMarkets.balances[i].protocols.push('0x')
+                    }
+                    log.info(tag,"balance: ",balance)
+                }
+            } else {
+                log.error(tag,'Missing cache for network status!')
+            }
+
+
             output.masters = masters
             output.pubkeys = pubkeys
             output.balances = responseMarkets.balances
