@@ -196,7 +196,9 @@ export class pioneerPrivateController extends Controller {
                     }
                     if(userInfoMongo.context) userInfo.context = userInfoMongo.context
                     if(userInfoMongo.assetContext) userInfo.assetContext = userInfoMongo.assetContext
+                    if(!userInfoMongo.wallets) userInfoMongo.wallets = []
                     userInfo.wallets = userInfoMongo.wallets
+
                     log.debug(tag,"userInfoMongo: ",userInfoMongo)
                     log.debug(tag,"userInfo: ",userInfo)
 
@@ -204,16 +206,16 @@ export class pioneerPrivateController extends Controller {
                     if(!userInfo.assetContext) userInfo.assetContext = 'ETH'
 
                     //context
-                    if(!userInfo.context){
-                        if(userInfoMongo.wallets && userInfoMongo.wallets.length > 0){
-                            userInfo.context = userInfoMongo.wallets[0]
-                        } else {
-                            log.debug(tag,"Invalid Mongo userInfoMongo: ",userInfoMongo.wallets)
-                            log.debug(tag,"Invalid Mongo userInfoMongo: ",typeof(userInfoMongo.wallets))
-                            log.error(tag,"Invalid Mongo entry: ",userInfoMongo)
-                            throw Error("102: invalid mongo user! ")
-                        }
-                    }
+                    // if(!userInfo.context){
+                    //     if(userInfoMongo.wallets && userInfoMongo.wallets.length > 0){
+                    //         userInfo.context = userInfoMongo.wallets[0]
+                    //     } else {
+                    //         log.debug(tag,"Invalid Mongo userInfoMongo: ",userInfoMongo.wallets)
+                    //         log.debug(tag,"Invalid Mongo userInfoMongo: ",typeof(userInfoMongo.wallets))
+                    //         log.error(tag,"Invalid Mongo entry: ",userInfoMongo)
+                    //         throw Error("102: invalid mongo user! ")
+                    //     }
+                    // }
 
                     //get market data from markets
                     let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
