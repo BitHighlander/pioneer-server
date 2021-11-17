@@ -55,7 +55,7 @@
     "@pioneer-platform/markets": "^8.1.30",
     "@pioneer-platform/midgard-client": "latest",
     "@pioneer-platform/network": "latest",
-    "@pioneer-platform/osmosis-network": "latest",
+    "@pioneer-platform/osmosis-network": "^8.1.33",
     "@pioneer-platform/pioneer-client": "latest",
     "@pioneer-platform/pioneer-coins": "latest",
     "@pioneer-platform/pioneer-invoke": "latest",

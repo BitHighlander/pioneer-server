@@ -542,6 +542,7 @@ export class atlasPublicController extends Controller {
                 if(!output.isConfirmed){
                     //get confirmation status
                     let txInfo
+                    //TODO normalize tx response between ALL blockchains
                     try{
                         if(UTXO_COINS.indexOf(output.network) >= 0){
                             txInfo = await networks['ANY'].getTransaction(output.network,output.signedTx.txid)
@@ -555,6 +556,19 @@ export class atlasPublicController extends Controller {
 
                         if(txInfo && txInfo.height){
                             log.info(tag,"Confirmed!")
+                            output.isConfirmed = true
+
+                            //update entry
+                            let mongoSave = await invocationsDB.update(
+                                {invocationId:output.invocationId},
+                                {$set:{isConfirmed:true}})
+                            output.resultUpdate = mongoSave
+                            //push event
+                            publisher.publish('invocationUpdate',JSON.stringify(output))
+                        }
+
+                        if(txInfo && txInfo.tx_response && txInfo.tx_response.height){
+                            log.debug(tag,"Confirmed!")
                             output.isConfirmed = true
 
                             //update entry

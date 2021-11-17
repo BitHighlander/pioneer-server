@@ -68,6 +68,7 @@ let push_balance_event = async function(work:any,balance:string){
             network:work.symbol,
             balance
         }
+        //TODO
         //publisher.publish('',JSON.stringify(balanceEvent))
     }catch(e){
         log.error(tag,e)
@@ -78,6 +79,9 @@ let do_work = async function(){
     let tag = TAG+" | do_work | "
     let work:any
     try{
+        // console.time('start2mongo');
+        // console.time('start2node');
+        // console.time('start2end');
 
         //TODO normalize queue names
         let allWork = await queue.count("pioneer:pubkey:ingest")
@@ -85,12 +89,11 @@ let do_work = async function(){
 
         work = await queue.getWork("pioneer:pubkey:ingest", 1)
         if(work){
-
             //setTimeout 1s TODO only in prod?
-            let release = function(){
-                redis.lpush(work.queueId,JSON.stringify({success:true}))
-            }
-            setTimeout(release,1000)
+            // let release = function(){
+            //     redis.lpush(work.queueId,JSON.stringify({success:true}))
+            // }
+            // setTimeout(release,1000)
             //note: this will still update cache on slow coins. but accepts a 0
 
             log.debug("work: ",work)
@@ -276,8 +279,21 @@ let do_work = async function(){
 
                 // if OSMO get tokens/ibc channels
                 if(work.network === 'OSMO'){
-                    //
-
+                    log.info(tag,"work.symbol: ",work.symbol)
+                    log.info(tag,"networks[work.symbol]: ",networks[work.symbol])
+                    let balancesResp = await networks[work.symbol].getBalances(work.pubkey)
+                    log.info(tag,"balancesResp: ",balancesResp)
+                    for(let i =0; i < balancesResp.length; i++){
+                        let balanceInfo = balancesResp[i]
+                        if(balanceInfo.asset){
+                            balanceInfo.network = 'OSMO'
+                            balanceInfo.isToken = false
+                            balanceInfo.symbol = balanceInfo.asset
+                            balanceInfo.source = "network"
+                            balanceInfo.lastUpdated = new Date().getTime() //TODO use block heights
+                            balances.push(balanceInfo)
+                        }
+                    }
                 }
 
 
@@ -286,14 +302,14 @@ let do_work = async function(){
 
                 log.debug(tag,"getBalance: ")
                 let balance = await networks[work.symbol].getBalance(work.pubkey)
-                log.debug(tag,"balance: ",balance)
+                log.info(tag,"balance: ",balance)
 
                 balances.push({
                     network:work.symbol,
                     asset:work.symbol,
                     symbol:work.symbol,
                     isToken:false,
-                    lastUpdated:new Date().getTime(),
+                    lastUpdated:new Date().getTime(), //TODO use block heights
                     balance,
                     source:"network"
                 })
@@ -345,9 +361,13 @@ let do_work = async function(){
                 pubkeyInfo = {
                     balances: []
                 }
+
+                //insert pubkey with balance
+
+
             }
-            log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
-            log.debug(tag,"pubkeyInfo: ",pubkeyInfo.balances)
+            log.info(tag,"pubkeyInfo: ",pubkeyInfo)
+            log.info(tag,"pubkeyInfo: ",pubkeyInfo.balances)
             let saveActions = []
 
             //push update
@@ -366,16 +386,17 @@ let do_work = async function(){
                 //if update
                 if(balanceMongo.length > 0){
                     //if value is diff
-                    log.debug(tag,"balanceMongo: ",balanceMongo[0])
-                    log.debug(tag,"balance: ",balance)
+                    log.info(tag,"balanceMongo: ",balanceMongo[0])
+                    log.info(tag,"balance: ",balance)
                     //TODO verify this actually works
                     if(balanceMongo[0].balance !== balance.balance){
+                        log.info(tag,"Update balance~!")
+
                         //TODO events
-                        //push_balance_event(work,balance)
-                        //push event
-                        //TODO get position in array and force update
+                        // push_balance_event(work,balance)
+                        // //push event
                         // saveActions.push({updateOne: {
-                        //         "filter": {pubkey:work.pubkey},
+                        //         "filter": {"pubkey.balances.":work.pubkey},
                         //         "update": {$Set: { balances: balance }},
                         //     }})
                     }
@@ -389,7 +410,7 @@ let do_work = async function(){
             }
 
             if(saveActions.length > 0){
-                log.debug(tag,"saveActions: ",saveActions)
+                log.info(tag,"saveActions: ",JSON.stringify(saveActions))
                 let updateSuccess = await pubkeysDB.bulkWrite(saveActions,{ordered:false})
                 log.debug(tag,"updateSuccess: ",updateSuccess)
             }

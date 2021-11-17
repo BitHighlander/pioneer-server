@@ -41,6 +41,76 @@ let ASSET = "ETH"
 //     inserted: 1594510142838
 // }
 
+// let work = {
+//     "_id":{
+//         "$oid":"6192ab10d544ce8a7c07af02"
+//     },
+//     "pubkey":"cosmos19442j2ug37kwyxuhc6qqyfw80xtahtenq4q0rh",
+//     "blockchain":"cosmos",
+//     "symbol":"ATOM",
+//     "asset":"cosmos",
+//     "path":"m/44'/118'/0'/0/0",
+//     "script_type":"bech32",
+//     "network":"cosmos",
+//     "created":1637002000018,
+//     "tags":[
+//         "user:pair-keepkey:405406bb-4f96-4251-b51b-aca67cf191d4",
+//         "cosmos",
+//         "ATOM",
+//         "cosmos",
+//         "kk-undefined-3800"
+//     ],
+//     "master":"cosmos19442j2ug37kwyxuhc6qqyfw80xtahtenq4q0rh",
+//     "address":"cosmos19442j2ug37kwyxuhc6qqyfw80xtahtenq4q0rh",
+//     "balances":[
+//         {
+//             "network":"ATOM",
+//             "asset":"ATOM",
+//             "symbol":"ATOM",
+//             "isToken":false,
+//             "lastUpdated":1637002003081,
+//             "balance":0,
+//             "source":"network"
+//         }
+//     ]
+// }
+
+let work = {
+    "_id":{
+        "$oid":"61935217d544ce8a7c07af21"
+    },
+    walletId: '0x2356a15042f98f0a53784f42237bd4b2873aadcf.wallet.json',
+    username: 'testerconfigenv',
+    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+    "pubkey":"osmo1yc6dftwdhgt96k8yty8djga88f3knhznply6vy",
+    "blockchain":"osmosis",
+    "symbol":"OSMO",
+    "asset":"OSMO",
+    "path":"m/44'/118'/0'/0/0",
+    "script_type":"bech32",
+    "network":"OSMO",
+    "created":1637044759526,
+    "tags":[
+        "testerconfigenv",
+        "osmosis",
+        "OSMO",
+        "OSMO",
+        "0x2356a15042f98f0a53784f42237bd4b2873aadcf.wallet.json"
+    ],
+    "master":"osmo1yc6dftwdhgt96k8yty8djga88f3knhznply6vy",
+    "address":"osmo1yc6dftwdhgt96k8yty8djga88f3knhznply6vy",
+    "balances":[
+        {
+            "network":"OSMO",
+            "asset":"OSMO",
+            "symbol":"OSMO",
+            "isToken":false,
+            "lastUpdated":1637044762640,
+            "balance":0.02,
+            "source":"network"
+        }
+    ]
+}
 
 // let work = {
 //     symbol: 'OSMO',
@@ -67,40 +137,40 @@ let ASSET = "ETH"
 //     inserted: 1594510142838
 // }
 
-let work = {
-    pubkey: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
-    username: 'test-user-2',
-    blockchain: 'thorchain',
-    symbol: 'RUNE',
-    asset: 'RUNE',
-    walletId: 'keepkey-pubkeys-343733331147363327003800',
-    queueId: 'j9ZbcfjFy6kqShnupHXLWi',
-    path: "m/44'/931'/0'/0/0",
-    script_type: 'thorchain',
-    network: 'RUNE',
-    created: 1635633471760,
-    tags: [
-        'keepkey:user:keepkey',
-        'thorchain',
-        'RUNE',
-        'thorchain',
-        'keepkey',
-        'kk-test-3800',
-        'keepkey-pubkeys-343733331147363327003800',
-        'keepkey:user:keepkey-pubkeys-343733331147363327003800'
-    ],
-    master: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
-    address: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
-    context: 'keepkey-pubkeys-343733331147363327003800',
-    isToken: false,
-    lastUpdated: 1635633696647,
-    balance: 0,
-    source: 'network',
-    priceUsd: '0',
-    valueUsd: '0',
-    onCoincap: false,
-    image: 'https://static.coincap.io/assets/icons/rune@2x.png'
-}
+// let work = {
+//     pubkey: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
+//     username: 'test-user-2',
+//     blockchain: 'thorchain',
+//     symbol: 'RUNE',
+//     asset: 'RUNE',
+//     walletId: 'keepkey-pubkeys-343733331147363327003800',
+//     queueId: 'j9ZbcfjFy6kqShnupHXLWi',
+//     path: "m/44'/931'/0'/0/0",
+//     script_type: 'thorchain',
+//     network: 'RUNE',
+//     created: 1635633471760,
+//     tags: [
+//         'keepkey:user:keepkey',
+//         'thorchain',
+//         'RUNE',
+//         'thorchain',
+//         'keepkey',
+//         'kk-test-3800',
+//         'keepkey-pubkeys-343733331147363327003800',
+//         'keepkey:user:keepkey-pubkeys-343733331147363327003800'
+//     ],
+//     master: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
+//     address: 'thor1mu7gez4wpkddlsldfc8trn94zqwqumcgan4w7u',
+//     context: 'keepkey-pubkeys-343733331147363327003800',
+//     isToken: false,
+//     lastUpdated: 1635633696647,
+//     balance: 0,
+//     source: 'network',
+//     priceUsd: '0',
+//     valueUsd: '0',
+//     onCoincap: false,
+//     image: 'https://static.coincap.io/assets/icons/rune@2x.png'
+// }
 
 // let work = {
 //     symbol: 'ETH',
