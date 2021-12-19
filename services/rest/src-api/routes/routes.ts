@@ -1350,30 +1350,6 @@ export function RegisterRoutes(app: express.Router) {
             promiseHandler(controller, promise, response, undefined, next);
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/api/v1/balance/:asset',
-
-            function pioneerPrivateController_balance(request: any, response: any, next: any) {
-            const args = {
-                    asset: {"in":"path","name":"asset","required":true,"dataType":"string"},
-                    authorization: {"in":"header","name":"Authorization","required":true,"dataType":"any"},
-            };
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = getValidatedArgs(args, request, response);
-            } catch (err) {
-                return next(err);
-            }
-
-            const controller = new pioneerPrivateController();
-
-
-            const promise = controller.balance.apply(controller, validatedArgs as any);
-            promiseHandler(controller, promise, response, undefined, next);
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.post('/api/v1/setAssetContext',
 
             function pioneerPrivateController_setAssetContext(request: any, response: any, next: any) {

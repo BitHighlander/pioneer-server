@@ -89,11 +89,11 @@ let do_work = async function(){
 
         work = await queue.getWork("pioneer:pubkey:ingest", 1)
         if(work){
-            //setTimeout 1s TODO only in prod?
-            // let release = function(){
-            //     redis.lpush(work.queueId,JSON.stringify({success:true}))
-            // }
-            // setTimeout(release,1000)
+            //setTimeout 1s TODO on flag?
+            let release = function(){
+                redis.lpush(work.queueId,JSON.stringify({success:true}))
+            }
+            setTimeout(release,1000)
             //note: this will still update cache on slow coins. but accepts a 0
 
             log.debug("work: ",work)

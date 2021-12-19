@@ -593,6 +593,7 @@ export class atlasPublicController extends Controller {
                             publisher.publish('invocationUpdate',JSON.stringify(output))
                         }
                     }catch(e){
+                        log.error(e)
                         log.info(tag,"Tx not found!")
                     }
                 }

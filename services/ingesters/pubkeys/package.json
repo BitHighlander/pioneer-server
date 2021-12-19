@@ -22,7 +22,6 @@
     "@pioneer-platform/default-redis": "latest",
     "@pioneer-platform/fio-network": "latest",
     "@pioneer-platform/loggerdog": "latest",
-    "@pioneer-platform/network": "latest",
     "@pioneer-platform/osmosis-network": "latest",
     "@pioneer-platform/redis-queue": "latest",
     "@pioneer-platform/thor-network": "latest",

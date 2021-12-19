@@ -29,7 +29,6 @@ invocationsDB.createIndex({invocationId: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
 
 const axios = require('axios')
-const network = require("@pioneer-platform/network")
 import { v4 as uuidv4 } from 'uuid';
 const short = require('short-uuid');
 let pioneer = require('../pioneer')
@@ -178,133 +177,142 @@ export class pioneerPrivateController extends Controller {
                 log.debug(tag,"accountInfo: ",accountInfo)
                 let username = accountInfo.username
                 if(!username){
-                    throw Error("103: invalid user info, missing username!")
-                }
-                let userInfo = await redis.hgetall(username)
-                log.debug(tag,"userInfo: ",userInfo)
-
-                if(Object.keys(userInfo).length === 0){
                     return {
                         success:false,
-                        error:"QueryKey not paired!"
+                        error:"QueryKey has no username registered!"
                     }
-                }else{
-                    //wallets
-                    let userInfoMongo = await usersDB.findOne({username})
-                    if(!userInfoMongo) {
-                        throw Error("102: unknown user! username: "+username)
-                    }
-                    if(userInfoMongo.context) userInfo.context = userInfoMongo.context
-                    if(userInfoMongo.assetContext) userInfo.assetContext = userInfoMongo.assetContext
-                    if(!userInfoMongo.wallets) userInfoMongo.wallets = []
-                    userInfo.wallets = userInfoMongo.wallets
-
-                    log.debug(tag,"userInfoMongo: ",userInfoMongo)
+                } else {
+                    let userInfo = await redis.hgetall(username)
                     log.debug(tag,"userInfo: ",userInfo)
 
-                    //asset context
-                    if(!userInfo.assetContext) userInfo.assetContext = 'ETH'
-
-                    //context
-                    if(!userInfo.context && userInfoMongo.wallets.length > 0){
-                        if(userInfoMongo.wallets && userInfoMongo.wallets.length > 0){
-                            userInfo.context = userInfoMongo.wallets[0]
-                        } else {
-                            log.debug(tag,"Invalid Mongo userInfoMongo: ",userInfoMongo.wallets)
-                            log.debug(tag,"Invalid Mongo userInfoMongo: ",typeof(userInfoMongo.wallets))
-                            log.error(tag,"Invalid Mongo entry: ",userInfoMongo)
-                            throw Error("102: invalid mongo user! ")
+                    if(Object.keys(userInfo).length === 0){
+                        return {
+                            success:false,
+                            error:"QueryKey not paired!"
                         }
-                    }
-
-                    //get market data from markets
-                    let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-                    let marketCacheCoinCap = await redis.get('markets:CoinCap')
-
-                    if(!marketCacheCoinGecko){
-                        let marketInfoCoinGecko = await markets.getAssetsCoingecko()
-                        if(marketInfoCoinGecko){
-                            log.debug(tag,"get info coinCap: ")
-                            //market info found for
-                            marketInfoCoinGecko.updated = new Date().getTime()
-                            // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
-                            redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko))
-                            marketCacheCoinGecko = marketInfoCoinGecko
+                    }else{
+                        //wallets
+                        let userInfoMongo = await usersDB.findOne({username})
+                        if(!userInfoMongo) {
+                            throw Error("102: unknown user! username: "+username)
                         }
-                    }
+                        if(userInfoMongo.context) userInfo.context = userInfoMongo.context
+                        if(userInfoMongo.assetContext) userInfo.assetContext = userInfoMongo.assetContext
+                        if(!userInfoMongo.wallets) userInfoMongo.wallets = []
+                        userInfo.wallets = userInfoMongo.wallets
 
-                    if(!marketCacheCoinCap){
-                        let marketInfoCoinCap = await markets.getAssetsCoinCap()
-                        if(marketInfoCoinCap){
-                            log.debug(tag,"get info coinCap: ")
-                            //market info found for
-                            marketInfoCoinCap.updated = new Date().getTime()
-                            // redis.set('markets:CoinCap',60 * 15,JSON.stringify(marketInfoCoinCap))
-                            redis.set('markets:CoinCap',JSON.stringify(marketInfoCoinCap))
-                            marketCacheCoinCap = marketInfoCoinCap
-                        }
-                    }
+                        log.debug(tag,"userInfoMongo: ",userInfoMongo)
+                        log.debug(tag,"userInfo: ",userInfo)
 
-                    //get value map
-                    userInfo.walletDescriptions = []
-                    let totalValueUsd = 0
-                    for(let i = 0; i < userInfoMongo.wallets.length; i++){
-                        let context = userInfoMongo.wallets[i]
-                        let walletInfo:any = userInfoMongo.walletDescriptions[i]
-                        log.debug(tag,"walletDescription: ",walletInfo)
-                        log.debug(tag,"building walletDescription for context: ",context)
-                        let { pubkeys } = await pioneer.getPubkeys(username,context)
-                        log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
-                        //build wallet info
-                        walletInfo.pubkeys = pubkeys
-                        if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
-                        //hydrate market data for all pubkeys
-                        log.debug(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
-                        let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinCap, pubkeys, context)
-                        log.debug(tag,"responseMarkets: ",responseMarkets)
+                        //asset context
+                        if(!userInfo.assetContext) userInfo.assetContext = 'ETH'
 
-                        let statusNetwork = await redis.get('cache:status')
-                        if(statusNetwork){
-                            statusNetwork = JSON.parse(statusNetwork)
-                            log.info(tag,"statusNetwork:",statusNetwork)
-
-                            log.info(tag,"thorchain:",statusNetwork.exchanges.thorchain.assets)
-                            //mark swapping protocols for assets
-                            for(let i = 0; i < responseMarkets.balances.length; i++){
-                                let balance = responseMarkets.balances[i]
-                                responseMarkets.balances[i].protocols = []
-                                log.info(tag,"balance: ",balance.symbol)
-                                //thorchain
-                                if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
-                                    responseMarkets.balances[i].protocols.push('thorchain')
-                                }
-                                //osmosis
-                                if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
-                                    responseMarkets.balances[i].protocols.push('osmosis')
-                                }
-                                //0x
-                                if(balance.network === 'ETH'){
-                                    responseMarkets.balances[i].protocols.push('0x')
-                                }
-                                log.info(tag,"balance: ",responseMarkets.balances[i])
+                        //context
+                        if(!userInfo.context && userInfoMongo.wallets.length > 0){
+                            if(userInfoMongo.wallets && userInfoMongo.wallets.length > 0){
+                                userInfo.context = userInfoMongo.wallets[0]
+                            } else {
+                                log.debug(tag,"Invalid Mongo userInfoMongo: ",userInfoMongo.wallets)
+                                log.debug(tag,"Invalid Mongo userInfoMongo: ",typeof(userInfoMongo.wallets))
+                                log.error(tag,"Invalid Mongo entry: ",userInfoMongo)
+                                throw Error("102: invalid mongo user! ")
                             }
-                        } else {
-                            log.error(tag,'Missing cache for network status!')
                         }
 
-                        let walletDescription = {
-                            context:walletInfo.context,
-                            type:walletInfo.type,
-                            pubkeys,
-                            balances:responseMarkets.balances,
-                            valueUsdContext:responseMarkets.total
+                        //get market data from markets
+                        let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+                        let marketCacheCoinCap = await redis.get('markets:CoinCap')
+
+                        if(!marketCacheCoinGecko){
+                            let marketInfoCoinGecko = await markets.getAssetsCoingecko()
+                            if(marketInfoCoinGecko){
+                                log.debug(tag,"get info coinCap: ")
+                                //market info found for
+                                marketInfoCoinGecko.updated = new Date().getTime()
+                                // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
+                                redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko))
+                                marketCacheCoinGecko = marketInfoCoinGecko
+                            }
                         }
-                        totalValueUsd = totalValueUsd + totalValueUsd
-                        //walletDescription
-                        userInfo.walletDescriptions.push(walletDescription)
+
+                        if(!marketCacheCoinCap){
+                            let marketInfoCoinCap = await markets.getAssetsCoinCap()
+                            if(marketInfoCoinCap){
+                                log.debug(tag,"get info coinCap: ")
+                                //market info found for
+                                marketInfoCoinCap.updated = new Date().getTime()
+                                // redis.set('markets:CoinCap',60 * 15,JSON.stringify(marketInfoCoinCap))
+                                redis.set('markets:CoinCap',JSON.stringify(marketInfoCoinCap))
+                                marketCacheCoinCap = marketInfoCoinCap
+                            }
+                        }
+
+                        //get value map
+                        userInfo.walletDescriptions = []
+                        userInfo.pubkeys = []
+                        userInfo.balances = []
+                        let totalValueUsd = 0
+                        for(let i = 0; i < userInfoMongo.wallets.length; i++){
+                            let context = userInfoMongo.wallets[i]
+                            let walletInfo:any = userInfoMongo.walletDescriptions[i]
+                            log.debug(tag,"walletDescription: ",walletInfo)
+                            log.debug(tag,"building walletDescription for context: ",context)
+                            let { pubkeys } = await pioneer.getPubkeys(username,context)
+                            log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
+                            userInfo.pubkeys = userInfo.pubkeys.concat(pubkeys)
+                            //build wallet info
+                            walletInfo.pubkeys = pubkeys
+                            if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
+                            //hydrate market data for all pubkeys
+                            log.debug(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
+                            let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinCap, pubkeys, context)
+                            log.debug(tag,"responseMarkets: ",responseMarkets)
+
+                            let statusNetwork = await redis.get('cache:status')
+                            if(statusNetwork){
+                                statusNetwork = JSON.parse(statusNetwork)
+                                log.info(tag,"statusNetwork:",statusNetwork)
+
+                                log.info(tag,"thorchain:",statusNetwork.exchanges.thorchain.assets)
+                                //mark swapping protocols for assets
+                                for(let i = 0; i < responseMarkets.balances.length; i++){
+                                    let balance = responseMarkets.balances[i]
+                                    responseMarkets.balances[i].protocols = []
+                                    log.info(tag,"balance: ",balance.symbol)
+                                    //thorchain
+                                    if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
+                                        responseMarkets.balances[i].protocols.push('thorchain')
+                                    }
+                                    //osmosis
+                                    if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
+                                        responseMarkets.balances[i].protocols.push('osmosis')
+                                    }
+                                    //0x
+                                    if(balance.network === 'ETH'){
+                                        responseMarkets.balances[i].protocols.push('0x')
+                                    }
+                                    log.info(tag,"balance: ",responseMarkets.balances[i])
+                                    //push to balances
+                                    userInfo.balances.push(responseMarkets.balances[i])
+                                }
+                            } else {
+                                log.error(tag,'Missing cache for network status!')
+                            }
+
+                            let walletDescription = {
+                                context:walletInfo.context,
+                                type:walletInfo.type,
+                                // pubkeys,
+                                // balances:responseMarkets.balances,
+                                valueUsdContext:responseMarkets.total
+                            }
+                            totalValueUsd = totalValueUsd + totalValueUsd
+                            //walletDescription
+                            userInfo.walletDescriptions.push(walletDescription)
+                        }
+                        userInfo.totalValueUsd = totalValueUsd
+                        return userInfo
                     }
-                    userInfo.totalValueUsd = totalValueUsd
-                    return userInfo
                 }
             }
         }catch(e){
@@ -573,61 +581,55 @@ export class pioneerPrivateController extends Controller {
     /**
         Get the balances for a given username on current context for asset
      */
-    @Get('/balance/{asset}')
-    public async balance(asset:string,@Header('Authorization') authorization): Promise<any> {
-        let tag = TAG + " | balance | "
-        try{
-            log.debug(tag,"queryKey: ",authorization)
-            log.debug(tag,"asset: ",asset)
-
-            let accountInfo = await redis.hgetall(authorization)
-            let username = accountInfo.username
-            if(!username) throw Error("unknown token! token:"+authorization)
-
-            //get cache
-            log.debug(tag,"cache path: ",accountInfo.username+":cache:"+asset+":balance")
-            let balance = await redis.get(accountInfo.username+":cache:"+asset+":balance")
-            log.debug(tag,"balance: ",balance)
-            if(balance){
-                return(JSON.parse(balance));
-            }else{
-                log.debug(tag,"username: ",username)
-                //get pubkeys from mongo
-                let userInfo = await usersDB.findOne({username})
-                if(!userInfo) {
-                    throw Error("102: unknown user! username: "+username)
-                }
-                log.debug(tag,"userInfo: ",userInfo)
-
-                //reformat
-                let pubkeys = {}
-                for(let i = 0; i < userInfo.pubkeys.length; i++){
-                    let pubkeyInfo = userInfo.pubkeys[i]
-                    pubkeys[pubkeyInfo.coin] = pubkeyInfo
-                }
-
-                //import into wallet
-                await network.init('full',{
-                    pubkeys
-                })
-                //get wallet info
-                balance = await network.getBalance(asset)
-
-                //write to cache
-                await redis.setex(accountInfo.username+":cache:"+asset+":balance",1000 * 5,JSON.stringify(balance))
-            }
-
-            return balance
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
+    //depricated?
+    // @Get('/balance/{asset}')
+    // public async balance(asset:string,@Header('Authorization') authorization): Promise<any> {
+    //     let tag = TAG + " | balance | "
+    //     try{
+    //         log.debug(tag,"queryKey: ",authorization)
+    //         log.debug(tag,"asset: ",asset)
+    //
+    //         let accountInfo = await redis.hgetall(authorization)
+    //         let username = accountInfo.username
+    //         if(!username) throw Error("unknown token! token:"+authorization)
+    //
+    //         //get cache
+    //         log.debug(tag,"cache path: ",accountInfo.username+":cache:"+asset+":balance")
+    //         let balance = await redis.get(accountInfo.username+":cache:"+asset+":balance")
+    //         log.debug(tag,"balance: ",balance)
+    //         if(balance){
+    //             return(JSON.parse(balance));
+    //         }else{
+    //             log.debug(tag,"username: ",username)
+    //             //get pubkeys from mongo
+    //             let userInfo = await usersDB.findOne({username})
+    //             if(!userInfo) {
+    //                 throw Error("102: unknown user! username: "+username)
+    //             }
+    //             log.debug(tag,"userInfo: ",userInfo)
+    //
+    //             //reformat
+    //             let pubkeys = {}
+    //             for(let i = 0; i < userInfo.pubkeys.length; i++){
+    //                 let pubkeyInfo = userInfo.pubkeys[i]
+    //                 pubkeys[pubkeyInfo.coin] = pubkeyInfo
+    //             }
+    //
+    //             //write to cache
+    //             await redis.setex(accountInfo.username+":cache:"+asset+":balance",1000 * 5,JSON.stringify(balance))
+    //         }
+    //
+    //         return balance
+    //     }catch(e){
+    //         let errorResp:Error = {
+    //             success:false,
+    //             tag,
+    //             e
+    //         }
+    //         log.error(tag,"e: ",{errorResp})
+    //         throw new ApiError("error",503,"error: "+e.toString());
+    //     }
+    // }
     /**
      * Update current account asset context
      * @param request This is an application pairing submission
@@ -1292,7 +1294,6 @@ export class pioneerPrivateController extends Controller {
                 log.debug(tag,"checkpoint 1 auth key known")
 
                 username = authInfo.username
-                if(!username) throw Error("102: invalid auth data!")
 
                 //does username match register request
                 if(username !== body.username){
@@ -1309,10 +1310,10 @@ export class pioneerPrivateController extends Controller {
                         return output
                     }
                 } else {
-                    log.debug("username available! checkpoint 1a")
+                    log.info("username available! checkpoint 1a")
                 }
             } else {
-                log.debug(tag,"checkpoint 1a auth key NOT known")
+                log.info(tag,"checkpoint 1a auth key NOT known")
                 newKey = true
             }
             if(!username) username = body.username
@@ -1386,7 +1387,7 @@ export class pioneerPrivateController extends Controller {
 
             //if auth found in redis
             const authInfo = await redis.hgetall(authorization)
-            log.debug(tag,"authInfo: ",authInfo)
+            log.info(tag,"authInfo: ",authInfo)
             let isTestnet = authInfo.isTestnet || false
             if(body.isTestnet && Object.keys(authInfo).length != 0 && !isTestnet) throw Error(" Username already registerd on mainnet! please create a new")
             log.debug(tag,"authInfo: ",authInfo)
@@ -1394,10 +1395,7 @@ export class pioneerPrivateController extends Controller {
             let username
             if(Object.keys(authInfo).length > 0){
                 log.debug(tag,"checkpoint 1 auth key known")
-
                 username = authInfo.username
-                if(!username) throw Error("102: invalid auth data!")
-
                 //does username match register request
                 if(username !== body.username){
                     //is username taken?
