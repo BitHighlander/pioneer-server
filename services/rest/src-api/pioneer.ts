@@ -211,6 +211,7 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
             //TODO validate pubkeys?
 
             if(!masters[pubkeyInfo.symbol] && pubkeyInfo.master)masters[pubkeyInfo.symbol] = pubkeyInfo.master
+            pubkeyInfo.context = context
             pubkeys.push(pubkeyInfo)
         }
 
