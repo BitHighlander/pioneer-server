@@ -517,7 +517,7 @@ export class atlasPublicController extends Controller {
         try{
             if(!invocationId) throw Error("102: invocationId required! ")
             let output = await invocationsDB.findOne({invocationId})
-            log.info(tag,"invocation MONGO: ",output)
+            log.debug(tag,"invocation MONGO: ",output)
 
             //hack, if a disagreement in txid, use broadcast (bad hash bug) TODO FIXME
             if(

@@ -239,6 +239,7 @@ subscriber.on('message', async function (channel, payloadS) {
                 for(let i =0; i < sockets.length; i++){
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
+                        globalSockets[socketid].emit('invocations', invocation);
                         globalSockets[socketid].emit('message', invocation);
                     }
                 }
@@ -260,7 +261,9 @@ subscriber.on('message', async function (channel, payloadS) {
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
                         pairing.type = "pairing"
+                        //TODO remove message
                         globalSockets[socketid].emit('message', pairing);
+                        globalSockets[socketid].emit('pairings', pairing);
                         log.debug(tag,socketid+ " sending message to user! msg: ",pairing)
                     }
                 }
@@ -290,6 +293,7 @@ subscriber.on('message', async function (channel, payloadS) {
                         if(globalSockets[socketid]){
                             context.event = 'context'
                             globalSockets[socketid].emit('message', context);
+                            globalSockets[socketid].emit('context', context);
                             log.debug(tag,socketid+ " sending message to user! msg: ",context)
                         }
                     }
@@ -305,6 +309,7 @@ subscriber.on('message', async function (channel, payloadS) {
                     if(globalSockets[socketid]){
                         context.event = 'context'
                         globalSockets[socketid].emit('message', context);
+                        globalSockets[socketid].emit('context', context);
                         log.debug(tag,socketid+ " sending message to user! msg: ",context)
                     }
                 }
@@ -418,7 +423,6 @@ io.on('connection', async function(socket){
     socket.on('message', async function(msg){
         log.debug(tag,'**** Received by socket api from client : ', typeof(msg));
         if(typeof(msg)==="string") msg = JSON.parse(msg)
-
     });
 
 });
