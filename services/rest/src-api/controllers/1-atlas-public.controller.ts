@@ -94,7 +94,7 @@ export class pioneerPublicController extends Controller {
                 type:"contract",
                 tags:body.tags,
                 username: body.contractName,
-                walletId: "contract:"+body.contractName,
+                context: "contract:"+body.contractName,
                 pubkey: body.pubkey,
                 charted: new Date().getTime()
             }

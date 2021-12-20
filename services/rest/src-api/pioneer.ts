@@ -81,21 +81,21 @@ module.exports = {
     refresh: async function (username:string) {
         return get_and_rescan_pubkeys(username);
     },
-    register: async function (username:string, xpubs:any, walletId:string) {
-        return register_pubkeys(username, xpubs, walletId);
+    register: async function (username:string, xpubs:any, context:string) {
+        return register_pubkeys(username, xpubs, context);
     },
-    getPubkeys: async function (username:string, walletId?:string) {
-        return get_and_verify_pubkeys(username, walletId);
+    getPubkeys: async function (username:string, context?:string) {
+        return get_and_verify_pubkeys(username, context);
     },
-    update: async function (username:string, xpubs:any, walletId:string) {
-        return update_pubkeys(username, xpubs, walletId);
+    update: async function (username:string, xpubs:any, context:string) {
+        return update_pubkeys(username, xpubs, context);
     },
 }
 
 let get_and_rescan_pubkeys = async function (username:string) {
     let tag = TAG + " | get_and_rescan_pubkeys | "
     try {
-        //get pubkeys from mongo with walletId tagged
+        //get pubkeys from mongo with context tagged
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [username]}})
         log.debug(tag,"pubkeysMongo: ",pubkeysMongo)
 
@@ -115,22 +115,22 @@ let get_and_rescan_pubkeys = async function (username:string) {
 
             //for each wallet by user
             for(let j = 0; j < userInfo.wallets.length; j++){
-                let walletId = userInfo.wallets[i]
+                let context = userInfo.wallets[i]
                 if(pubkeyInfo.type === 'zpub'){
-                    //if walletId found in tags
-                    let match = pubkeyInfo.tags.filter((e: any) => e === walletId)
+                    //if context found in tags
+                    let match = pubkeyInfo.tags.filter((e: any) => e === context)
                     if(match.length > 0){
-                        register_zpub(username,pubkeyInfo,walletId)
+                        register_zpub(username,pubkeyInfo,context)
                     }
                 }else if(pubkeyInfo.type === 'xpub'){
-                    let match = pubkeyInfo.tags.filter((e: any) => e === walletId)
+                    let match = pubkeyInfo.tags.filter((e: any) => e === context)
                     if(match.length > 0){
-                        register_xpub(username,pubkeyInfo,walletId)
+                        register_xpub(username,pubkeyInfo,context)
                     }
                 }else if(pubkeyInfo.type === 'address'){
-                    let match = pubkeyInfo.tags.filter((e: any) => e === walletId)
+                    let match = pubkeyInfo.tags.filter((e: any) => e === context)
                     if(match.length > 0){
-                        register_address(username,pubkeyInfo,walletId)
+                        register_address(username,pubkeyInfo,context)
                     }
                 }
             }
@@ -145,7 +145,7 @@ let get_and_rescan_pubkeys = async function (username:string) {
     }
 }
 
-// let fix_pubkey = async function (username:string, pubkey:any, walletId:string) {
+// let fix_pubkey = async function (username:string, pubkey:any, context:string) {
 //     let tag = TAG + " | register_address | "
 //     try {
 //         let output:any = {}
@@ -160,9 +160,9 @@ let get_and_rescan_pubkeys = async function (username:string) {
 //                     { $addToSet: { tags: username } })
 //                 output.pushTagMongoUsername = pushTagMongo
 //             }
-//             if(tags.indexOf(walletId) < 0){
+//             if(tags.indexOf(context) < 0){
 //                 let pushTagMongo = await pubkeysDB.update({pubkey:pubkey.pubkey},
-//                     { $addToSet: { tags: walletId } })
+//                     { $addToSet: { tags: context } })
 //                 output.pushTagMongoWalletId = pushTagMongo
 //             }
 //         } else {
@@ -171,8 +171,8 @@ let get_and_rescan_pubkeys = async function (username:string) {
 //             if(pubkey.tags.indexOf(username) < 0){
 //                 pubkey.tags.push(username)
 //             }
-//             if(pubkey.tags.indexOf(walletId) < 0){
-//                 pubkey.tags.push(walletId)
+//             if(pubkey.tags.indexOf(context) < 0){
+//                 pubkey.tags.push(context)
 //             }
 //             let resultFix = await pubkeysDB.insert(pubkey)
 //             log.debug(tag,"resultFix: ",resultFix)
@@ -187,12 +187,12 @@ let get_and_rescan_pubkeys = async function (username:string) {
 // }
 //
 
-let get_and_verify_pubkeys = async function (username:string, walletId?:string) {
+let get_and_verify_pubkeys = async function (username:string, context?:string) {
     let tag = TAG + " | get_and_verify_pubkeys | "
     try {
-        //get pubkeys from mongo with walletId tagged
-        if(!walletId) walletId = username
-        let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [walletId]}})
+        //get pubkeys from mongo with context tagged
+        if(!context) context = username
+        let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [context]}})
         log.debug(tag,"pubkeysMongo: ",pubkeysMongo)
 
         //get user info from mongo
@@ -239,10 +239,10 @@ let get_and_verify_pubkeys = async function (username:string, walletId?:string) 
     }
 }
 
-let register_zpub = async function (username:string, pubkey:any, walletId:string) {
+let register_zpub = async function (username:string, pubkey:any, context:string) {
     let tag = TAG + " | register_zpub | "
     try {
-        if(!walletId) throw Error("101: walletId required!")
+        if(!context) throw Error("101: context required!")
         if(!pubkey.zpub) throw Error("102: invalid pubkey! missing zpub!")
         if(!pubkey.pubkey) throw Error("103: invalid pubkey! missing pubkey!")
         if(pubkey.pubkey == true) throw Error("104:(zpub) invalid pubkey! == true wtf!")
@@ -271,7 +271,7 @@ let register_zpub = async function (username:string, pubkey:any, walletId:string
             asset:pubkey.symbol,
             queueId,
             username,
-            walletId,
+            context,
             zpub:pubkey.zpub,
             inserted: new Date().getTime()
         }
@@ -285,7 +285,7 @@ let register_zpub = async function (username:string, pubkey:any, walletId:string
     }
 }
 
-let register_xpub = async function (username:string, pubkey:any, walletId:string) {
+let register_xpub = async function (username:string, pubkey:any, context:string) {
     let tag = TAG + " | register_xpub | "
     try {
         if(!pubkey.pubkey) throw Error("102: invalid pubkey! missing pubkey!")
@@ -307,7 +307,7 @@ let register_xpub = async function (username:string, pubkey:any, walletId:string
             address = pubkey.master
         }
         let work = {
-            walletId,
+            context,
             type:'xpub',
             blockchain:pubkey.blockchain,
             pubkey:pubkey.pubkey,
@@ -330,7 +330,7 @@ let register_xpub = async function (username:string, pubkey:any, walletId:string
     }
 }
 
-let register_address = async function (username:string, pubkey:any, walletId:string) {
+let register_address = async function (username:string, pubkey:any, context:string) {
     let tag = TAG + " | register_address | "
     try {
         let address = pubkey.pubkey
@@ -344,7 +344,7 @@ let register_address = async function (username:string, pubkey:any, walletId:str
             blockchain:pubkey.blockchain,
             network:pubkey.network,
             asset:pubkey.symbol,
-            walletId,
+            context,
             queueId,
             username,
             address,
@@ -362,10 +362,10 @@ let register_address = async function (username:string, pubkey:any, walletId:str
     }
 }
 
-let update_pubkeys = async function (username:string, pubkeys:any, walletId:string) {
+let update_pubkeys = async function (username:string, pubkeys:any, context:string) {
     let tag = TAG + " | update_pubkeys | "
     try {
-        log.debug(tag,"input: ",{username,pubkeys,walletId})
+        log.debug(tag,"input: ",{username,pubkeys,context})
         let saveActions = []
         //generate addresses
         let output:any = {}
@@ -414,9 +414,9 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
                 if (!pubkeyInfo.symbol) pubkeyInfo.symbol = nativeAsset
 
                 //hack clean up tags
-                if(typeof(walletId) !== 'string') {
+                if(typeof(context) !== 'string') {
                     //
-                    log.error("invalid walletId!",walletId)
+                    log.error("invalid context!",context)
                     throw Error("Bad walletID!")
                 }
 
@@ -431,7 +431,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
                     script_type:pubkeyInfo.script_type,
                     network:pubkeyInfo.network,
                     created:new Date().getTime(),
-                    tags:[username,pubkeyInfo.blockchain,pubkeyInfo.network,walletId],
+                    tags:[username,pubkeyInfo.blockchain,pubkeyInfo.network,context],
                 }
 
                 if(pubkeyInfo.type === "xpub" || pubkeyInfo.xpub){
@@ -442,7 +442,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
                         throw Error("102: Invalid xpub pubkey!")
                     }
                     saveActions.push({insertOne:entryMongo})
-                    let queueId = await register_xpub(username,pubkeyInfo,walletId)
+                    let queueId = await register_xpub(username,pubkeyInfo,context)
                     //add to Mutex array for async xpub register option
                     output.work.push(queueId)
                 } else if(pubkeyInfo.type === "zpub" || pubkeyInfo.zpub){
@@ -453,12 +453,12 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
                         throw Error("102: Invalid zpub pubkey!")
                     }
                     saveActions.push({insertOne:entryMongo})
-                    let queueId = await register_zpub(username,pubkeyInfo,walletId)
+                    let queueId = await register_zpub(username,pubkeyInfo,context)
                     //add to Mutex array for async xpub register option
                     output.work.push(queueId)
                 } else if(pubkeyInfo.type === "address"){
                     entryMongo.pubkey = pubkeyInfo.pubkey
-                    let queueId = await register_address(username,pubkeyInfo,walletId)
+                    let queueId = await register_address(username,pubkeyInfo,context)
                     output.work.push(queueId)
                 } else {
                     log.error("Unhandled type: ",pubkeyInfo.type)
@@ -474,7 +474,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
                     //push wallet to tags
                     //add to tags
                     let pushTagMongo = await pubkeysDB.update({pubkey:entryMongo.pubkey},
-                        { $addToSet: { tags: { $each:[walletId,username] } } })
+                        { $addToSet: { tags: { $each:[context,username] } } })
                     log.debug(tag,"pushTagMongo: ",pushTagMongo)
                 }else{
                     // saveActions.push({insertOne: entryMongo})
@@ -531,10 +531,10 @@ let update_pubkeys = async function (username:string, pubkeys:any, walletId:stri
     }
 }
 
-let register_pubkeys = async function (username: string, pubkeys: any, walletId: string) {
+let register_pubkeys = async function (username: string, pubkeys: any, context: string) {
     let tag = TAG + " | register_pubkeys | "
     try {
-        log.debug(tag, "input: ", {username, pubkeys, walletId})
+        log.debug(tag, "input: ", {username, pubkeys, context})
         let saveActions = []
         //generate addresses
         let output: any = {}
@@ -567,7 +567,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 script_type: pubkeyInfo.script_type,
                 network: pubkeyInfo.blockchain,
                 created: new Date().getTime(),
-                tags: [username, pubkeyInfo.blockchain,pubkeyInfo.symbol, pubkeyInfo.network, walletId],
+                tags: [username, pubkeyInfo.blockchain,pubkeyInfo.symbol, pubkeyInfo.network, context],
             }
 
             if (pubkeyInfo.type === "xpub") {
@@ -578,7 +578,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 entryMongo.type = 'xpub'
                 entryMongo.master = pubkeyInfo.address
                 entryMongo.address = pubkeyInfo.address
-                let queueId = await register_xpub(username, pubkeyInfo, walletId)
+                let queueId = await register_xpub(username, pubkeyInfo, context)
 
                 //add to Mutex array for async xpub register option
                 output.work.push(queueId)
@@ -592,7 +592,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 entryMongo.master = pubkeyInfo.address
                 entryMongo.address = pubkeyInfo.address
 
-                let queueId = await register_xpub(username, pubkeyInfo, walletId)
+                let queueId = await register_xpub(username, pubkeyInfo, context)
 
                 //add to Mutex array for async xpub register option
                 output.work.push(queueId)
@@ -601,7 +601,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 entryMongo.pubkey = pubkeyInfo.pubkey
                 entryMongo.master = pubkeyInfo.pubkey
                 entryMongo.address = pubkeyInfo.address
-                let queueId = await register_address(username, pubkeyInfo, walletId)
+                let queueId = await register_address(username, pubkeyInfo, context)
 
                 output.work.push(queueId)
             } else {
@@ -618,7 +618,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, walletId:
                 //push wallet to tags
                 //add to tags
                 let pushTagMongo = await pubkeysDB.update({pubkey:entryMongo.pubkey},
-                    { $addToSet: { tags: { $each:[walletId,username] } } })
+                    { $addToSet: { tags: { $each:[context,username] } } })
 
                 log.debug(tag,"pushTagMongo: ",pushTagMongo)
             }else{

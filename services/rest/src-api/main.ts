@@ -476,7 +476,7 @@ app.use(errorHandler)
 let start_markets_cache = async function () {
     let tag = " | start_markets_cache | "
     try {
-        //get pubkeys from mongo with walletId tagged
+        //get pubkeys from mongo with context tagged
         let marketsMongo = await marketsDB.find({},{limit:1000})
         log.debug(tag,"marketsMongo: ",marketsMongo)
 

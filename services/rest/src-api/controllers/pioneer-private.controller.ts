@@ -886,14 +886,14 @@ export class pioneerPrivateController extends Controller {
                 //if username sdk
                 if(userInfoSdk.wallets){
                     //TODO handle if multiple?
-                    let walletId = userInfoSdk.wallets
-                    log.debug(tag,"walletId: ",walletId)
+                    let context = userInfoSdk.wallets
+                    log.debug(tag,"context: ",context)
 
                     let userInfoOfSdkKey = await usersDB.findOne({username:userInfoSdk.username})
                     log.debug(tag,"userInfoOfSdkKey: ",userInfoOfSdkKey)
 
                     //add metamask wallet to user
-                    let updateDBPubkey = await usersDB.update({username:userInfo.username},{ $addToSet: { "wallets": walletId } })
+                    let updateDBPubkey = await usersDB.update({username:userInfo.username},{ $addToSet: { "wallets": context } })
                     log.debug(tag,"updateDBPubkey: ",updateDBPubkey)
 
                     //for wallet on sdkUserInfo

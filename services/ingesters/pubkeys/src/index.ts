@@ -99,7 +99,7 @@ let do_work = async function(){
             log.debug("work: ",work)
             if(!work.symbol && work.asset) work.symbol = work.asset
             if(!work.type && work.address) work.type = "address"
-            if(!work.walletId) throw Error("100: invalid work! missing walletId")
+            if(!work.context) throw Error("100: invalid work! missing context")
             if(!work.symbol) throw Error("101: invalid work! missing symbol")
             if(!work.username) throw Error("102: invalid work! missing username")
             if(!work.pubkey) throw Error("103: invalid work! missing pubkey")
@@ -128,7 +128,7 @@ let do_work = async function(){
                 })
 
                 //update balance cache
-                let updateResult = await redis.hset(work.username+":assets:"+work.walletId,work.symbol,balance)
+                let updateResult = await redis.hset(work.username+":assets:"+work.context,work.symbol,balance)
                 if(updateResult) push_balance_event(work,balance)
                 log.debug(tag,"updateResult: ",updateResult)
 
@@ -314,7 +314,7 @@ let do_work = async function(){
                     source:"network"
                 })
 
-                let updateResult = await redis.hset(work.username+":assets:"+work.walletId,work.symbol,balance)
+                let updateResult = await redis.hset(work.username+":assets:"+work.context,work.symbol,balance)
                 if(updateResult) push_balance_event(work,balance)
                 //if eth get info
                 //TODO if change push new balance over socket to user
