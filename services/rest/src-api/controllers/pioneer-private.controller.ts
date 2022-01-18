@@ -271,14 +271,14 @@ export class pioneerPrivateController extends Controller {
                             let statusNetwork = await redis.get('cache:status')
                             if(statusNetwork){
                                 statusNetwork = JSON.parse(statusNetwork)
-                                log.info(tag,"statusNetwork:",statusNetwork)
+                                log.debug(tag,"statusNetwork:",statusNetwork)
 
-                                log.info(tag,"thorchain:",statusNetwork.exchanges.thorchain.assets)
+                                log.debug(tag,"thorchain:",statusNetwork.exchanges.thorchain.assets)
                                 //mark swapping protocols for assets
                                 for(let i = 0; i < responseMarkets.balances.length; i++){
                                     let balance = responseMarkets.balances[i]
                                     responseMarkets.balances[i].protocols = []
-                                    log.info(tag,"balance: ",balance.symbol)
+                                    log.debug(tag,"balance: ",balance.symbol)
                                     //thorchain
                                     if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
                                         responseMarkets.balances[i].protocols.push('thorchain')
@@ -291,7 +291,7 @@ export class pioneerPrivateController extends Controller {
                                     if(balance.network === 'ETH'){
                                         responseMarkets.balances[i].protocols.push('0x')
                                     }
-                                    log.info(tag,"balance: ",responseMarkets.balances[i])
+                                    log.debug(tag,"balance: ",responseMarkets.balances[i])
                                     //push to balances
                                     userInfo.balances.push(responseMarkets.balances[i])
                                 }
@@ -402,12 +402,12 @@ export class pioneerPrivateController extends Controller {
                 log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
                 log.debug(tag,"Checkpoint pre-build balances: (pre)")
                 let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, context)
-                log.info(tag,"responseMarkets: ",responseMarkets)
+                log.debug(tag,"responseMarkets: ",responseMarkets)
 
                 let statusNetwork = await redis.get('cache:status')
                 if(statusNetwork){
                     statusNetwork = JSON.parse(statusNetwork)
-                    log.info(tag,"statusNetwork: ",statusNetwork)
+                    log.debug(tag,"statusNetwork: ",statusNetwork)
                     //mark swapping protocols for assets
                     for(let i = 0; i < responseMarkets.balances.length; i++){
                         let balance = responseMarkets.balances[i]
@@ -425,7 +425,7 @@ export class pioneerPrivateController extends Controller {
                         if(balance.network === 'ETH'){
                             responseMarkets.balances[i].protocols.push('0x')
                         }
-                        log.info(tag,"balance: ",balance)
+                        log.debug(tag,"balance: ",balance)
                     }
                 } else {
                     log.error(tag,'Missing cache for network status!')
@@ -764,22 +764,42 @@ export class pioneerPrivateController extends Controller {
     public async updateInvocation(@Body() body: UpdateInvocationBody, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | updateInvocation | "
         try{
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
             log.debug(tag,"Authorization: ",Authorization)
-            //TODO auth?
+            let userInfo = await redis.hgetall(Authorization)
+            log.info(tag,"userInfo: ",userInfo)
+            //TODO auth
+            //get invocation owner
+            let invocationInfo = await invocationsDB.findOne({invocationId:body.invocationId})
+            if(invocationInfo.username === userInfo.username){
+                log.info(tag," auth success")
+                //TODO use auth
+                //update database
+                let updateResult
+                if(body.unsignedTx){
+                    //update state to
+                    updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{unsignedTx:body.unsignedTx,state:'builtTx'}})
+                }
 
-            //update database
-            let updateResult
-            if(body.unsignedTx){
-                //update state to
-                updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{unsignedTx:body.unsignedTx,state:'builtTx'}})
+                if(body.signedTx){
+                    if(!invocationInfo.signTx){
+                        //push signedTx event
+                        let event = {
+                            type:'update',
+                            username:userInfo.username,
+                            invocation:body
+                        }
+                        publisher.publish('invocations',JSON.stringify(event))
+                    }
+                    updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{signedTx:body.signedTx,state:'signedTx'}})
+                }
+                return(updateResult);
+            } else {
+                log.error(tag,"auth failure!")
+                log.error(tag,"owned: ",invocationInfo.username)
+                log.error(tag,"given: ",userInfo.username)
+                throw Error("Failed to auth! owned: "+invocationInfo.username+" given: "+userInfo.username)
             }
-
-            if(body.signedTx){
-                updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{signedTx:body.signedTx,state:'signedTx'}})
-            }
-
-            return(updateResult);
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -1310,10 +1330,10 @@ export class pioneerPrivateController extends Controller {
                         return output
                     }
                 } else {
-                    log.info("username available! checkpoint 1a")
+                    log.debug("username available! checkpoint 1a")
                 }
             } else {
-                log.info(tag,"checkpoint 1a auth key NOT known")
+                log.debug(tag,"checkpoint 1a auth key NOT known")
                 newKey = true
             }
             if(!username) username = body.username
@@ -1387,7 +1407,7 @@ export class pioneerPrivateController extends Controller {
 
             //if auth found in redis
             const authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
+            log.debug(tag,"authInfo: ",authInfo)
             let isTestnet = authInfo.isTestnet || false
             if(body.isTestnet && Object.keys(authInfo).length != 0 && !isTestnet) throw Error(" Username already registerd on mainnet! please create a new")
             log.debug(tag,"authInfo: ",authInfo)
@@ -1420,7 +1440,7 @@ export class pioneerPrivateController extends Controller {
             if(!username) username = body.username
 
             let userInfoMongo:any = await usersDB.findOne({username})
-            log.info(tag,"userInfoMongo: ",userInfoMongo)
+            log.debug(tag,"userInfoMongo: ",userInfoMongo)
 
             if(newKey){
                 //create user
@@ -1546,7 +1566,7 @@ export class pioneerPrivateController extends Controller {
             let statusNetwork = await redis.get('cache:status')
             if(statusNetwork){
                 statusNetwork = JSON.parse(statusNetwork)
-                log.info(tag,"statusNetwork: ",statusNetwork)
+                log.debug(tag,"statusNetwork: ",statusNetwork)
                 //mark swapping protocols for assets
                 for(let i = 0; i < responseMarkets.balances.length; i++){
                     let balance = responseMarkets.balances[i]
@@ -1564,7 +1584,7 @@ export class pioneerPrivateController extends Controller {
                     if(balance.network === 'ETH'){
                         responseMarkets.balances[i].protocols.push('0x')
                     }
-                    log.info(tag,"balance: ",balance)
+                    log.debug(tag,"balance: ",balance)
                 }
             } else {
                 log.error(tag,'Missing cache for network status!')

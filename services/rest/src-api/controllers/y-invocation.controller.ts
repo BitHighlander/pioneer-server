@@ -295,12 +295,11 @@ export class pioneerInvocationController extends Controller {
             }
 
             //build invocation
-
-
             if(onlineUsers.indexOf(body.username) >= 0){
                 body.invocationId = invocationId
                 //auth (app needs to verify!)
                 body.auth = authorization
+                body.type = 'signRequest'
                 //send
                 publisher.publish("invocations",JSON.stringify(body))
 

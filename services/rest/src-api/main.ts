@@ -139,29 +139,29 @@ subscriber.subscribe('invocations');
 subscriber.on('message', async function (channel, payloadS) {
     let tag = TAG + ' | publishToFront | ';
     try {
-        log.debug(tag,channel+ " event: ",payloadS)
+        log.info(tag,channel+ " event: ",payloadS)
         //Push event over socket
         if(channel === 'payments'){
             let payload = JSON.parse(payloadS)
-            log.debug(tag,"payments: ",payload)
+            log.info(tag,"payments: ",payload)
             //for each username
             for(let i = 0; i < payload.accounts.length; i++){
                 let username = payload.accounts[i]
 
                 //if subscribed
                 if(usersByUsername[username]){
-                    log.debug(tag," User is subscribed! username: ",username)
+                    log.info(tag," User is subscribed! username: ",username)
 
-                    log.debug(tag,"usersByUsername: ",usersByUsername)
-                    //log.debug(tag,"globalSockets: ",globalSockets)
-                    log.debug(tag,"usersBySocketId: ",usersBySocketId)
+                    log.info(tag,"usersByUsername: ",usersByUsername)
+                    //log.info(tag,"globalSockets: ",globalSockets)
+                    log.info(tag,"usersBySocketId: ",usersBySocketId)
 
                     let sockets = usersByUsername[username]
-                    log.debug(tag,"sockets: ",sockets)
+                    log.info(tag,"sockets: ",sockets)
                     for(let i =0; i < sockets.length; i++){
                         let socketid = sockets[i]
                         //push tx to user
-                        log.debug(tag,"socketid: ",socketid)
+                        log.info(tag,"socketid: ",socketid)
                         if(globalSockets[socketid]){
 
                             let tx = payload
@@ -170,11 +170,11 @@ subscriber.on('message', async function (channel, payloadS) {
                             let to
                             let amount
                             let fee
-                            log.debug(tag,"tx: ",tx)
+                            log.info(tag,"tx: ",tx)
                             for(let j = 0; j < tx.events.length; j++){
 
                                 let event = tx.events[j]
-                                log.debug(tag,"event: ",event)
+                                log.info(tag,"event: ",event)
                                 let addressInfo = await redis.smembers(event.address+":accounts")
 
                                 if(addressInfo.indexOf(username) >= 0 && event.type === 'debit'){
@@ -224,12 +224,12 @@ subscriber.on('message', async function (channel, payloadS) {
                         }
                     }
                 } else {
-                    log.debug(tag," Payment to offline user! ")
+                    log.info(tag," Payment to offline user! ")
                 }
             }
         } else if(channel === 'invocations'){
             let invocation = JSON.parse(payloadS)
-            log.debug(tag,"invocation: ",invocation)
+            log.info(tag,"invocation: ",invocation)
             //send to user
             let username = invocation.username
             if(!username) throw Error("username required!")
@@ -240,7 +240,6 @@ subscriber.on('message', async function (channel, payloadS) {
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
                         globalSockets[socketid].emit('invocations', invocation);
-                        globalSockets[socketid].emit('message', invocation);
                     }
                 }
             } else {
@@ -249,22 +248,21 @@ subscriber.on('message', async function (channel, payloadS) {
             }
         }else if(channel === 'pairings'){
             let pairing = JSON.parse(payloadS)
-            log.debug(tag,"pairing: ",pairing)
+            log.info(tag,"pairing: ",pairing)
             //send to user
             let queryKey = pairing.queryKey
-            log.debug(tag,"usersByKey: ",usersByKey)
+            log.info(tag,"usersByKey: ",usersByKey)
             if(usersByKey[queryKey]){
-                log.debug(tag,"key found! ")
+                log.info(tag,"key found! ")
                 let sockets = usersByKey[queryKey]
-                log.debug(tag,"sockets: ",sockets)
+                log.info(tag,"sockets: ",sockets)
                 for(let i =0; i < sockets.length; i++){
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
                         pairing.type = "pairing"
                         //TODO remove message
-                        globalSockets[socketid].emit('message', pairing);
                         globalSockets[socketid].emit('pairings', pairing);
-                        log.debug(tag,socketid+ " sending message to user! msg: ",pairing)
+                        log.info(tag,socketid+ " sending message to user! msg: ",pairing)
                     }
                 }
             } else {
@@ -273,28 +271,27 @@ subscriber.on('message', async function (channel, payloadS) {
             }
         }else if(channel === 'context'){
             let context = JSON.parse(payloadS)
-            log.debug(tag,"context: ",context)
-            log.debug(tag,"context: ",context.username)
-            log.debug(tag,"usersByUsername: ",usersByUsername)
-            log.debug(tag,"usersByKey: ",usersByKey)
+            log.info(tag,"context: ",context)
+            log.info(tag,"context: ",context.username)
+            log.info(tag,"usersByUsername: ",usersByUsername)
+            log.info(tag,"usersByKey: ",usersByKey)
             //usersBySocketId
-            log.debug(tag,"usersBySocketId: ",usersBySocketId)
+            log.info(tag,"usersBySocketId: ",usersBySocketId)
 
             //send to keys
             let queryKeys = await redis.smembers(context.username+":pairings")
-            log.debug(tag,"queryKey")
+            log.info(tag,"queryKey")
             for(let i = 0; i < queryKeys.length; i++){
                 let queryKey = queryKeys[i]
                 if(usersByKey[queryKey]){
                     let sockets = usersByKey[queryKey]
-                    log.debug(tag,"sockets: ",sockets)
+                    log.info(tag,"sockets: ",sockets)
                     for(let j =0; j < sockets.length; j++){
                         let socketid = sockets[j]
                         if(globalSockets[socketid]){
                             context.event = 'context'
-                            globalSockets[socketid].emit('message', context);
                             globalSockets[socketid].emit('context', context);
-                            log.debug(tag,socketid+ " sending message to user! msg: ",context)
+                            log.info(tag,socketid+ " sending message to user! msg: ",context)
                         }
                     }
                 }
@@ -303,14 +300,13 @@ subscriber.on('message', async function (channel, payloadS) {
             //send to users
             if(usersByUsername[context.username]){
                 let sockets = usersByUsername[context.username]
-                log.debug(tag,"sockets: ",sockets)
+                log.info(tag,"sockets: ",sockets)
                 for(let i =0; i < sockets.length; i++){
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
                         context.event = 'context'
-                        globalSockets[socketid].emit('message', context);
                         globalSockets[socketid].emit('context', context);
-                        log.debug(tag,socketid+ " sending message to user! msg: ",context)
+                        log.info(tag,socketid+ " sending message to user! msg: ",context)
                     }
                 }
             }
@@ -321,7 +317,7 @@ subscriber.on('message', async function (channel, payloadS) {
         ]
 
         if(channel.indexOf(globals) >= 0){
-            log.debug(tag,"Pushing event to global users!")
+            log.info(tag,"Pushing event to global users!")
             io.emit('message', payloadS);
             io.emit(channel, payloadS);
         }
@@ -346,7 +342,7 @@ subscriber.on('message', async function (channel, payloadS) {
 
 io.on('connection', async function(socket){
     let tag = TAG + ' | io connection | '
-    log.debug(tag,'a user connected', socket.id," user: ",usersByUsername[socket.id]);
+    log.info(tag,'a user connected', socket.id," user: ",usersByUsername[socket.id]);
     redis.sadd("online:users",socket.id)
     redis.hincrby("globals","usersOnline",Object.keys(usersByUsername).length)
 
@@ -355,7 +351,7 @@ io.on('connection', async function(socket){
 
     socket.on('disconnect', function(){
         let username = usersByUsername[socket.id]
-        log.debug(tag,socket.id+" username: "+username+' disconnected');
+        log.info(tag,socket.id+" username: "+username+' disconnected');
         redis.srem('online',username)
         //remove socket.id from username list
         if(usersByUsername[username])usersByUsername[username].splice(usersByUsername[username].indexOf(socket.id), 1);
@@ -365,16 +361,16 @@ io.on('connection', async function(socket){
     });
 
     socket.on('join', async function(msg){
-        log.debug(tag,'**** Join event! : ', typeof(msg));
+        log.info(tag,'**** Join event! : ', typeof(msg));
         //if(typeof(msg) === "string") msg = JSON.parse(msg)
-        log.debug(tag,"message: ",msg)
+        log.info(tag,"message: ",msg)
 
         let queryKey = msg.queryKey
         if(queryKey && msg.username){
-            log.debug(tag,"GIVEN: username: ",msg.username)
+            log.info(tag,"GIVEN: username: ",msg.username)
             //get pubkeyInfo
             let queryKeyInfo = await redis.hgetall(queryKey)
-            log.debug(tag,"ACTUAL: username: ",queryKeyInfo.username)
+            log.info(tag,"ACTUAL: username: ",queryKeyInfo.username)
             if(queryKeyInfo.username === msg.username){
                 usersBySocketId[socket.id] = msg.username
                 if(!usersByUsername[msg.username]) usersByUsername[msg.username] = []
@@ -403,7 +399,7 @@ io.on('connection', async function(socket){
             }
 
         } else if(msg.queryKey){
-            log.debug(tag,"No username given! subbing to queryKey!")
+            log.info(tag,"No username given! subbing to queryKey!")
             if(!usersByKey[msg.queryKey]) {
                 usersByKey[msg.queryKey] = [socket.id]
             } else {
@@ -413,15 +409,15 @@ io.on('connection', async function(socket){
                 success:true,
             }
             globalSockets[socket.id].emit('connect', connectPayload);
-            log.debug(tag,"sdk subscribed to apiKey: ",msg.queryKey)
-            log.debug(tag,"usersByKey: ",usersByKey)
+            log.info(tag,"sdk subscribed to apiKey: ",msg.queryKey)
+            log.info(tag,"usersByKey: ",usersByKey)
         } else {
             log.error(tag,"invalid join request! ")
         }
     });
 
     socket.on('message', async function(msg){
-        log.debug(tag,'**** Received by socket api from client : ', typeof(msg));
+        log.info(tag,'**** Received by socket api from client : ', typeof(msg));
         if(typeof(msg)==="string") msg = JSON.parse(msg)
     });
 

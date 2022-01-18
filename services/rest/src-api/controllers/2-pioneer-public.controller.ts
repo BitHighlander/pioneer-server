@@ -531,7 +531,7 @@ export class atlasPublicController extends Controller {
                     let mongoSave = await invocationsDB.update(
                         {invocationId:output.invocationId},
                         {$set:{signedTx:output.signedTx}})
-                    log.info(tag,"updated incorrect txid: ",mongoSave)
+                    log.debug(tag,"updated incorrect txid: ",mongoSave)
                 }
                 //replace
                 output.signedTx.txid = output.broadcast?.result?.txid
@@ -551,11 +551,11 @@ export class atlasPublicController extends Controller {
 
 
                             txInfo = await networks[output.network].getTransaction(output.signedTx.txid)
-                            log.info(tag,"txInfo: ",txInfo)
+                            log.debug(tag,"txInfo: ",txInfo)
                         }
 
                         if(txInfo && txInfo.height){
-                            log.info(tag,"Confirmed!")
+                            log.debug(tag,"Confirmed!")
                             output.isConfirmed = true
 
                             //update entry
@@ -594,7 +594,7 @@ export class atlasPublicController extends Controller {
                         }
                     }catch(e){
                         log.error(e)
-                        log.info(tag,"Tx not found!")
+                        log.debug(tag,"Tx not found!")
                     }
                 }
 
@@ -860,7 +860,7 @@ export class atlasPublicController extends Controller {
      */
     @Get('/getChangeAddress/{network}/{xpub}')
     public async getChangeAddress(network:string,xpub:string) {
-        let tag = TAG + " | listUnspent | "
+        let tag = TAG + " | getChangeAddress | "
         try{
             log.debug(tag,"network: ",network)
             log.debug(tag,"xpub: ",xpub)
@@ -1543,8 +1543,8 @@ export class atlasPublicController extends Controller {
     public async broadcast(@Body() body: BroadcastBody): Promise<any> {
         let tag = TAG + " | broadcast | "
         try{
-            log.info(tag,"************************** CHECKPOINT *******************88 ")
-            log.info(tag,"body: ",body)
+            log.debug(tag,"************************** CHECKPOINT *******************88 ")
+            log.debug(tag,"body: ",body)
             if(!body.txid) throw Error("103: must known txid BEFORE broadcast! ")
             if(!body.network) throw Error("104: network required! ")
             if(!body.serialized) throw Error("105: must have serialized payload! ")
