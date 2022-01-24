@@ -1543,8 +1543,8 @@ export class atlasPublicController extends Controller {
     public async broadcast(@Body() body: BroadcastBody): Promise<any> {
         let tag = TAG + " | broadcast | "
         try{
-            log.debug(tag,"************************** CHECKPOINT *******************88 ")
-            log.debug(tag,"body: ",body)
+            log.info(tag,"************************** CHECKPOINT *******************88 ")
+            log.info(tag,"body: ",body)
             if(!body.txid) throw Error("103: must known txid BEFORE broadcast! ")
             if(!body.network) throw Error("104: network required! ")
             if(!body.serialized) throw Error("105: must have serialized payload! ")
@@ -1633,12 +1633,15 @@ export class atlasPublicController extends Controller {
                             }
                         }
                     } else {
+                        log.info(tag,"normal broadcast! ")
                         //All over coins
                         //normal broadcast
                         await networks[network].init()
                         try{
                             result = await networks[network].broadcast(body.serialized)
+                            log.info(tag,"result: ",result)
                         }catch(e){
+                            log.error(tag,"Failed to broadcast!: ",e)
                             result = {
                                 error:true,
                                 errorMsg: e.toString()
