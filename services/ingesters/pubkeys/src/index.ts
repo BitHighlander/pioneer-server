@@ -282,7 +282,7 @@ let do_work = async function(){
                     log.info(tag,"work.symbol: ",work.symbol)
                     log.info(tag,"networks[work.symbol]: ",networks[work.symbol])
                     let balancesResp = await networks[work.symbol].getBalances(work.pubkey)
-                    log.info(tag,"balancesResp: ",balancesResp)
+                    log.debug(tag,"balancesResp: ",balancesResp)
                     for(let i =0; i < balancesResp.length; i++){
                         let balanceInfo = balancesResp[i]
                         if(balanceInfo.asset){
@@ -302,7 +302,7 @@ let do_work = async function(){
 
                 log.debug(tag,"getBalance: ")
                 let balance = await networks[work.symbol].getBalance(work.pubkey)
-                log.info(tag,"balance: ",balance)
+                log.debug(tag,"balance: ",balance)
 
                 balances.push({
                     network:work.symbol,
@@ -366,8 +366,8 @@ let do_work = async function(){
 
 
             }
-            log.info(tag,"pubkeyInfo: ",pubkeyInfo)
-            log.info(tag,"pubkeyInfo: ",pubkeyInfo.balances)
+            log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
+            log.debug(tag,"pubkeyInfo: ",pubkeyInfo.balances)
             let saveActions = []
 
             //push update
@@ -386,8 +386,8 @@ let do_work = async function(){
                 //if update
                 if(balanceMongo.length > 0){
                     //if value is diff
-                    log.info(tag,"balanceMongo: ",balanceMongo[0])
-                    log.info(tag,"balance: ",balance)
+                    log.debug(tag,"balanceMongo: ",balanceMongo[0])
+                    log.debug(tag,"balance: ",balance)
                     //TODO verify this actually works
                     if(balanceMongo[0].balance !== balance.balance){
                         log.info(tag,"Update balance~!")
@@ -410,7 +410,7 @@ let do_work = async function(){
             }
 
             if(saveActions.length > 0){
-                log.info(tag,"saveActions: ",JSON.stringify(saveActions))
+                log.debug(tag,"saveActions: ",JSON.stringify(saveActions))
                 let updateSuccess = await pubkeysDB.bulkWrite(saveActions,{ordered:false})
                 log.debug(tag,"updateSuccess: ",updateSuccess)
             }

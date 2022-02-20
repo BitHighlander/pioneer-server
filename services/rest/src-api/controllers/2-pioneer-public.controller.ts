@@ -12,7 +12,7 @@ const log = require('@pioneer-platform/loggerdog')()
 const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
 const midgard = require("@pioneer-platform/midgard-client")
 
-let connection  = require("@pioneer-platform/default-mongo")
+let connection = require("@pioneer-platform/default-mongo")
 const markets = require('@pioneer-platform/markets')
 let usersDB = connection.get('users')
 let pubkeysDB = connection.get('pubkeys')

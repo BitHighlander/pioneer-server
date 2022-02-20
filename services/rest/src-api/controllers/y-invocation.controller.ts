@@ -105,6 +105,10 @@ export class pioneerInvocationController extends Controller {
 
             //TODO verify vault address if marked as swap
 
+            //check for scamms
+            //IF ETH
+
+
             //get approveTx for dapp
             //verify sign on approveTx
             //verify address match on invocation

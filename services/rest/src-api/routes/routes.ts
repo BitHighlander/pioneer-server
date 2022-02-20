@@ -13,6 +13,8 @@ import { streamsPublicController } from './../controllers/3-streams-public.contr
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { pioneerMarketsController } from './../controllers/4-markets.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { nftPublicController } from './../controllers/5-nft-public.controller';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { pioneerPrivateController } from './../controllers/pioneer-private.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { XAppsController } from './../controllers/x-apps.controller';
@@ -1205,6 +1207,29 @@ export function RegisterRoutes(app: express.Router) {
 
 
               const promise = controller.market.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/api/v1/nft/:address',
+
+            function nftPublicController_getNfts(request: any, response: any, next: any) {
+            const args = {
+                    address: {"in":"path","name":"address","required":true,"dataType":"string"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new nftPublicController();
+
+
+              const promise = controller.getNfts.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);
