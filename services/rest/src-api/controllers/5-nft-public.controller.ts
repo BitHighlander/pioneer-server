@@ -98,7 +98,7 @@ export class nftPublicController extends Controller {
                 nfts.push(nft)
             }
 
-            return(nfts)
+            return({nfts})
         }catch(e){
             let errorResp:Error = {
                 success:false,
