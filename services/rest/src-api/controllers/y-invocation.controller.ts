@@ -68,7 +68,6 @@ export class pioneerInvocationController extends Controller {
         let tag = TAG + " | invocation | "
         try{
             log.debug(tag,"body: ",body)
-            if(!body.network) throw Error("102: invalid invocation! network required!")
             let output:any = {}
             //mode
             let mode = 'async'
@@ -139,14 +138,14 @@ export class pioneerInvocationController extends Controller {
 
             //TODO make this more clear what coins can do what
             //swap type contract only
-            if(body.invocation.type === 'swap'){
-                //if not ETH throw
-                if(body.invocation.asset !== 'ETH') throw Error("104: swap* smart contract execution only supported on ETH! asset: "+body.invocation.asset)
-            } else {
-                if(body.invocation.type !== 'transfer' && body.invocation.type !== 'replace'){
-                    if(body.invocation.asset === 'ETH') throw Error("105: eth must use smart contract router!")
-                }
-            }
+            // if(body.invocation.type === 'swap'){
+            //     //if not ETH throw
+            //     if(body.invocation.asset !== 'ETH') throw Error("104: swap* smart contract execution only supported on ETH! asset: "+body.invocation.asset)
+            // } else {
+            //     if(body.invocation.type !== 'transfer' && body.invocation.type !== 'replace'){
+            //         if(body.invocation.asset === 'ETH') throw Error("105: eth must use smart contract router!")
+            //     }
+            // }
 
             //deposit type thorchain only
             if(body.invocation.type === 'deposit'){
@@ -190,7 +189,7 @@ export class pioneerInvocationController extends Controller {
                 //not RBF / a new invocation
 
                 //validate
-                if(!body.invocation.fee) throw Error("104: invalid body missing fee ")
+                // if(!body.invocation.fee) throw Error("104: invalid body missing fee ")
 
                 let entry:any = {
                     state:'created',

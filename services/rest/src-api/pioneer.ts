@@ -101,6 +101,7 @@ let get_and_rescan_pubkeys = async function (username:string) {
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
+        if(!userInfo) throw Error("get_and_rescan_pubkeys user not found!")
         log.debug(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
         if(!blockchains) blockchains = []
@@ -197,6 +198,7 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
+        if(!userInfo) throw Error("get_and_verify_pubkeys User not found!")
         log.debug(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
         if(!blockchains) blockchains = []

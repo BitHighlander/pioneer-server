@@ -443,8 +443,8 @@ export class pioneerPrivateController extends Controller {
                 log.debug(tag,"userInfoMongo: ",userInfoMongo)
                 //migrations
                 if(!userInfoMongo) throw Error("102: unknown user! username: "+username)
-                walletInfo.wallets = userInfoMongo.wallets
-                walletInfo.blockchains = userInfoMongo.blockchains
+                walletInfo.wallets = userInfoMongo?.wallets
+                walletInfo.blockchains = userInfoMongo?.blockchains
 
                 return walletInfo
             }else{
@@ -904,7 +904,7 @@ export class pioneerPrivateController extends Controller {
                 log.debug(tag,"userInfoSdk: ",userInfoSdk)
 
                 //if username sdk
-                if(userInfoSdk.wallets){
+                if(userInfoSdk && userInfoSdk.wallets){
                     //TODO handle if multiple?
                     let context = userInfoSdk.wallets
                     log.debug(tag,"context: ",context)
@@ -1456,7 +1456,9 @@ export class pioneerPrivateController extends Controller {
 
                 if(!userInfoMongo){
                     output.resultSaveUserDB = await usersDB.insert(userInfo)
+                    log.info(tag,"output.resultSaveUserDB: ",output.resultSaveUserDB)
                 }
+
                 //delete descriptions
                 delete userInfo.walletDescriptions
                 let redisSuccess = await redis.hmset(body.username,userInfo)
@@ -1480,7 +1482,7 @@ export class pioneerPrivateController extends Controller {
             }
 
             //get wallets
-            let userWallets = userInfoMongo.wallets
+            let userWallets = userInfoMongo?.wallets
             if(!userWallets) userWallets = []
             log.debug(tag,"userWallets: ",userWallets)
 

@@ -7,6 +7,11 @@
  */
 let TAG = ' | API | '
 
+//rango SDK for markets
+import {
+    RangoClient
+} from "rango-sdk"
+
 const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
 const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
@@ -27,6 +32,9 @@ utxosDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
+
+const RANGO_API_KEY = process.env['RANGO_API_KEY'] || '4a624ab5-16ff-4f96-90b7-ab00ddfc342c'
+const rangoClient = new RangoClient(RANGO_API_KEY)
 
 /*
     Feature Flags per blockchain
@@ -229,80 +237,96 @@ export class atlasPublicController extends Controller {
             output.exchanges.thorchain.assets = []
             output.exchanges.thorchain.pools = pools
 
+            output.rango = await redis.get('rango:markets')
+            output.rango = JSON.parse(output.rango)
 
-            for(let i = 0; i < pools.length; i++){
-                let pool = pools[i]
-                output.exchanges.thorchain.assets.push(pool.chain)
-                let entry:any = {
-                    blockchain:COIN_MAP_LONG[pool.chain].toLowerCase(),
+            let updateRango = async function(){
+                let metaInfo = await rangoClient.getAllMetadata()
+                if(metaInfo){
+                    let updateRedis = await redis.set('rango:markets',JSON.stringify(metaInfo))
+                    log.info(tag,"updateRedis: ",updateRedis)
                 }
-                if(pool.halted === false){
-                    entry.online = true
-                } else {
-                    entry.online = false
-                }
-                output.exchanges.thorchain.status.push(entry)
             }
+            try{
+                updateRango()
+            }catch(e){
+                log.info("failed to get rango markets! ",e)
+            }
+
+
+            // for(let i = 0; i < pools.length; i++){
+            //     let pool = pools[i]
+            //     output.exchanges.thorchain.assets.push(pool.chain)
+            //     let entry:any = {
+            //         blockchain:COIN_MAP_LONG[pool.chain].toLowerCase(),
+            //     }
+            //     if(pool.halted === false){
+            //         entry.online = true
+            //     } else {
+            //         entry.online = false
+            //     }
+            //     output.exchanges.thorchain.status.push(entry)
+            // }
 
             //get rate for every market
-            let marketsCache = await redis.get('thorchain:markets')
-            if(!marketsCache){
-                marketsCache = await midgard.getPools()
-                redis.setex('thorchain:markets',CACHE_TIME,JSON.stringify(marketsCache))
-            } else {
-                marketsCache = JSON.parse(marketsCache)
-            }
-
-            //normalize market info
-            let normalizedMarketInfo:any = []
-            for(let i = 0; i < marketsCache.length; i++){
-                let market = marketsCache[i]
-                log.debug("market: ",market)
-                market.assetThorchain = market.asset
-                let assetParsed = parseThorchainAssetString(market.asset)
-                let normalized = {...assetParsed,...market}
-                normalizedMarketInfo.push(normalized)
-            }
-
-            //add tokens and pairs to exchange map
-            let allMarketPairs = getPermutations(output.exchanges.thorchain.assets,2)
-
-            //iterate over markets
-            log.debug("normalizedMarketInfo: ",normalizedMarketInfo)
-            for(let i = 0; i < allMarketPairs.length; i++){
-                let pair = allMarketPairs[i]
-                log.debug(tag,"pair: ",pair)
-                let pairParts = pair.split("_")
-                let inputSymbol = pairParts[0]
-                let outputSymbol = pairParts[1]
-                let inputMarketInfo = normalizedMarketInfo.filter((e:any) => e.symbol === inputSymbol)
-                let outputMarketInfo = normalizedMarketInfo.filter((e:any) => e.symbol === outputSymbol)
-                if(inputMarketInfo && outputMarketInfo && inputMarketInfo[0] && outputMarketInfo[0]){
-                    //TODO handle symbol collision
-                    //if network !==
-                    if(inputMarketInfo.length > 1){
-                        //filter out correct ETH
-                    }
-                    //hack
-                    inputMarketInfo = inputMarketInfo[0]
-                    outputMarketInfo = outputMarketInfo[0]
-                    log.debug(tag,"inputMarketInfo: ",inputMarketInfo)
-                    log.debug(tag,"outputMarketInfo: ",outputMarketInfo)
-                    log.debug(tag,"inputMarketInfo: ",inputMarketInfo.assetPriceUSD)
-                    log.debug(tag,"outputMarketInfo: ",outputMarketInfo.assetPriceUSD)
-                    //usd value input
-                    //usd value output
-                    //rate of input / output
-                    let rate = inputMarketInfo.assetPriceUSD / outputMarketInfo.assetPriceUSD
-                    log.debug(tag,"rate: ",rate)
-                    let market = {
-                        protocal:'thorchain',
-                        pair,
-                        rate
-                    }
-                    output.exchanges.thorchain.markets.push(market)
-                }
-            }
+            // let marketsCache = await redis.get('thorchain:markets')
+            // if(!marketsCache){
+            //     marketsCache = await midgard.getPools()
+            //     redis.setex('thorchain:markets',CACHE_TIME,JSON.stringify(marketsCache))
+            // } else {
+            //     marketsCache = JSON.parse(marketsCache)
+            // }
+            //
+            // //normalize market info
+            // let normalizedMarketInfo:any = []
+            // for(let i = 0; i < marketsCache.length; i++){
+            //     let market = marketsCache[i]
+            //     log.debug("market: ",market)
+            //     market.assetThorchain = market.asset
+            //     let assetParsed = parseThorchainAssetString(market.asset)
+            //     let normalized = {...assetParsed,...market}
+            //     normalizedMarketInfo.push(normalized)
+            // }
+            //
+            // //add tokens and pairs to exchange map
+            // let allMarketPairs = getPermutations(output.exchanges.thorchain.assets,2)
+            //
+            // //iterate over markets
+            // log.debug("normalizedMarketInfo: ",normalizedMarketInfo)
+            // for(let i = 0; i < allMarketPairs.length; i++){
+            //     let pair = allMarketPairs[i]
+            //     log.debug(tag,"pair: ",pair)
+            //     let pairParts = pair.split("_")
+            //     let inputSymbol = pairParts[0]
+            //     let outputSymbol = pairParts[1]
+            //     let inputMarketInfo = normalizedMarketInfo.filter((e:any) => e.symbol === inputSymbol)
+            //     let outputMarketInfo = normalizedMarketInfo.filter((e:any) => e.symbol === outputSymbol)
+            //     if(inputMarketInfo && outputMarketInfo && inputMarketInfo[0] && outputMarketInfo[0]){
+            //         //TODO handle symbol collision
+            //         //if network !==
+            //         if(inputMarketInfo.length > 1){
+            //             //filter out correct ETH
+            //         }
+            //         //hack
+            //         inputMarketInfo = inputMarketInfo[0]
+            //         outputMarketInfo = outputMarketInfo[0]
+            //         log.debug(tag,"inputMarketInfo: ",inputMarketInfo)
+            //         log.debug(tag,"outputMarketInfo: ",outputMarketInfo)
+            //         log.debug(tag,"inputMarketInfo: ",inputMarketInfo.assetPriceUSD)
+            //         log.debug(tag,"outputMarketInfo: ",outputMarketInfo.assetPriceUSD)
+            //         //usd value input
+            //         //usd value output
+            //         //rate of input / output
+            //         let rate = inputMarketInfo.assetPriceUSD / outputMarketInfo.assetPriceUSD
+            //         log.debug(tag,"rate: ",rate)
+            //         let market = {
+            //             protocal:'thorchain',
+            //             pair,
+            //             rate
+            //         }
+            //         output.exchanges.thorchain.markets.push(market)
+            //     }
+            // }
 
             //osmo
             if(networks['OSMO']){
@@ -768,27 +792,6 @@ export class atlasPublicController extends Controller {
         }
     }
 
-    @Get('/osmosis/pools')
-    public async getOsmosisPools() {
-        let tag = TAG + " | getOsmosisPools | "
-        try{
-            let output
-            output = await networks['OSMO'].getPools()
-            log.debug("output:",output)
-
-            return(output)
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
-
-
     /**
      *  getValidators
      */
@@ -918,7 +921,7 @@ export class atlasPublicController extends Controller {
      */
     @Get('/getNewAddress/{network}/{xpub}')
     public async getNewAddress(network:string,xpub:string) {
-        let tag = TAG + " | listUnspent | "
+        let tag = TAG + " | getNewAddress | "
         try{
             let output:any = []
             //TODO if UTXO coin else error
@@ -1049,6 +1052,35 @@ export class atlasPublicController extends Controller {
             }
 
             return inputs
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /**
+     *  Retrieve account info
+     */
+    @Get('/utxo/getBalance/{network}/{xpub}')
+    public async getBalance(network:string,xpub:string) {
+        let tag = TAG + " | getBalance | "
+        try{
+            let output:any = []
+            //TODO if UTXO coin else error
+            //TODO does this scale on large xpubs?
+            log.debug(tag,"network: ",network)
+            log.debug(tag,"xpub: ",xpub)
+            await networks.ANY.init()
+            //log.debug("networks: ",networks)
+            //log.debug("networks: ",networks.ANY)
+            let balances = await networks.ANY.getBalanceByXpub(network,xpub)
+
+            return balances
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -1545,7 +1577,6 @@ export class atlasPublicController extends Controller {
         try{
             log.info(tag,"************************** CHECKPOINT *******************88 ")
             log.info(tag,"body: ",body)
-            if(!body.txid) throw Error("103: must known txid BEFORE broadcast! ")
             if(!body.network) throw Error("104: network required! ")
             if(!body.serialized) throw Error("105: must have serialized payload! ")
 
