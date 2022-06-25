@@ -790,8 +790,9 @@ export class pioneerPrivateController extends Controller {
                             invocation:body
                         }
                         publisher.publish('invocations',JSON.stringify(event))
+                        updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{signedTx:body.signedTx,state:'signedTx'}})
                     }
-                    updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{signedTx:body.signedTx,state:'signedTx'}})
+
                 }
                 return(updateResult);
             } else {
@@ -1293,7 +1294,7 @@ export class pioneerPrivateController extends Controller {
      *
      * @param request This is a user creation
      */
-
+    //TODO is this ever used? removeme?
     @Post('/registerUser')
     public async registerUser(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
         let tag = TAG + " | register | "
@@ -1442,22 +1443,23 @@ export class pioneerPrivateController extends Controller {
             let userInfoMongo:any = await usersDB.findOne({username})
             log.debug(tag,"userInfoMongo: ",userInfoMongo)
 
-            if(newKey){
-                //create user
-                let userInfo:any = {
-                    registered: new Date().getTime(),
-                    id:"pioneer:"+pjson.version+":"+uuidv4(), //user ID versioning!
-                    username:body.username,
-                    verified:true,
-                    blockchains:body.blockchains,
-                    wallets:[body.context], // just one wallet for now
-                    walletDescriptions:[body.walletDescription]
-                }
+            //create user
+            let userInfo:any = {
+                registered: new Date().getTime(),
+                id:"pioneer:"+pjson.version+":"+uuidv4(), //user ID versioning!
+                username:body.username,
+                verified:true,
+                blockchains:body.blockchains,
+                wallets:[body.context], // just one wallet for now
+                walletDescriptions:[body.walletDescription]
+            }
 
-                if(!userInfoMongo){
-                    output.resultSaveUserDB = await usersDB.insert(userInfo)
-                    log.info(tag,"output.resultSaveUserDB: ",output.resultSaveUserDB)
-                }
+            if(!userInfoMongo){
+                output.resultSaveUserDB = await usersDB.insert(userInfo)
+                log.info(tag,"output.resultSaveUserDB: ",output.resultSaveUserDB)
+            }
+
+            if(newKey){
 
                 //delete descriptions
                 delete userInfo.walletDescriptions

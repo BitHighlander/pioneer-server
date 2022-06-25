@@ -541,7 +541,7 @@ export class atlasPublicController extends Controller {
         try{
             if(!invocationId) throw Error("102: invocationId required! ")
             let output = await invocationsDB.findOne({invocationId})
-            log.debug(tag,"invocation MONGO: ",output)
+            log.info(tag,"invocation MONGO: ",output)
 
             //hack, if a disagreement in txid, use broadcast (bad hash bug) TODO FIXME
             if(
@@ -625,9 +625,13 @@ export class atlasPublicController extends Controller {
                 if(output.type === 'swap' && output.isConfirmed && !output.isFullfilled){
                     //txid
                     try{
-                        log.debug(tag,"output.signedTx.txid: ",output.signedTx.txid)
-                        let midgardInfo = await midgard.getTransaction(output.signedTx.txid)
-                        log.debug(tag,"midgardInfo: ",midgardInfo)
+                        log.info(tag,"output.signedTx.txid: ",output.signedTx.txid)
+                        //parse tx
+                        let txid = output.signedTx.txid.toUpperCase()
+                        txid = txid.replace("0X","")
+                        log.info(tag,"txid: ",txid)
+                        let midgardInfo = await midgard.getTransaction(txid)
+                        log.info(tag,"midgardInfo: ",midgardInfo)
 
                         if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
                             let depositInfo = midgardInfo.actions[0].in
@@ -1586,11 +1590,13 @@ export class atlasPublicController extends Controller {
             let network = body.network
 
             //if(!networks[coin]) throw Error("102: unknown network coin:"+coin)
+            let updateResult2 = await invocationsDB.update({invocationId:body.invocationId},{$set:{state:'broadcasted'}})
+            log.info(tag,"updateResult2: ********* ",updateResult2)
 
             //if
             let invocationInfo:any = {}
             if(body.invocationId){
-                log.debug(tag,"invocationId: ",body.invocationId)
+                log.info(tag,"invocationId: ",body.invocationId)
                 //get invocation
                 let invocationInfoQuery = await invocationsDB.findOne({invocationId:body.invocationId})
                 log.debug(tag,"invocationInfoQuery: ",invocationInfoQuery)
@@ -1603,7 +1609,7 @@ export class atlasPublicController extends Controller {
                 redis.lpush(body.invocationId,body.txid)
 
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{state:'broadcasted'}})
-                log.debug(tag,"invocation updateResult: ",updateResult)
+                log.info(tag,"invocation updateResult: ",updateResult)
             } else {
                 log.error(tag,"No invocationId on body.")
                 throw Error('invocationId required!')
@@ -1696,7 +1702,7 @@ export class atlasPublicController extends Controller {
                 result.success = true
                 result.broadcast = false
                 //result = body.invocationId
-                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:{noBroadCast:true}}})
+                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:{noBroadcast:true}}})
                 log.debug(tag,"updateResult: ",updateResult)
             }
 
