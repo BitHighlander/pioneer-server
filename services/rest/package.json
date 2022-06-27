@@ -92,7 +92,7 @@
     "short-uuid": "^3.1.1",
     "socket.io": "^2.4.1",
     "swagger-ui-express": "^4.1.6",
-    "tsoa": "^3.7.0",
+    "tsoa": "^3.14.1",
     "typescript": "^3.9.9",
     "url-parse": "^1.5.1",
     "vue-i18n": "^8.24.4",
