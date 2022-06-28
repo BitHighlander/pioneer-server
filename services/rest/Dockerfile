@@ -1,4 +1,6 @@
-FROM --platform=linux/amd64 node:14.16.0
+#uncomment ONLY on M1 mac (rolls eyes)
+#FROM --platform=linux/amd64 node:14.16.0
+FROM node:14.16.0
 
 ARG NPM_TOKEN
 ARG NODE_ENV
