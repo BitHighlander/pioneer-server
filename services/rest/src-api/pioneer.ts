@@ -574,7 +574,9 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
             }
 
             if (pubkeyInfo.type === "xpub") {
-                let xpub = pubkeyInfo.xpub
+                log.info(tag,"pubkeyInfo: ",pubkeyInfo)
+                let xpub = pubkeyInfo.pubkey
+                log.info(tag,"xpub: ",xpub)
 
                 entryMongo.pubkey = xpub
                 entryMongo.xpub = xpub
@@ -587,7 +589,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
                 output.work.push(queueId)
 
             } else if (pubkeyInfo.type === "zpub") {
-                let zpub = pubkeyInfo.zpub
+                let zpub = pubkeyInfo.pubkey
 
                 entryMongo.pubkey = zpub
                 entryMongo.zpub = zpub
