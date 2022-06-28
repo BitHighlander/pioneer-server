@@ -65,7 +65,7 @@
     "@pioneer-platform/signing": "latest",
     "@pioneer-platform/terra-network": "latest",
     "@pioneer-platform/thor-network": "latest",
-    "@pioneer-platform/utxo-network": "^8.1.39",
+    "@pioneer-platform/utxo-network": "^8.1.42",
     "@quasar/extras": "^1.10.4",
     "@types/node": "^12.20.11",
     "api": "^4.2.0",

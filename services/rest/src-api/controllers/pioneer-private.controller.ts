@@ -517,15 +517,44 @@ export class pioneerPrivateController extends Controller {
 
             let accountInfo = await redis.hgetall(authorization)
             if(!accountInfo) throw Error("unknown token! token:"+authorization)
-            log.debug(tag,"accountInfo: ",accountInfo)
+            log.info(tag,"accountInfo: ",accountInfo)
+
 
             if(accountInfo){
-                let refreshedTime = await redis.get(accountInfo.username+":lastRefresh")
-                if(!refreshedTime){
-                    //get all pubkeys for username
+                //TODO
+                // let refreshedTime = await redis.get(accountInfo.username+":lastRefresh")
+                // if(!refreshedTime){
+                // }
+
+
+                //get all pubkeys for username
+                let pubkeysOwnedBySdk = await pubkeysDB.find({tags:{ $all: [accountInfo.username]}})
+                log.info(tag,"pubkeysOwnedBySdk: ",pubkeysOwnedBySdk)
+
+                //for each wallet
+                let wallets = accountInfo.wallets
+                wallets = wallets.split(",")
+                log.info(tag,"wallets: ",wallets)
+
+                let output:any = {
+                    success:true,
+                    results:[]
+                }
+                for(let i = 0; i < wallets.length; i++){
+                    let wallet = wallets[i]
+                    log.info(tag,"wallet: ",wallet)
+
+                    //pubkeys filter by wallet
+
+                    //TODO if wallet not in redis add to redis
 
                     //re-submit to pubkey ingester
+                    let result = await pioneer.register(accountInfo.username, pubkeysOwnedBySdk,accountInfo.context)
+                    log.info(tag,"resultPioneer: ",result)
+                    output.results.push(result)
                 }
+
+                return output
             } else {
                 throw Error("102: invalid auth token!")
             }

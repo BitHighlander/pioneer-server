@@ -997,7 +997,7 @@ export class atlasPublicController extends Controller {
             //log.debug("networks: ",networks)
             //log.debug("networks: ",networks.ANY)
             let inputs = await networks.ANY.utxosByXpub(network,xpub)
-
+            log.debug("inputs: ",inputs)
             //for each get hex
             for(let i = 0; i < inputs.length; i++){
                 let input = inputs[i]
@@ -1055,7 +1055,7 @@ export class atlasPublicController extends Controller {
                 output.push(input)
             }
 
-            return inputs
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,
