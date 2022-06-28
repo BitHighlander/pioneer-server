@@ -625,8 +625,17 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
 
                 log.debug(tag,"pushTagMongo: ",pushTagMongo)
             }else{
-                let saveMongo = await pubkeysDB.insert(entryMongo)
-                log.debug(tag,"saveMongo: ",saveMongo)
+
+                if(!entryMongo.pubkey || entryMongo.pubkey == true){
+                    log.error(" **** ERROR INVALID PUBKEY ENTRY! ***** pubkeyInfo: ",pubkeyInfo)
+                    log.error(" **** ERROR INVALID PUBKEY ENTRY! ***** entryMongo: ",entryMongo)
+                    throw Error("105: unable to save invalid pubkey!")
+                } else {
+                    let saveMongo = await pubkeysDB.insert(entryMongo)
+                    log.debug(tag,"saveMongo: ",saveMongo)
+                    //TODO throw if error (better get error then not fail fast)
+                }
+
             }
 
         }
