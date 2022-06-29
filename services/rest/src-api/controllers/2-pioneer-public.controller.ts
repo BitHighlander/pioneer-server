@@ -565,61 +565,72 @@ export class atlasPublicController extends Controller {
             if(output && output.state === 'broadcasted'){
                 if(!output.isConfirmed){
                     //get confirmation status
-                    let txid = output.signedTx.txid || output.broadcast.txid || output.broadcast.result.txid
-                    log.info(tag,"***** txid: ",txid)
+                    // let txid = output.signedTx.txid || output.broadcast.txid
+                    // if(!txid && output?.broadcast && output?.broadcast.result && output?.broadcast?.result?.txid) txid = output?.broadcast?.result?.txid
+                    // log.info(tag,"***** txid: ",txid)
+                    let txid
+                    if(output && output.broadcast && output.broadcast.txid) txid = output.broadcast.txid
+                    if(!txid && output.signedTx && output.signedTx.txid) txid = output.broadcast.txid
+
                     let txInfo
                     //TODO normalize tx response between ALL blockchains
-                    try{
-                        if(UTXO_COINS.indexOf(output.network) >= 0){
-                            txInfo = await networks['ANY'].getTransaction(output.network,txid)
-                            log.info(tag,"UTXO txInfo: ",txInfo)
-                        } else {
-                            if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
-                            txInfo = await networks[output.network].getTransaction(output.signedTx.txid)
-                            log.debug(tag,"txInfo: ",txInfo)
+
+                    log.info(tag,"txid: ",txid)
+                    if(txid){
+                        try{
+                            if(UTXO_COINS.indexOf(output.network) >= 0){
+                                txInfo = await networks['ANY'].getTransaction(output.network,txid)
+                                log.info(tag,"UTXO txInfo: ",txInfo)
+                            } else {
+                                if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
+                                txInfo = await networks[output.network].getTransaction(txid)
+                                log.debug(tag,"txInfo: ",txInfo)
+                            }
+
+                            if(txInfo && txInfo.height){
+                                log.debug(tag,"Confirmed!")
+                                output.isConfirmed = true
+
+                                //update entry
+                                let mongoSave = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{isConfirmed:true}})
+                                output.resultUpdate = mongoSave
+                                //push event
+                                publisher.publish('invocationUpdate',JSON.stringify(output))
+                            }
+
+                            if(txInfo && txInfo.tx_response && txInfo.tx_response.height){
+                                log.debug(tag,"Confirmed!")
+                                output.isConfirmed = true
+
+                                //update entry
+                                let mongoSave = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{isConfirmed:true}})
+                                output.resultUpdate = mongoSave
+                                //push event
+                                publisher.publish('invocationUpdate',JSON.stringify(output))
+                            }
+
+                            if(txInfo && txInfo.txInfo && txInfo.txInfo.blockNumber){
+                                log.debug(tag,"Confirmed!")
+                                output.isConfirmed = true
+
+                                //update entry
+                                let mongoSave = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{isConfirmed:true}})
+                                output.resultUpdate = mongoSave
+                                //push event
+                                publisher.publish('invocationUpdate',JSON.stringify(output))
+                            }
+                        }catch(e){
+                            log.error(e)
+                            log.debug(tag,"Tx not found!")
                         }
-
-                        if(txInfo && txInfo.height){
-                            log.debug(tag,"Confirmed!")
-                            output.isConfirmed = true
-
-                            //update entry
-                            let mongoSave = await invocationsDB.update(
-                                {invocationId:output.invocationId},
-                                {$set:{isConfirmed:true}})
-                            output.resultUpdate = mongoSave
-                            //push event
-                            publisher.publish('invocationUpdate',JSON.stringify(output))
-                        }
-
-                        if(txInfo && txInfo.tx_response && txInfo.tx_response.height){
-                            log.debug(tag,"Confirmed!")
-                            output.isConfirmed = true
-
-                            //update entry
-                            let mongoSave = await invocationsDB.update(
-                                {invocationId:output.invocationId},
-                                {$set:{isConfirmed:true}})
-                            output.resultUpdate = mongoSave
-                            //push event
-                            publisher.publish('invocationUpdate',JSON.stringify(output))
-                        }
-
-                        if(txInfo && txInfo.txInfo && txInfo.txInfo.blockNumber){
-                            log.debug(tag,"Confirmed!")
-                            output.isConfirmed = true
-
-                            //update entry
-                            let mongoSave = await invocationsDB.update(
-                                {invocationId:output.invocationId},
-                                {$set:{isConfirmed:true}})
-                            output.resultUpdate = mongoSave
-                            //push event
-                            publisher.publish('invocationUpdate',JSON.stringify(output))
-                        }
-                    }catch(e){
-                        log.error(e)
-                        log.debug(tag,"Tx not found!")
+                    } else {
+                        log.error("Unable to deturmine the TXID for invocation! can not lookup!")
                     }
                 }
 
@@ -663,14 +674,14 @@ export class atlasPublicController extends Controller {
                     }
                 }
             }
-
-            if(!output){
-                output = {
-                    error:true,
-                    message:"No invocation found with ID: "+invocationId
-                }
-            }
-            log.debug("output: ",output)
+            //
+            // if(!output){
+            //     output = {
+            //         error:true,
+            //         message:"No invocation found with ID: "+invocationId
+            //     }
+            // }
+            log.info("output: ",output)
             return(output)
         }catch(e){
             let errorResp:Error = {
@@ -1683,14 +1694,20 @@ export class atlasPublicController extends Controller {
                         //normal broadcast
                         await networks[network].init()
                         try{
+                            log.info(tag,"body: ",body)
+                            log.info(tag,"body.serialized: ",body.serialized)
+                            log.info(tag,"network: ",network)
+
                             let result = await networks[network].broadcast(body.serialized)
                             log.info(tag,"BROADCASAT RESULT: ",result)
+                            output.result = result
                             if(result.success){
                                 output.success = true
                                 if(result.txid) output.txid = result.txid
                             } else {
                                 if(result.error) output.error = result.error
                             }
+                            log.info(tag,"output: ",output)
                             log.info(tag,"result: ",result)
                         }catch(e){
                             log.error(tag,"Failed to broadcast!: ",e)
@@ -1700,22 +1717,11 @@ export class atlasPublicController extends Controller {
                             }
                         }
                     }
-
-
                 }catch(e){
                     result.error = true
                     result.errorMsg = e.toString()
                 }
-
-                let resultSave:any = {}
-                if(output.success){
-                    resultSave.success = true
-                } else {
-                    resultSave.success = false
-                }
-                resultSave.broadcast = true
-                resultSave.result = result
-                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:resultSave}})
+                let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:output}})
                 log.debug(tag,"updateResult: ",updateResult)
             } else {
                 log.notice(tag,"Not broadcasting!")
@@ -1738,7 +1744,7 @@ export class atlasPublicController extends Controller {
             mongoEntry.pending = true
             mongoEntry.broadcasted = new Date().getTime()
             try{
-                output.saveTx = await txsDB.insert(mongoEntry)
+                if(mongoEntry.txid && mongoEntry.txid !== "" && mongoEntry.txid !== "unknown")output.saveTx = await txsDB.insert(mongoEntry)
             }catch(e){
                 log.error(tag,"e: ",e)
                 //duplicate
