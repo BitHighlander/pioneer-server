@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@pioneer-platform/binance-network": "latest",
-    "@pioneer-platform/blockbook": "latest",
+    "@pioneer-platform/blockbook": "^8.1.41",
     "@pioneer-platform/blocknative-client": "latest",
     "@pioneer-platform/cosmos-network": "latest",
     "@pioneer-platform/default-mongo": "latest",
@@ -65,7 +65,7 @@
     "@pioneer-platform/signing": "latest",
     "@pioneer-platform/terra-network": "latest",
     "@pioneer-platform/thor-network": "latest",
-    "@pioneer-platform/utxo-network": "^8.1.42",
+    "@pioneer-platform/utxo-network": "^8.1.46",
     "@quasar/extras": "^1.10.4",
     "@types/node": "^12.20.11",
     "api": "^4.2.0",

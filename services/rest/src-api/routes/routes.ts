@@ -516,11 +516,11 @@ export function RegisterRoutes(app: express.Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.get('/api/v1/getPubkeyBalance/:coin/:pubkey',
+        app.get('/api/v1/getPubkeyBalance/:asset/:pubkey',
 
             function atlasPublicController_getPubkeyBalance(request: any, response: any, next: any) {
             const args = {
-                    coin: {"in":"path","name":"coin","required":true,"dataType":"string"},
+                    asset: {"in":"path","name":"asset","required":true,"dataType":"string"},
                     pubkey: {"in":"path","name":"pubkey","required":true,"dataType":"string"},
             };
 

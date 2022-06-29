@@ -565,15 +565,16 @@ export class atlasPublicController extends Controller {
             if(output && output.state === 'broadcasted'){
                 if(!output.isConfirmed){
                     //get confirmation status
+                    let txid = output.signedTx.txid || output.broadcast.txid || output.broadcast.result.txid
+                    log.info(tag,"***** txid: ",txid)
                     let txInfo
                     //TODO normalize tx response between ALL blockchains
                     try{
                         if(UTXO_COINS.indexOf(output.network) >= 0){
-                            txInfo = await networks['ANY'].getTransaction(output.network,output.signedTx.txid)
+                            txInfo = await networks['ANY'].getTransaction(output.network,txid)
+                            log.info(tag,"UTXO txInfo: ",txInfo)
                         } else {
                             if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
-
-
                             txInfo = await networks[output.network].getTransaction(output.signedTx.txid)
                             log.debug(tag,"txInfo: ",txInfo)
                         }
@@ -686,28 +687,28 @@ export class atlasPublicController extends Controller {
     /**
      *  get balance of an address
      */
-    @Get('/getPubkeyBalance/{coin}/{pubkey}')
-    public async getPubkeyBalance(coin:string,pubkey:string) {
+    @Get('/getPubkeyBalance/{asset}/{pubkey}')
+    public async getPubkeyBalance(asset:string,pubkey:string) {
         let tag = TAG + " | getPubkeyBalance | "
         try{
-            log.debug(tag,{coin,pubkey})
-            let output = await redis.get("cache:balance:"+pubkey+":"+coin)
+            log.debug(tag,{asset,pubkey})
+            let output = await redis.get("cache:balance:"+pubkey+":"+asset)
             networks.ETH.init({testnet:true})
             if(!output || CACHE_OVERRIDE){
                 //if coin = token, network = ETH
                 if(false){
                     //TODO
-                    output = await networks['ETH'].getBalanceToken(pubkey,coin)
-                } else if(coin === 'ETH'){
+                    output = await networks['ETH'].getBalanceToken(pubkey,asset)
+                } else if(asset === 'ETH'){
                     output = await networks['ETH'].getBalanceAddress(pubkey)
-                } else if(UTXO_COINS.indexOf(coin) >= 0){
+                } else if(UTXO_COINS.indexOf(asset) >= 0){
                     //get xpub/zpub
-                    output = await networks['ANY'].getBalanceByXpub(coin,pubkey)
+                    output = await networks['ANY'].getBalanceByXpub(asset,pubkey)
                 } else {
-                    if(!networks[coin]) {
-                        throw Error("109: coin not supported! coin: "+coin)
+                    if(!networks[asset]) {
+                        throw Error("109: asset not supported! coin: "+asset)
                     } else {
-                        output = await networks[coin].getBalance(pubkey)
+                        output = await networks[asset].getBalance(pubkey)
                     }
                 }
             }
@@ -1584,7 +1585,7 @@ export class atlasPublicController extends Controller {
             if(!body.network) throw Error("104: network required! ")
             if(!body.serialized) throw Error("105: must have serialized payload! ")
 
-            let result:any = {
+            let output:any = {
                 success:false
             }
             let network = body.network
@@ -1663,6 +1664,13 @@ export class atlasPublicController extends Controller {
                         await networks.ANY.init('full')
                         try{
                             result = await networks['ANY'].broadcast(network,body.serialized)
+                            if(result.success){
+                                output.success = true
+                                if(result.txid) output.txid = result.txid
+                            } else {
+                                if(result.error) output.error = result.error
+                            }
+                            log.info(tag,"result: ",result)
                         }catch(e){
                             result = {
                                 error:true,
@@ -1675,7 +1683,14 @@ export class atlasPublicController extends Controller {
                         //normal broadcast
                         await networks[network].init()
                         try{
-                            result = await networks[network].broadcast(body.serialized)
+                            let result = await networks[network].broadcast(body.serialized)
+                            log.info(tag,"BROADCASAT RESULT: ",result)
+                            if(result.success){
+                                output.success = true
+                                if(result.txid) output.txid = result.txid
+                            } else {
+                                if(result.error) output.error = result.error
+                            }
                             log.info(tag,"result: ",result)
                         }catch(e){
                             log.error(tag,"Failed to broadcast!: ",e)
@@ -1691,16 +1706,21 @@ export class atlasPublicController extends Controller {
                     result.error = true
                     result.errorMsg = e.toString()
                 }
+
                 let resultSave:any = {}
-                resultSave.success = true
+                if(output.success){
+                    resultSave.success = true
+                } else {
+                    resultSave.success = false
+                }
                 resultSave.broadcast = true
                 resultSave.result = result
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:resultSave}})
                 log.debug(tag,"updateResult: ",updateResult)
             } else {
                 log.notice(tag,"Not broadcasting!")
-                result.success = true
-                result.broadcast = false
+                output.success = true
+                output.broadcast = false
                 //result = body.invocationId
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{broadcast:{noBroadcast:true}}})
                 log.debug(tag,"updateResult: ",updateResult)
@@ -1718,13 +1738,13 @@ export class atlasPublicController extends Controller {
             mongoEntry.pending = true
             mongoEntry.broadcasted = new Date().getTime()
             try{
-                result.saveTx = await txsDB.insert(mongoEntry)
+                output.saveTx = await txsDB.insert(mongoEntry)
             }catch(e){
                 log.error(tag,"e: ",e)
                 //duplicate
             }
 
-            return(result);
+            return(output);
         }catch(e){
             let errorResp:Error = {
                 success:false,

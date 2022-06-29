@@ -429,6 +429,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
                     symbol:nativeAsset,
                     asset:nativeAsset,
                     path:pubkeyInfo.path,
+                    pathMaster:pubkeyInfo.pathMaster,
                     master:pubkeyInfo.master,
                     pubkey:pubkeyInfo.pubkey,
                     script_type:pubkeyInfo.script_type,
@@ -545,6 +546,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
 
         for (let i = 0; i < pubkeys.length; i++) {
             let pubkeyInfo = pubkeys[i]
+            log.info(tag,"pubkeyInfo: ",pubkeyInfo)
             let nativeAsset = getNativeAssetForBlockchain(pubkeyInfo.blockchain)
             if(!nativeAsset) throw Error("104: invalid pubkey! unsupported by coins module!")
             if(!pubkeyInfo.pubkey) throw Error("104: invalid pubkey! missing pubkey!")
@@ -567,6 +569,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
                 symbol:nativeAsset,
                 asset: pubkeyInfo.blockchain,
                 path: pubkeyInfo.path,
+                pathMaster: pubkeyInfo.pathMaster,
                 script_type: pubkeyInfo.script_type,
                 network: pubkeyInfo.blockchain,
                 created: new Date().getTime(),
@@ -605,6 +608,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
             } else if (pubkeyInfo.type === "address") {
                 entryMongo.pubkey = pubkeyInfo.pubkey
                 entryMongo.master = pubkeyInfo.pubkey
+                entryMongo.type = pubkeyInfo.type
                 entryMongo.address = pubkeyInfo.address
                 let queueId = await register_address(username, pubkeyInfo, context)
 
