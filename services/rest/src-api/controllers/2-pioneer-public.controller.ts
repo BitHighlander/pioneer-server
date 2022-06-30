@@ -384,11 +384,22 @@ export class atlasPublicController extends Controller {
         }
     }
 
-    @Get('/coins')
-    public async coins() {
+    @Get('/blockchains')
+    public async blockchains() {
         let tag = TAG + " | coins | "
         try{
-            let coins = blockchains
+            //nerf chains under development
+
+            let livechains = [
+                'bitcoin',
+                'ethereum',
+                'thorchain'
+            ]
+
+            let coins = {
+                live:livechains,
+                all:blockchains
+            }
 
             //TODO assets/including tokens
 
