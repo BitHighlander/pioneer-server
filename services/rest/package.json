@@ -68,6 +68,7 @@
     "@pioneer-platform/utxo-network": "^8.1.46",
     "@quasar/extras": "^1.10.4",
     "@types/node": "^12.20.11",
+    "ajv": "^8.11.0",
     "api": "^4.2.0",
     "autoprefixer": "^9.8.6",
     "axios": "^0.18.1",
