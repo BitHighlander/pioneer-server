@@ -193,6 +193,7 @@ export class pioneerInvocationController extends Controller {
 
                 let entry:any = {
                     state:'created',
+                    date: new Date().getTime(),
                     network:body.network,
                     type:body.invocation.type,
                     invocationId,
