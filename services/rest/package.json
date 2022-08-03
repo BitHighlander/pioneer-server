@@ -35,6 +35,7 @@
     "start": "node dist/main.js",
     "docker:build": "docker build -t pioneer/pioneer-server:latest .",
     "docker:tag": "docker tag pioneer/pioneer-server:latest registry.digitalocean.com/pioneer/pioneer/pioneer-server:latest",
+    "docker:run": "docker run --env-file=../../.env pioneer/pioneer-server:latest",
     "docker:push": "docker push registry.digitalocean.com/pioneer/pioneer/pioneer-server:latest",
     "docker:push:all": "npm run docker:build && npm run docker:tag && npm run docker:push",
     "lint": "tslint -c tslint.json 'src-api/**/*.ts'",
