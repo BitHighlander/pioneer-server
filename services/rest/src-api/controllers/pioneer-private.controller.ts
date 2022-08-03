@@ -221,7 +221,9 @@ export class pioneerPrivateController extends Controller {
 
                         //get market data from markets
                         let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+                        marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
                         let marketCacheCoinCap = await redis.get('markets:CoinCap')
+                        marketCacheCoinCap = JSON.parse(marketCacheCoinCap)
 
                         if(!marketCacheCoinGecko){
                             let marketInfoCoinGecko = await markets.getAssetsCoingecko()
@@ -264,40 +266,52 @@ export class pioneerPrivateController extends Controller {
                             walletInfo.pubkeys = pubkeys
                             if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
                             //hydrate market data for all pubkeys
-                            log.debug(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
-                            let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinCap, pubkeys, context)
-                            log.debug(tag,"responseMarkets: ",responseMarkets)
+                            log.info(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
+                            log.info(tag,"pre: buildBalance: pubkeys: ",JSON.stringify(pubkeys))
+                            log.info(tag,"pre: buildBalance: marketCacheCoinCap: ",JSON.stringify(marketCacheCoinCap))
+                            log.info(tag,"pre: buildBalance: marketCacheCoinGecko: ",JSON.stringify(marketCacheCoinGecko))
+                            log.info(tag,"pre: buildBalance: context: ",context)
 
-                            let statusNetwork = await redis.get('cache:status')
-                            if(statusNetwork){
-                                statusNetwork = JSON.parse(statusNetwork)
-                                log.debug(tag,"statusNetwork:",statusNetwork)
+                            let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, context)
+                            log.info(tag,"responseMarkets: ",responseMarkets.balances[0])
+                            log.info(tag,"responseMarkets: ",responseMarkets.balances[23])
+                            log.info(tag,"responseMarkets: ",responseMarkets.balances.length)
 
-                                log.debug(tag,"thorchain:",statusNetwork.exchanges.thorchain.assets)
-                                //mark swapping protocols for assets
-                                for(let i = 0; i < responseMarkets.balances.length; i++){
-                                    let balance = responseMarkets.balances[i]
-                                    responseMarkets.balances[i].protocols = []
-                                    log.debug(tag,"balance: ",balance.symbol)
-                                    //thorchain
-                                    if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
-                                        responseMarkets.balances[i].protocols.push('thorchain')
-                                    }
-                                    //osmosis
-                                    if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
-                                        responseMarkets.balances[i].protocols.push('osmosis')
-                                    }
-                                    //0x
-                                    if(balance.network === 'ETH'){
-                                        responseMarkets.balances[i].protocols.push('0x')
-                                    }
-                                    log.debug(tag,"balance: ",responseMarkets.balances[i])
-                                    //push to balances
-                                    userInfo.balances.push(responseMarkets.balances[i])
-                                }
-                            } else {
-                                log.error(tag,'Missing cache for network status!')
+                            for(let i = 0; i < responseMarkets.balances.length; i++){
+                                let balance = responseMarkets.balances[i]
+                                userInfo.balances.push(balance)
                             }
+
+                            // let statusNetwork = await redis.get('cache:status')
+                            // if(statusNetwork){
+                            //     statusNetwork = JSON.parse(statusNetwork)
+                            //     log.debug(tag,"statusNetwork:",statusNetwork)
+                            //
+                            //     log.debug(tag,"thorchain:",statusNetwork.exchanges.thorchain.assets)
+                            //     //mark swapping protocols for assets
+                            //     for(let i = 0; i < responseMarkets.balances.length; i++){
+                            //         let balance = responseMarkets.balances[i]
+                            //         // responseMarkets.balances[i].protocols = []
+                            //         // log.debug(tag,"balance: ",balance.symbol)
+                            //         // //thorchain
+                            //         // if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
+                            //         //     responseMarkets.balances[i].protocols.push('thorchain')
+                            //         // }
+                            //         // //osmosis
+                            //         // if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
+                            //         //     responseMarkets.balances[i].protocols.push('osmosis')
+                            //         // }
+                            //         // //0x
+                            //         // if(balance.network === 'ETH'){
+                            //         //     responseMarkets.balances[i].protocols.push('0x')
+                            //         // }
+                            //         // log.debug(tag,"balance: ",responseMarkets.balances[i])
+                            //         //push to balances
+                            //         userInfo.balances.push(responseMarkets.balances[i])
+                            //     }
+                            // } else {
+                            //     log.error(tag,'Missing cache for network status!')
+                            // }
 
                             let walletDescription = {
                                 context:walletInfo.context,
@@ -306,7 +320,7 @@ export class pioneerPrivateController extends Controller {
                                 // balances:responseMarkets.balances,
                                 valueUsdContext:responseMarkets.total
                             }
-                            totalValueUsd = totalValueUsd + totalValueUsd
+                            totalValueUsd = totalValueUsd + responseMarkets.total
                             //walletDescription
                             userInfo.walletDescriptions.push(walletDescription)
                         }
