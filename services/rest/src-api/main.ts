@@ -131,6 +131,9 @@ let usersByUsername = {}
 let usersByKey = {}
 let channel_history_max = 10;
 
+//broadcast
+subscriber.subscribe('blocks');
+
 //private
 subscriber.subscribe('payments');
 subscriber.subscribe('pairings');
