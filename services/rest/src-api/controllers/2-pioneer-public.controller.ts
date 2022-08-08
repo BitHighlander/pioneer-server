@@ -107,7 +107,8 @@ let {
     UTXO_COINS,
     COIN_MAP,
     get_address_from_xpub,
-    COIN_MAP_LONG
+    COIN_MAP_LONG,
+    getExplorerTxUrl
 } = require('@pioneer-platform/pioneer-coins')
 
 const parseThorchainAssetString = function(input:string){
@@ -1714,7 +1715,11 @@ export class atlasPublicController extends Controller {
                             output.result = result
                             if(result.success){
                                 output.success = true
-                                if(result.txid) output.txid = result.txid
+                                if(result.txid) {
+                                    output.txid = result.txid
+                                    //update txid URL
+                                    output.explorerUrl = getExplorerTxUrl(network,output.txid)
+                                }
                             } else {
                                 if(result.error) output.error = result.error
                             }
