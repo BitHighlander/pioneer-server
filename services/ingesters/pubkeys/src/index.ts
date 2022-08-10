@@ -40,6 +40,7 @@ const networks:any = {
     'FIO' : require('@pioneer-platform/fio-network'),
     'ANY' : require('@pioneer-platform/utxo-network'),
     'RUNE' : require('@pioneer-platform/thor-network'),
+    'AVAX' : require('@pioneer-platform/avax-network'),
 }
 networks.ANY.init('full')
 networks.ETH.init()
