@@ -44,6 +44,7 @@ const networks:any = {
 }
 networks.ANY.init('full')
 networks.ETH.init()
+networks.AVAX.init()
 
 let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
@@ -269,6 +270,24 @@ let do_work = async function(){
                     // filter LP positions
 
                     // Price LP positions
+
+                }
+
+                if(work.symbol === 'AVAX'){
+                    log.info(tag,"avax detected! pubkey: ",work.pubkey)
+
+                    let balanceAvax = await networks['AVAX'].getBalance(work.pubkey)
+                    log.info(tag,"balanceAvax: ",balanceAvax)
+
+                    balances.push({
+                        network:work.symbol,
+                        asset:work.symbol,
+                        symbol:work.symbol,
+                        isToken:false,
+                        lastUpdated:new Date().getTime(), //TODO use block heights
+                        balance:balanceAvax,
+                        source:"network"
+                    })
 
                 }
 
