@@ -1741,9 +1741,9 @@ export class atlasPublicController extends Controller {
                         await networks.ANY.init('full')
                         try{
                             result = await networks['ANY'].broadcast(network,body.serialized)
+                            if(result.txid) output.txid = result.txid
                             if(result.success){
                                 output.success = true
-                                if(result.txid) output.txid = result.txid
                             } else {
                                 if(result.error) output.error = result.error
                             }
