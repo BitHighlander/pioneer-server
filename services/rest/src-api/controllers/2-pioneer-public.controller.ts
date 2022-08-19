@@ -582,7 +582,7 @@ export class atlasPublicController extends Controller {
                     // log.info(tag,"***** txid: ",txid)
                     let txid
                     if(output && output.broadcast && output.broadcast.txid) txid = output.broadcast.txid
-                    if(!txid && output.signedTx && output.signedTx.txid) txid = output.broadcast.txid
+                    if(!txid && output.signedTx && output.signedTx.txid) txid = output.signedTx.txid
 
                     let txInfo
                     //TODO normalize tx response between ALL blockchains
@@ -590,6 +590,19 @@ export class atlasPublicController extends Controller {
                     log.info(tag,"txid: ",txid)
                     if(txid){
                         try{
+                            log.info(tag,"txid: ",txid)
+                            if(output?.invocation?.swap?.input?.blockchain){
+                                //get block explorer for txid
+                                let explorerUrl = getExplorerTxUrl(output?.invocation?.swap?.input?.blockchain,txid,false)
+                                console.log("explorerUrl: ",explorerUrl)
+                                output.depositUrl = explorerUrl
+
+                                //update entry
+                                let mongoSave = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{depositUrl:explorerUrl}})
+                            }
+
                             if(UTXO_COINS.indexOf(output.network) >= 0){
                                 txInfo = await networks['ANY'].getTransaction(output.network,txid)
                                 log.info(tag,"UTXO txInfo: ",txInfo)
@@ -671,6 +684,19 @@ export class atlasPublicController extends Controller {
 
                                 output.isFullfilled = true
                                 output.fullfillmentTxid = fullfillmentInfo.out[0].txID
+
+                                //get block explorer for txid
+                                log.info(tag,"output?.invocation?.swap?.output?.blockchain: ",output?.invocation?.swap?.output?.blockchain)
+                                let explorerUrl = getExplorerTxUrl(output?.invocation?.swap?.output?.blockchain,output.fullfillmentTxid,false)
+                                log.info(tag,"explorerUrl: ",explorerUrl)
+                                output.withdrawalUrl = explorerUrl
+
+                                //update entry
+                                let mongoSave2 = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{withdrawalUrl:output.withdrawalUrl}})
+                                log.info(tag,"mongoSave2: ",mongoSave2)
+                                output.resultUpdateWithdrawalUrl = mongoSave2
 
                                 //
                                 let mongoSave = await invocationsDB.update(

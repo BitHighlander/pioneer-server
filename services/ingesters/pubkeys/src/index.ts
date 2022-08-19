@@ -40,11 +40,17 @@ const networks:any = {
     'FIO' : require('@pioneer-platform/fio-network'),
     'ANY' : require('@pioneer-platform/utxo-network'),
     'RUNE' : require('@pioneer-platform/thor-network'),
-    'AVAX' : require('@pioneer-platform/avax-network'),
 }
 networks.ANY.init('full')
 networks.ETH.init()
-networks.AVAX.init()
+try{
+    //Moralas sucks and keepkey breaking their API handle downtime
+    //TODO dynamic node failovers
+    networks['AVAX'] = require('@pioneer-platform/avax-network'),
+    networks.AVAX.init()
+}catch(e){
+    log.error("failed to init avax! e: ",e)
+}
 
 let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
@@ -273,23 +279,26 @@ let do_work = async function(){
 
                 }
 
-                if(work.symbol === 'AVAX'){
-                    log.info(tag,"avax detected! pubkey: ",work.pubkey)
-
-                    let balanceAvax = await networks['AVAX'].getBalance(work.pubkey)
-                    log.info(tag,"balanceAvax: ",balanceAvax)
-
-                    balances.push({
-                        network:work.symbol,
-                        asset:work.symbol,
-                        symbol:work.symbol,
-                        isToken:false,
-                        lastUpdated:new Date().getTime(), //TODO use block heights
-                        balance:balanceAvax,
-                        source:"network"
-                    })
-
-                }
+                // if(work.symbol === 'AVAX'){
+                //     try{
+                //         log.info(tag,"avax detected! pubkey: ",work.pubkey)
+                //
+                //         let balanceAvax = await networks['AVAX'].getBalance(work.pubkey)
+                //         log.info(tag,"balanceAvax: ",balanceAvax)
+                //         if(!balanceAvax) balanceAvax = 0
+                //         balances.push({
+                //             network:work.symbol,
+                //             asset:work.symbol,
+                //             symbol:work.symbol,
+                //             isToken:false,
+                //             lastUpdated:new Date().getTime(), //TODO use block heights
+                //             balance:balanceAvax,
+                //             source:"network"
+                //         })
+                //     }catch(e){
+                //         log.error(tag,"Failed to query AVAX! e: ",e)
+                //     }
+                // }
 
                 // TODO if BSC get tokens
 
@@ -323,7 +332,7 @@ let do_work = async function(){
                 log.debug(tag,"getBalance: ")
                 let balance = await networks[work.symbol].getBalance(work.pubkey)
                 log.debug(tag,"balance: ",balance)
-
+                if(!balance) balance = 0
                 balances.push({
                     network:work.symbol,
                     asset:work.symbol,

@@ -48,7 +48,7 @@
     "@pioneer-platform/cosmos-network": "latest",
     "@pioneer-platform/default-mongo": "latest",
     "@pioneer-platform/default-redis": "latest",
-    "@pioneer-platform/eth-network": "latest",
+    "@pioneer-platform/eth-network": "^8.1.48",
     "@pioneer-platform/fio-network": "latest",
     "@pioneer-platform/kava-network": "latest",
     "@pioneer-platform/loggerdog": "latest",

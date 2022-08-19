@@ -15,7 +15,7 @@
     "docker:push:all": "npm run docker:build && npm run docker:tag && npm run docker:push"
   },
   "dependencies": {
-    "@pioneer-platform/avax-network": "^0.0.1",
+    "@pioneer-platform/avax-network": "^0.0.3",
     "@pioneer-platform/binance-network": "latest",
     "@pioneer-platform/blockbook": "^8.1.39",
     "@pioneer-platform/cosmos-network": "latest",
