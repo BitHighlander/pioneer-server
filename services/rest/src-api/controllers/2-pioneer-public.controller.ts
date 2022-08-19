@@ -617,6 +617,13 @@ export class atlasPublicController extends Controller {
                                 output.isConfirmed = true
 
                                 //update entry
+                                let mongoSave3 = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{state:"confirmed"}})
+                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                output.resultUpdateState = mongoSave3
+
+                                //update entry
                                 let mongoSave = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{isConfirmed:true}})
@@ -630,6 +637,13 @@ export class atlasPublicController extends Controller {
                                 output.isConfirmed = true
 
                                 //update entry
+                                let mongoSave3 = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{state:"confirmed"}})
+                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                output.resultUpdateState = mongoSave3
+
+                                //update entry
                                 let mongoSave = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{isConfirmed:true}})
@@ -641,6 +655,13 @@ export class atlasPublicController extends Controller {
                             if(txInfo && txInfo.txInfo && txInfo.txInfo.blockNumber){
                                 log.debug(tag,"Confirmed!")
                                 output.isConfirmed = true
+
+                                //update entry
+                                let mongoSave3 = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{state:"confirmed"}})
+                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                output.resultUpdateState = mongoSave3
 
                                 //update entry
                                 let mongoSave = await invocationsDB.update(
@@ -690,6 +711,13 @@ export class atlasPublicController extends Controller {
                                 let explorerUrl = getExplorerTxUrl(output?.invocation?.swap?.output?.blockchain,output.fullfillmentTxid,false)
                                 log.info(tag,"explorerUrl: ",explorerUrl)
                                 output.withdrawalUrl = explorerUrl
+
+                                //update entry
+                                let mongoSave3 = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{state:"fullfilled"}})
+                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                output.resultUpdateState = mongoSave3
 
                                 //update entry
                                 let mongoSave2 = await invocationsDB.update(
