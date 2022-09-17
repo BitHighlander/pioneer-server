@@ -573,16 +573,19 @@ export class atlasPublicController extends Controller {
                 output.signedTx.txid = output.broadcast?.result?.txid
             }
 
+            let txid
+            if(output && output.broadcast && output.broadcast.txid) txid = output.broadcast.txid
+            if(!txid && output.signedTx && output.signedTx.txid) txid = output.signedTx.txid
+
+
             //if type is swap get blockchain info for fullfillment
             if(output && output.state === 'broadcasted'){
                 if(!output.isConfirmed){
+                    log.info(tag,"Checkpoint broadcasted but NOT confirmed!")
                     //get confirmation status
                     // let txid = output.signedTx.txid || output.broadcast.txid
                     // if(!txid && output?.broadcast && output?.broadcast.result && output?.broadcast?.result?.txid) txid = output?.broadcast?.result?.txid
                     // log.info(tag,"***** txid: ",txid)
-                    let txid
-                    if(output && output.broadcast && output.broadcast.txid) txid = output.broadcast.txid
-                    if(!txid && output.signedTx && output.signedTx.txid) txid = output.signedTx.txid
 
                     let txInfo
                     //TODO normalize tx response between ALL blockchains
@@ -610,6 +613,28 @@ export class atlasPublicController extends Controller {
                                 if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
                                 txInfo = await networks[output.network].getTransaction(txid)
                                 log.debug(tag,"txInfo: ",txInfo)
+                            }
+
+                            //@TODO standardize getTransaction in network
+
+                            if(txInfo && txInfo.blockHeight && parseInt(txInfo.blockHeight) > 0){
+                                log.info(tag,"Confirmed!")
+                                output.isConfirmed = true
+
+                                //update entry
+                                let mongoSave3 = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{state:"confirmed"}})
+                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                output.resultUpdateState = mongoSave3
+
+                                //update entry
+                                let mongoSave = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{isConfirmed:true}})
+                                output.resultUpdate = mongoSave
+                                //push event
+                                publisher.publish('invocationUpdate',JSON.stringify(output))
                             }
 
                             if(txInfo && txInfo.height){
@@ -680,25 +705,46 @@ export class atlasPublicController extends Controller {
                     }
                 }
 
-                if(output.type === 'swap' && output.isConfirmed && !output.isFullfilled){
-                    //txid
-                    try{
-                        log.info(tag,"output.signedTx.txid: ",output.signedTx.txid)
-                        //parse tx
-                        let txid = output.signedTx.txid.toUpperCase()
-                        txid = txid.replace("0X","")
-                        log.info(tag,"txid: ",txid)
-                        let midgardInfo = await midgard.getTransaction(txid)
-                        log.info(tag,"midgardInfo: ",midgardInfo)
+            }
 
-                        if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
-                            let depositInfo = midgardInfo.actions[0].in
-                            log.debug(tag,"deposit: ",depositInfo)
+            if(output.type === 'swap' && output.isConfirmed){
+                //txid
+                try{
+                    log.info(tag,"Checkpoint thorchain swap check ID")
+                    //parse tx
+                    txid = txid.replace("0X","")
+                    log.info(tag,"txid: ",txid)
+                    let midgardInfo = await midgard.getTransaction(txid)
+                    log.info(tag,"midgardInfo: ",midgardInfo)
 
-                            let fullfillmentInfo = midgardInfo.actions[0]
-                            log.debug(tag,"fullfillmentInfo: ",JSON.stringify(fullfillmentInfo))
+                    if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
+                        let depositInfo = midgardInfo.actions[0].in
+                        log.debug(tag,"deposit: ",depositInfo)
 
-                            if(fullfillmentInfo.status === 'success'){
+                        let fullfillmentInfo = midgardInfo.actions[0]
+                        log.debug(tag,"fullfillmentInfo: ",JSON.stringify(fullfillmentInfo))
+
+                        if(fullfillmentInfo.status === 'success'){
+                            if(fullfillmentInfo.type === 'refund'){
+                                //refund
+                                output.isRefunded = true
+                                output.refundTxid = fullfillmentInfo.out[0].txID
+
+                                //update entry
+                                let mongoSave3 = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{state:"refunded"}})
+                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                output.resultUpdateState = mongoSave3
+
+                                //
+                                let mongoSave = await invocationsDB.update(
+                                    {invocationId:output.invocationId},
+                                    {$set:{isRefunded:true,refundTxid:output.refundTxid}})
+                                output.resultUpdateFullment = mongoSave
+
+                            } else {
+                                //@TODO handle explcitly
                                 log.debug(tag,"fullfillmentInfo: ",fullfillmentInfo)
                                 log.debug(tag,"fullfillmentInfo: ",fullfillmentInfo.out[0].txID)
 
@@ -732,13 +778,18 @@ export class atlasPublicController extends Controller {
                                     {$set:{isFullfilled:true,fullfillmentTxid:output.fullfillmentTxid}})
                                 output.resultUpdateFullment = mongoSave
                             }
-                        } else {
-                            log.debug(tag,"not fullfilled!")
+
                         }
-                    }catch(e){
-                        log.error(" txid Not found!")
+                    } else {
+                        log.debug(tag,"not fullfilled!")
                     }
+                }catch(e){
+                    log.error(" txid Not found!")
                 }
+            } else {
+                log.info(tag,"Not a swap! ")
+                log.info(tag,"Not a swap! ",output.type)
+                log.info(tag,"Not a swap! ",output.isConfirmed)
             }
             //
             // if(!output){

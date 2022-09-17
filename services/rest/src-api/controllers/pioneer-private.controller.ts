@@ -563,7 +563,7 @@ export class pioneerPrivateController extends Controller {
                     //TODO if wallet not in redis add to redis
 
                     //re-submit to pubkey ingester
-                    let result = await pioneer.register(accountInfo.username, pubkeysOwnedBySdk,accountInfo.context)
+                    let result = await pioneer.register(accountInfo.username, pubkeysOwnedBySdk,wallet)
                     log.info(tag,"resultPioneer: ",result)
                     output.results.push(result)
                 }
