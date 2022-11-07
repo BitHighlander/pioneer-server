@@ -19,7 +19,9 @@ import { pioneerOsmosisController } from './../controllers/6-osmosis-public.cont
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { pioneerPrivateController } from './../controllers/pioneer-private.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-import { XAppsController } from './../controllers/x-apps.controller';
+import { WAppsController } from './../controllers/w-apps.controller';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { XDevsController } from './../controllers/x-developer.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { pioneerInvocationController } from './../controllers/y-invocation.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -221,17 +223,6 @@ const models: TsoaRoute.Models = {
             "source": {"dataType":"string","required":true},
             "coin": {"dataType":"string","required":true},
             "pubkeys": {"dataType":"any","required":true},
-        },
-        "additionalProperties": false,
-    },
-    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-    "CreateAppBody": {
-        "dataType": "refObject",
-        "properties": {
-            "name": {"dataType":"string","required":true},
-            "image": {"dataType":"string","required":true},
-            "version": {"dataType":"string","required":true},
-            "description": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -1760,12 +1751,12 @@ export function RegisterRoutes(app: express.Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        app.post('/api/v1/create',
+        app.post('/api/v1/apps/create',
 
-            function XAppsController_createApp(request: any, response: any, next: any) {
+            function WAppsController_createApp(request: any, response: any, next: any) {
             const args = {
                     authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
-                    body: {"in":"body","name":"body","required":true,"ref":"CreateAppBody"},
+                    body: {"in":"body","name":"body","required":true,"dataType":"any"},
             };
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
@@ -1774,7 +1765,7 @@ export function RegisterRoutes(app: express.Router) {
             try {
                 validatedArgs = getValidatedArgs(args, request, response);
 
-                const controller = new XAppsController();
+                const controller = new WAppsController();
 
 
               const promise = controller.createApp.apply(controller, validatedArgs as any);
@@ -1786,7 +1777,7 @@ export function RegisterRoutes(app: express.Router) {
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         app.get('/api/v1/apps',
 
-            function XAppsController_listApps(request: any, response: any, next: any) {
+            function WAppsController_listApps(request: any, response: any, next: any) {
             const args = {
             };
 
@@ -1796,10 +1787,56 @@ export function RegisterRoutes(app: express.Router) {
             try {
                 validatedArgs = getValidatedArgs(args, request, response);
 
-                const controller = new XAppsController();
+                const controller = new WAppsController();
 
 
               const promise = controller.listApps.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.post('/api/v1/devs/create',
+
+            function XDevsController_createDeveloper(request: any, response: any, next: any) {
+            const args = {
+                    authorization: {"in":"header","name":"Authorization","required":true,"dataType":"string"},
+                    body: {"in":"body","name":"body","required":true,"dataType":"any"},
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new XDevsController();
+
+
+              const promise = controller.createDeveloper.apply(controller, validatedArgs as any);
+              promiseHandler(controller, promise, response, undefined, next);
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        app.get('/api/v1/devs',
+
+            function XDevsController_listDevelopers(request: any, response: any, next: any) {
+            const args = {
+            };
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = getValidatedArgs(args, request, response);
+
+                const controller = new XDevsController();
+
+
+              const promise = controller.listDevelopers.apply(controller, validatedArgs as any);
               promiseHandler(controller, promise, response, undefined, next);
             } catch (err) {
                 return next(err);

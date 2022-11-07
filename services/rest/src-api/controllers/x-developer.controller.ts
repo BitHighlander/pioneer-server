@@ -18,11 +18,11 @@ let connection  = require("@pioneer-platform/default-mongo")
 let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
 let txsRawDB = connection.get('transactions-raw')
-let appsDB = connection.get('apps')
+let devsDB = connection.get('developers')
 
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
-//appsDB.createIndex({appId: 1}, {unique: true})
+devsDB.createIndex({username: 1}, {unique: true})
 
 //globals
 
@@ -47,18 +47,19 @@ export class ApiError extends Error {
 //route
 @Tags('App Store Endpoints')
 @Route('')
-export class XAppsController extends Controller {
+export class XDevsController extends Controller {
 
     /*
         Create
 
      */
 
-    @Post('/create')
-    public async createApp(@Header('Authorization') authorization: string,@Body() body: CreateAppBody): Promise<any> {
+    @Post('/devs/create')
+    //CreateAppBody
+    public async createDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | transactions | "
         try{
-            let success = appsDB.insert(body)
+            let success = devsDB.insert(body)
             return(success);
         }catch(e){
             let errorResp:Error = {
@@ -75,11 +76,11 @@ export class XAppsController extends Controller {
         read
     */
 
-    @Get('/apps')
-    public async listApps() {
-        let tag = TAG + " | health | "
+    @Get('/devs')
+    public async listDevelopers() {
+        let tag = TAG + " | listDeveloper | "
         try{
-            let apps = appsDB.find()
+            let apps = devsDB.find()
             return(apps)
         }catch(e){
             let errorResp:Error = {
@@ -91,15 +92,4 @@ export class XAppsController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
-
-    /*
-        TODO
-        update
-     */
-
-    /*
-        TODO
-        destroy
-     */
-
 }

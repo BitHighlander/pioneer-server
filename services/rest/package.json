@@ -62,7 +62,7 @@
     "@pioneer-platform/pioneer-sdk": "latest",
     "@pioneer-platform/pioneer-types": "latest",
     "@pioneer-platform/redis-queue": "latest",
-    "@pioneer-platform/ripple-network": "^8.1.44",
+    "@pioneer-platform/ripple-network": "^8.1.45",
     "@pioneer-platform/secret-network": "latest",
     "@pioneer-platform/signing": "latest",
     "@pioneer-platform/terra-network": "latest",
