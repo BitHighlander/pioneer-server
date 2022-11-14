@@ -10,7 +10,6 @@ WORKDIR /usr/src/app
 COPY package.json /usr/src/app/
 
 RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/app/.npmrc
-RUN npm install -g @quasar/cli
 RUN npm install
 
 COPY . /usr/src/app
