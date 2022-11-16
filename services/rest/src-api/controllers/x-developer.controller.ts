@@ -50,6 +50,11 @@ export class ApiError extends Error {
 export class XDevsController extends Controller {
 
     /*
+        Verify
+
+     */
+
+    /*
         Create
 
      */
@@ -59,6 +64,15 @@ export class XDevsController extends Controller {
     public async createDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | transactions | "
         try{
+            //TODO
+            //is developer already in database?
+
+            //does dev have ENS name
+
+            //validate github url
+
+            //send email confirmation
+
             let success = devsDB.insert(body)
             return(success);
         }catch(e){

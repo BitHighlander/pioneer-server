@@ -1,6 +1,6 @@
 {
   "name": "pioneer-server",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "private": true,
   "description": "Pioneer is a multi-asset blockchain explorer and subscription service",
   "main": "dist/main.js",
