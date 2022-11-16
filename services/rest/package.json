@@ -16,7 +16,7 @@
     "clean": "rm -Rf node_modules dist api",
     "refresh": "rm -Rf node_modules dist api && npm i",
     "api-dev": "npm run build:all-local-api && npm run start",
-    "build:web": "npm i  react-scripts && react-scripts build && gulp licenses",
+    "build:web": "react-scripts build && gulp licenses",
     "build:routes": "mkdir -p src-api/routes && tsoa routes",
     "build:swagger": "mkdir -p api && mkdir -p api/dist && tsoa swagger",
     "build:routes-local": "mkdir -p src-api/routes && tsoa routes --configuration tsoaLocal.json",

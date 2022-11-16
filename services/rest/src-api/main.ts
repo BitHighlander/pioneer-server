@@ -112,7 +112,7 @@ let io = require('socket.io')(server);
 io.sockets.setMaxListeners(SOCKET_MAX_CONNECTIONS);
 
 //web
-app.use('/',express.static('dist/spa'));
+app.use('/',express.static('build'));
 
 //docs
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
