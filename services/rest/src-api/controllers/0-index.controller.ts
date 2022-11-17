@@ -78,4 +78,11 @@ export class IndexController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
+
+
+    /*
+        Info
+
+     */
+
 }
