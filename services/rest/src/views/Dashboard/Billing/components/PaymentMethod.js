@@ -32,17 +32,11 @@ const PaymentMethod = ({ title, mastercard, visa }) => {
             {title}
           </Text>
           <Button bg={bgButton} color='white' fontSize='xs' variant='no-hover'>
-            ADD NEW CARD
+            ADD NEW DAPP
           </Button>
         </Flex>
       </CardHeader>
       <CardBody>
-        <Flex
-          direction={{ sm: "column", md: "row" }}
-          align='center'
-          w='100%'
-          justify='center'
-          py='1rem'>
           <Flex
             p='1rem'
             bg='transparent'
@@ -54,10 +48,10 @@ const PaymentMethod = ({ title, mastercard, visa }) => {
             mb={{ sm: "24px", md: "0px" }}
             me={{ sm: "0px", md: "24px" }}>
             <IconBox me='10px' w='25px' h='22px'>
-              {mastercard.icon}
+
             </IconBox>
             <Text color='gray.400' fontSize='md' fontWeight='semibold'>
-              {mastercard.number}
+              Dapp URL
             </Text>
             <Spacer />
             <Button
@@ -78,10 +72,9 @@ const PaymentMethod = ({ title, mastercard, visa }) => {
             borderColor={borderColor}
             align='center'>
             <IconBox me='10px' w='25px' h='25px'>
-              {visa.icon}
             </IconBox>
             <Text color='gray.400' fontSize='md' fontWeight='semibold'>
-              {visa.number}
+              Dapp Description
             </Text>
             <Spacer />
             <Button
@@ -92,7 +85,6 @@ const PaymentMethod = ({ title, mastercard, visa }) => {
               variant='no-hover'>
               <Icon as={FaPencilAlt} />
             </Button>
-          </Flex>
         </Flex>
       </CardBody>
     </Card>

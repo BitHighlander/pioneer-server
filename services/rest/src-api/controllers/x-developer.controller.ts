@@ -29,12 +29,13 @@ let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
 let txsRawDB = connection.get('transactions-raw')
 let devsDB = connection.get('developers')
+let dapsDB = connection.get('dapps')
 
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
 // devsDB.createIndex({username: 1}, {unique: true})
 devsDB.createIndex({publicAddress: 1}, {unique: true})
-
+// dapsDB.createIndex({id: 1}, {unique: true})
 //globals
 
 //rest-ts
@@ -61,40 +62,42 @@ export class ApiError extends Error {
 export class XDevsController extends Controller {
 
     /** GET /users */
+    /** GET /users/:publicAddress */
+    @Get('/users')
+    public async users() {
+        let tag = TAG + " | users | "
+        try{
+            let devs = await devsDB.find()
+            log.info(tag,"devs: ",devs)
+            return(devs);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
-    // @Get('/users')
-    // public async users(@Query()publicAddress:any) {
-    //     let tag = TAG + " | users | "
-    //     try{
-    //         log.info(tag,"publicAddress: ",publicAddress)
-    //
-    //         let devs = await devsDB.find()
-    //         log.info(tag,"devs: ",devs)
-    //
-    //         let secretInfo = {
-    //             id:1,
-    //             username:null,
-    //             publicAddress:"0x33b35c665496ba8e71b22373843376740401f106",
-    //             nonce:4474
-    //         }
-    //
-    //         //users: [{"id":2,"nonce":4474,"publicAddress":"0x33b35c665496ba8e71b22373843376740401f106","username":null}]
-    //
-    //
-    //         return(devs);
-    //         // log.info(tag)
-    //         // let apps = await devsDB.find()
-    //         // return(apps)
-    //     }catch(e){
-    //         let errorResp:Error = {
-    //             success:false,
-    //             tag,
-    //             e
-    //         }
-    //         log.error(tag,"e: ",{errorResp})
-    //         throw new ApiError("error",503,"error: "+e.toString());
-    //     }
-    // }
+    @Get('/dapps')
+    public async dapps() {
+        let tag = TAG + " | dapps | "
+        try{
+            let devs = await dapsDB.find()
+            log.info(tag,"devs: ",devs)
+            return(devs);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
     /** GET /users/:publicAddress */
     @Get('/users/{publicAddress}')

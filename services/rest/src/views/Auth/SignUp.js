@@ -28,7 +28,8 @@ function SignUp() {
       direction='column'
       alignSelf='center'
       justifySelf='center'
-      overflow='hidden'>
+      overflow='hidden'
+    >
       <Box
         position='absolute'
         minH={{ base: "70vh", md: "50vh" }}

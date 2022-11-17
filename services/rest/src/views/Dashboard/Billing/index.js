@@ -32,42 +32,48 @@ function Billing() {
             }}
             templateRows={{ sm: "auto auto auto", md: "1fr auto", xl: "1fr" }}
             gap='26px'>
-            <CreditCard
-              backgroundImage={BackgroundCard1}
-              title={"Purity UI"}
-              number={"7812 2139 0823 XXXX"}
-              validity={{
-                name: "VALID THRU",
-                data: "05/24",
-              }}
-              cvv={{
-                name: "CVV",
-                code: "09x",
-              }}
-              icon={
-                <Icon
-                  as={RiMastercardFill}
-                  w='48px'
-                  h='auto'
-                  color='gray.400'
-                />
-              }
-            />
-            <PaymentStatistics
-              icon={<Icon h={"24px"} w={"24px"} color='white' as={FaWallet} />}
-              title={"Salary"}
-              description={"Belong interactive"}
-              amount={2000}
-            />
-            <PaymentStatistics
-              icon={<Icon h={"24px"} w={"24px"} color='white' as={FaPaypal} />}
-              title={"Paypal"}
-              description={"Freelance Payment"}
-              amount={4550}
-            />
+            {/*<CreditCard*/}
+            {/*  backgroundImage={BackgroundCard1}*/}
+            {/*  title={"Purity UI"}*/}
+            {/*  number={"7812 2139 0823 XXXX"}*/}
+            {/*  validity={{*/}
+            {/*    name: "VALID THRU",*/}
+            {/*    data: "05/24",*/}
+            {/*  }}*/}
+            {/*  cvv={{*/}
+            {/*    name: "CVV",*/}
+            {/*    code: "09x",*/}
+            {/*  }}*/}
+            {/*  icon={*/}
+            {/*    <Icon*/}
+            {/*      as={RiMastercardFill}*/}
+            {/*      w='48px'*/}
+            {/*      h='auto'*/}
+            {/*      color='gray.400'*/}
+            {/*    />*/}
+            {/*  }*/}
+            {/*/>*/}
+            {/*<PaymentStatistics*/}
+            {/*  icon={<Icon h={"24px"} w={"24px"} color='white' as={FaWallet} />}*/}
+            {/*  title={"Salary"}*/}
+            {/*  description={"Belong interactive"}*/}
+            {/*  amount={2000}*/}
+            {/*/>*/}
+            {/*<PaymentStatistics*/}
+            {/*  icon={<Icon h={"24px"} w={"24px"} color='white' as={FaPaypal} />}*/}
+            {/*  title={"Paypal"}*/}
+            {/*  description={"Freelance Payment"}*/}
+            {/*  amount={4550}*/}
+            {/*/>*/}
           </Grid>
           <PaymentMethod
-            title={"Payment Method"}
+              templateColumns={{
+                  sm: "1fr",
+                  md: "1fr 1fr",
+                  xl: "1fr 1fr 1fr 1fr",
+              }}
+              templateRows={{ sm: "auto auto auto", md: "1fr auto", xl: "1fr" }}
+            title={"Create Dapp"}
             mastercard={{
               icon: <MastercardIcon w='100%' h='100%' />,
               number: "7812 2139 0823 XXXX",
@@ -78,16 +84,16 @@ function Billing() {
             }}
           />
         </Box>
-        <Invoices title={"Invoices"} data={invoicesData} />
+        {/*<Invoices title={"Invoices"} data={invoicesData} />*/}
       </Grid>
       <Grid templateColumns={{ sm: "1fr", lg: "1.6fr 1.2fr" }}>
-        <BillingInformation title={"Billing Information"} data={billingData} />
-        <Transactions
-          title={"Your Transactions"}
-          date={"23 - 30 March"}
-          newestTransactions={newestTransactions}
-          olderTransactions={olderTransactions}
-        />
+        {/*<BillingInformation title={"Billing Information"} data={billingData} />*/}
+        {/*<Transactions*/}
+        {/*  title={"Your Transactions"}*/}
+        {/*  date={"23 - 30 March"}*/}
+        {/*  newestTransactions={newestTransactions}*/}
+        {/*  olderTransactions={olderTransactions}*/}
+        {/*/>*/}
       </Grid>
     </Flex>
   );
