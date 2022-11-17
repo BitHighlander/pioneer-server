@@ -5,7 +5,7 @@ import injectedModule from '@web3-onboard/injected-wallets'
 import { init } from '@web3-onboard/react'
 
 
-const INFURA_KEY = '2896ff3d0a1143689424a8341cb75c67'
+const INFURA_KEY = 'fb05c87983c4431baafd4600fd33de7e'
 
 const walletConnect = walletConnectModule()
 
@@ -82,10 +82,10 @@ export default init({
             }
         ],
         // Optional - but allows for dapps to require users to agree to TOS and privacy policy before connecting a wallet
-        agreement: {
-          version: '1.0.0',
-          termsUrl: 'https://www.blocknative.com/terms-conditions',
-          privacyUrl: 'https://www.blocknative.com/privacy-policy'
-        }
+        // agreement: {
+        //   version: '1.0.0',
+        //   termsUrl: 'https://www.blocknative.com/terms-conditions',
+        //   privacyUrl: 'https://www.blocknative.com/privacy-policy'
+        // }
     }
 })

@@ -32,7 +32,7 @@ let devsDB = connection.get('developers')
 
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
-devsDB.createIndex({username: 1}, {unique: true})
+// devsDB.createIndex({username: 1}, {unique: true})
 devsDB.createIndex({publicAddress: 1}, {unique: true})
 
 //globals

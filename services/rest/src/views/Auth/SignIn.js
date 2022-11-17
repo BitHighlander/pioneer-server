@@ -1,4 +1,7 @@
 import React from "react";
+import {
+  useEffect
+} from 'react';
 // Chakra imports
 import {
   Box,
@@ -13,30 +16,84 @@ import {
   Text,
   useColorModeValue,
 } from "@chakra-ui/react";
+import { ethers } from 'ethers'
+
 // Assets
 // import signInImage from "assets/img/signInImage.png";
 import home from "assets/img/home.png";
 import { useConnectWallet } from '@web3-onboard/react'
 
-import client from '@pioneer-platform/pioneer-client'
+import Client from '@pioneer-platform/pioneer-client'
+import {PersonalSignMessageRequest} from "@web3-onboard/common/dist/types";
+let spec = 'http://127.0.0.1:9001/spec/swagger.json'
 
 function SignIn() {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet()
 
   const onConnect = async function(){
     try{
-      //
-      let config = {
-        queryKey:'key:public',
-        username:"billybob",
-        spec
-      }
-      connect()
+      await connect()
       return true
     }catch(e){
       console.error(e)
     }
   }
+
+  const onLogin = async function(){
+    try{
+      let address = wallet?.accounts[0]?.address
+      console.log("address: ",address)
+
+      let config = {
+        queryKey:'key:public',
+        username:"billybob",
+        spec
+      }
+
+      //get config
+      let client = new Client(spec,config)
+      let pioneer = await client.init()
+
+      //is address logged in?
+      let user = await pioneer.instance.GetUser({publicAddress:address})
+      console.log("user: ",user.data)
+
+      //login
+      let nonce = user.data.nonce
+      let message = `I am signing my one-time nonce: ${nonce}`
+
+        console.log("wallet: ",wallet)
+      console.log("wallet: ",wallet.provider)
+      // console.log("wallet: ",await wallet.provider.request('personal_sign'))
+      // console.log("wallet: ",wallet.provider.request(message,address))
+      // const signature = await wallet.provider.request('personal_sign',{message,address})
+      // const signature = await wallet.sign(
+      //     `I am signing my one-time nonce: ${nonce}`,
+      //     address,
+      //     '' // MetaMask will ignore the password argument here
+      // );
+      // console.log("signature: ",signature)
+
+      console.log("message: ",message)
+      console.log("address: ",address)
+
+      // const ethersWallet = new ethers.Wallet(wallet.provider)
+      const ethersProvider = new ethers.providers.Web3Provider(wallet.provider, 'any')
+      const signer = ethersProvider.getSigner()
+      let signature = await signer.signMessage(message,address)
+      console.log("signature: ",signature)
+
+      return true
+    }catch(e){
+      console.error(e)
+    }
+  }
+
+  useEffect(() => {
+    if(wallet?.accounts && wallet?.accounts[0]?.address){
+      onLogin()
+    }
+  }, [wallet,wallet?.provider])
 
   // Chakra color mode
   const titleColor = useColorModeValue("gray.300", "black.200");
