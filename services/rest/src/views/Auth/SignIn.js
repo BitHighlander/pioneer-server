@@ -18,8 +18,26 @@ import {
 import home from "assets/img/home.png";
 import { useConnectWallet } from '@web3-onboard/react'
 
+import client from '@pioneer-platform/pioneer-client'
+
 function SignIn() {
   const [{ wallet, connecting }, connect, disconnect] = useConnectWallet()
+
+  const onConnect = async function(){
+    try{
+      //
+      let config = {
+        queryKey:'key:public',
+        username:"billybob",
+        spec
+      }
+      connect()
+      return true
+    }catch(e){
+      console.error(e)
+    }
+  }
+
   // Chakra color mode
   const titleColor = useColorModeValue("gray.300", "black.200");
   const textColor = useColorModeValue("gray.400", "white");
@@ -66,7 +84,7 @@ function SignIn() {
                 </FormLabel>
               </FormControl>
               <Button
-                onClick={() => connect()}
+                onClick={onConnect}
                 fontSize='10px'
                 type='submit'
                 bg='green.300'
