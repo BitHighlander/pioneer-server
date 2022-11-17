@@ -14,7 +14,7 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 // Assets
-import BgSignUp from "assets/img/BgSignUp.png";
+import BgSignUp from "assets/img/community-web.jpg";
 import React from "react";
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
 
@@ -76,114 +76,23 @@ function SignUp() {
           bg={bgColor}
           boxShadow='0 20px 27px 0 rgb(0 0 0 / 5%)'>
           <Text
-            fontSize='xl'
-            color={textColor}
-            fontWeight='bold'
-            textAlign='center'
-            mb='22px'>
-            Register With
-          </Text>
-          <HStack spacing='15px' justify='center' mb='22px'>
-            <Flex
-              justify='center'
-              align='center'
-              w='75px'
-              h='75px'
-              borderRadius='15px'
-              border='1px solid lightgray'
-              cursor='pointer'
-              transition='all .25s ease'
-              _hover={{ filter: "brightness(120%)", bg: bgIcons }}>
-              <Link href='#'>
-                <Icon
-                  as={FaFacebook}
-                  w='30px'
-                  h='30px'
-                  _hover={{ filter: "brightness(120%)" }}
-                />
-              </Link>
-            </Flex>
-            <Flex
-              justify='center'
-              align='center'
-              w='75px'
-              h='75px'
-              borderRadius='15px'
-              border='1px solid lightgray'
-              cursor='pointer'
-              transition='all .25s ease'
-              _hover={{ filter: "brightness(120%)", bg: bgIcons }}>
-              <Link href='#'>
-                <Icon
-                  as={FaApple}
-                  w='30px'
-                  h='30px'
-                  _hover={{ filter: "brightness(120%)" }}
-                />
-              </Link>
-            </Flex>
-            <Flex
-              justify='center'
-              align='center'
-              w='75px'
-              h='75px'
-              borderRadius='15px'
-              border='1px solid lightgray'
-              cursor='pointer'
-              transition='all .25s ease'
-              _hover={{ filter: "brightness(120%)", bg: bgIcons }}>
-              <Link href='#'>
-                <Icon
-                  as={FaGoogle}
-                  w='30px'
-                  h='30px'
-                  _hover={{ filter: "brightness(120%)" }}
-                />
-              </Link>
-            </Flex>
-          </HStack>
-          <Text
             fontSize='lg'
             color='gray.400'
             fontWeight='bold'
             textAlign='center'
             mb='22px'>
-            or
+            Select a Username
           </Text>
           <FormControl>
             <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
-              Name
+              Username
             </FormLabel>
             <Input
               fontSize='sm'
               ms='4px'
               borderRadius='15px'
               type='text'
-              placeholder='Your full name'
-              mb='24px'
-              size='lg'
-            />
-            <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
-              Email
-            </FormLabel>
-            <Input
-              fontSize='sm'
-              ms='4px'
-              borderRadius='15px'
-              type='email'
-              placeholder='Your email address'
-              mb='24px'
-              size='lg'
-            />
-            <FormLabel ms='4px' fontSize='sm' fontWeight='normal'>
-              Password
-            </FormLabel>
-            <Input
-              fontSize='sm'
-              ms='4px'
-              borderRadius='15px'
-              type='password'
-              placeholder='Your password'
+              placeholder='Username'
               mb='24px'
               size='lg'
             />
@@ -217,17 +126,6 @@ function SignUp() {
             alignItems='center'
             maxW='100%'
             mt='0px'>
-            <Text color={textColor} fontWeight='medium'>
-              Already have an account?
-              <Link
-                color={titleColor}
-                as='span'
-                ms='5px'
-                href='#'
-                fontWeight='bold'>
-                Sign In
-              </Link>
-            </Text>
           </Flex>
         </Flex>
       </Flex>
