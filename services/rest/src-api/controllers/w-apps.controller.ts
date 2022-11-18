@@ -81,7 +81,7 @@ export class WAppsController extends Controller {
     public async listApps() {
         let tag = TAG + " | health | "
         try{
-            let apps = appsDB.find()
+            let apps = appsDB.find({whitelist:true})
             return(apps)
         }catch(e){
             let errorResp:Error = {
