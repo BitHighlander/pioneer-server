@@ -98,6 +98,10 @@ let CACHE_OVERRIDE = true
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
 // import * as express from 'express';
 
+//globals
+const ADMIN_PUBLIC_ADDRESS = process.env['ADMIN_PUBLIC_ADDRESS']
+if(!ADMIN_PUBLIC_ADDRESS) throw Error("Invalid ENV missing ADMIN_PUBLIC_ADDRESS")
+
 import {
     Error,
     ApiError,
@@ -192,6 +196,7 @@ export class atlasPublicController extends Controller {
             let online = await redis.smembers('online')
             globals.online = online
             globals.blockchains = blockchains
+            globals.root = ADMIN_PUBLIC_ADDRESS
             return(globals)
         }catch(e){
             let errorResp:Error = {

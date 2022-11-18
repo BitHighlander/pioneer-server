@@ -19,6 +19,7 @@ let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
 let txsRawDB = connection.get('transactions-raw')
 let appsDB = connection.get('apps')
+const uuid = require('short-uuid');
 
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
@@ -98,16 +99,48 @@ export class WAppsController extends Controller {
         TODO
         update
      */
+    @Post('/apps/update')
+    //CreateAppBody
+    public async updateApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | transactions | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!authorization && !body.authorization) throw Error("authorization required!")
+            if(!authorization) authorization = body.authorization
+
+            //validate auth
+            let authInfo = await redis.hgetall(authorization)
+            log.info(tag,"authInfo: ",authInfo)
+            if(!authInfo) throw Error("invalid token!")
+
+            let publicAddress = authInfo.publicAddress
+            if(!publicAddress) throw Error("invalid auth key info!")
+
+            //body
+
+
+            return(true);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
     /*
         TODO
         destroy
      */
 
-    /*
-    Create
+     /*
+        Create
 
- */
+     */
 
     @Post('/apps/create')
     //CreateAppBody
@@ -148,6 +181,7 @@ export class WAppsController extends Controller {
             }
 
             //defaults
+            entry.id = uuid.generate()
             entry.trust = 0
             entry.transparency = 0
             entry.innovation = 0
