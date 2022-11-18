@@ -168,7 +168,7 @@ export class WAppsController extends Controller {
 
             let entry:any = {
                 homepage,
-                appName,
+                name:appName,
                 image
             }
 
@@ -182,6 +182,7 @@ export class WAppsController extends Controller {
 
             //defaults
             entry.id = uuid.generate()
+            entry.created = new Date().getTime()
             entry.trust = 0
             entry.transparency = 0
             entry.innovation = 0
@@ -193,7 +194,6 @@ export class WAppsController extends Controller {
             entry.version = "wc-1"
             entry.description = "app name is "+appName
             entry.tags = ['ethereum']
-            console.log(entry)
             let success = appsDB.insert(entry)
 
             return(success);
