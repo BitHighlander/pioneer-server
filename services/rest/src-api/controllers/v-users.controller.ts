@@ -62,7 +62,7 @@ export class ApiError extends Error {
 //route
 @Tags('App Store Endpoints')
 @Route('')
-export class XDevsController extends Controller {
+export class VUsersController extends Controller {
 
     //Info
     @Get('/info')
