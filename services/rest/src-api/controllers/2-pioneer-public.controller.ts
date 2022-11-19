@@ -24,6 +24,8 @@ let pubkeysDB = connection.get('pubkeys')
 let txsDB = connection.get('transactions')
 let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
+let devsDB = connection.get('developers')
+let dapsDB = connection.get('dapps')
 
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
@@ -193,6 +195,30 @@ export class atlasPublicController extends Controller {
         try{
             let globals = await redis.hgetall('globals')
             let online = await redis.smembers('online')
+
+
+            let info = await redis.hgetall("info:dapps")
+
+            if(!info){
+                //populate
+                let countUsers = await usersDB.count()
+                let countDevs = await devsDB.count()
+                let countDapps = await dapsDB.count()
+                log.info(tag,"countDevs: ",countDevs)
+                log.info(tag,"countDapps: ",countDapps)
+                globals.info = {
+                    users:countUsers,
+                    devs:countDevs,
+                    dapps:countDapps
+                }
+                redis.hset("info:dapps",info)
+            }
+
+            //add MOTD
+            let motd = await redis.get("MOTD")
+            globals.motd = motd
+
+
             globals.online = online
             globals.blockchains = blockchains
             globals.root = ADMIN_PUBLIC_ADDRESS

@@ -13,6 +13,7 @@ import theme from 'theme/theme.js';
 
 export default function Pages(props) {
 	const { ...rest } = props;
+
 	// ref for the wrapper div
 	const wrapper = React.createRef();
 	React.useEffect(() => {
@@ -20,6 +21,7 @@ export default function Pages(props) {
 		// Specify how to clean up after this effect:
 		return function cleanup() {};
 	});
+
 	const getActiveRoute = (routes) => {
 		let activeRoute = 'Default Brand Text';
 		for (let i = 0; i < routes.length; i++) {

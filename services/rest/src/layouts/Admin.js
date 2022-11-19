@@ -18,12 +18,14 @@ import FixedPlugin from '../components/FixedPlugin/FixedPlugin';
 import MainPanel from '../components/Layout/MainPanel';
 import PanelContainer from '../components/Layout/PanelContainer';
 import PanelContent from '../components/Layout/PanelContent';
+
 export default function Dashboard(props) {
 	const { ...rest } = props;
 	// states and functions
 	const [ sidebarVariant, setSidebarVariant ] = useState('transparent');
 	const [ fixed, setFixed ] = useState(false);
 	// functions for changing the states from components
+
 	const getRoute = () => {
 		return window.location.pathname !== '/admin/full-screen-maps';
 	};
@@ -48,6 +50,7 @@ export default function Dashboard(props) {
 		}
 		return activeRoute;
 	};
+
 	// This changes navbar state(fixed or not)
 	const getActiveNavbar = (routes) => {
 		let activeNavbar = false;
