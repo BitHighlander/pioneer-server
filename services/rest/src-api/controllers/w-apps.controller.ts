@@ -78,6 +78,27 @@ export class WAppsController extends Controller {
         read
     */
 
+    @Get('/spotlight')
+    public async getSpotlight() {
+        let tag = TAG + " | getSpotlight | "
+        try{
+            let apps = appsDB.findOne({whitelist:true,isSpotlight:true})
+            return(apps)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+        read
+    */
+
     @Get('/apps/{developer}')
     public async listAppsByDeveloper(developer:any) {
         let tag = TAG + " | listAppsByDeveloper | "
@@ -173,6 +194,7 @@ export class WAppsController extends Controller {
             }
 
             //defaults
+            entry.isSpotlight = false
             entry.whitelist = false
             if(publicAddress === ADMIN_PUBLIC_ADDRESS) {
                 entry.whitelist = true

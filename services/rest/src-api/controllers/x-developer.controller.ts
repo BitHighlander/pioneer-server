@@ -85,6 +85,7 @@ export class XDevsController extends Controller {
         }
     }
 
+
     @Get('/auth/dev')
     public async getDevInfo(@Header('Authorization') authorization: string) {
         let tag = TAG + " | getDevInfo | "
