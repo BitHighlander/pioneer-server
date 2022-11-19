@@ -12,9 +12,6 @@ const log = require('@pioneer-platform/loggerdog')()
 const {subscriber, publisher, redis} = require('@pioneer-platform/default-redis')
 let connection  = require("@pioneer-platform/default-mongo")
 const util = require('util')
-import { recoverPersonalSignature } from 'eth-sig-util';
-import { bufferToHex } from 'ethereumjs-util';
-import {sign} from 'jsonwebtoken';
 
 //TODO if no mongo use nedb?
 //https://github.com/louischatriot/nedb
@@ -65,65 +62,91 @@ export class ApiError extends Error {
 export class VUsersController extends Controller {
 
     //Info
-    @Get('/info')
-    public async info() {
-        let tag = TAG + " | info | "
-        try{
-
-            let info = await redis.hgetall("info:dapps")
-
-            if(!info){
-                //populate
-                let countUsers = await usersDB.count()
-                let countDevs = await devsDB.count()
-                let countDapps = await dapsDB.count()
-                log.info(tag,"countDevs: ",countDevs)
-                log.info(tag,"countDapps: ",countDapps)
-                info = {
-                    users:countUsers,
-                    devs:countDevs,
-                    dapps:countDapps
-                }
-                redis.hset("info:dapps",info)
-            }
-
-            //add MOTD
-            let motd = await redis.get("MOTD")
-            info.motd = motd
-
-            log.info(tag,"INFO: ",info)
-            return(info);
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
+    // @Get('/info')
+    // public async info() {
+    //     let tag = TAG + " | info | "
+    //     try{
+    //
+    //         let info = await redis.hgetall("info:dapps")
+    //
+    //         if(!info){
+    //             //populate
+    //             let countUsers = await usersDB.count()
+    //             let countDevs = await devsDB.count()
+    //             let countDapps = await dapsDB.count()
+    //             log.info(tag,"countDevs: ",countDevs)
+    //             log.info(tag,"countDapps: ",countDapps)
+    //             info = {
+    //                 users:countUsers,
+    //                 devs:countDevs,
+    //                 dapps:countDapps
+    //             }
+    //             redis.hset("info:dapps",info)
+    //         }
+    //
+    //         //add MOTD
+    //         let motd = await redis.get("MOTD")
+    //         info.motd = motd
+    //
+    //         log.info(tag,"INFO: ",info)
+    //         return(info);
+    //     }catch(e){
+    //         let errorResp:Error = {
+    //             success:false,
+    //             tag,
+    //             e
+    //         }
+    //         log.error(tag,"e: ",{errorResp})
+    //         throw new ApiError("error",503,"error: "+e.toString());
+    //     }
+    // }
 
 
     /** GET /users */
-    /** GET /users/:publicAddress */
-    @Get('/users')
-    public async users() {
-        let tag = TAG + " | users | "
-        try{
-            let devs = await devsDB.find()
-            log.info(tag,"devs: ",devs)
-            return(devs);
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
+    // @Get('/users')
+    // public async users() {
+    //     let tag = TAG + " | users | "
+    //     try{
+    //         let devs = await devsDB.find()
+    //         log.info(tag,"devs: ",devs)
+    //         return(devs);
+    //     }catch(e){
+    //         let errorResp:Error = {
+    //             success:false,
+    //             tag,
+    //             e
+    //         }
+    //         log.error(tag,"e: ",{errorResp})
+    //         throw new ApiError("error",503,"error: "+e.toString());
+    //     }
+    // }
+
+    // @Get('/auth/user')
+    // public async getUserInfo(@Header('Authorization') authorization: string) {
+    //     let tag = TAG + " | users | "
+    //     try{
+    //         let authInfo = await redis.hgetall(authorization)
+    //         log.info(tag,"authInfo: ",authInfo)
+    //         log.info(tag,"Object: ",Object.keys(authInfo))
+    //         if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
+    //         let publicAddress = authInfo.publicAddress
+    //         if(!publicAddress) throw Error("invalid auth key info!")
+    //
+    //
+    //
+    //         let user = await usersDB.findOne({publicAddress})
+    //         log.info(tag,"user: ",user)
+    //         return(user);
+    //     }catch(e){
+    //         let errorResp:Error = {
+    //             success:false,
+    //             tag,
+    //             e
+    //         }
+    //         log.error(tag,"e: ",{errorResp})
+    //         throw new ApiError("error",503,"error: "+e.toString());
+    //     }
+    // }
 
     /** GET /users/:publicAddress */
     @Get('/users/{publicAddress}')
@@ -157,79 +180,6 @@ export class VUsersController extends Controller {
         }
     }
 
-    /*
-        Verify
-
-     */
-
-    /** POST /users */
-    @Post('/login')
-    //CreateAppBody
-    public async login(@Body() body: any): Promise<any> {
-        let tag = TAG + " | createUser | "
-        try{
-            log.info(tag,"body: ",body)
-            let publicAddress = body.publicAddress
-            let signature = body.signature
-            let message = body.message
-            if(!publicAddress) throw Error("Missing publicAddress!")
-            if(!signature) throw Error("Missing signature!")
-            if(!message) throw Error("Missing message!")
-
-            log.info(tag,{publicAddress,signature,message})
-            //get user
-            let devs = await devsDB.findOne({publicAddress})
-            log.info(tag,"devs: ",devs)
-            log.info(tag,"devs: ",devs.nonce)
-
-            //validate nonce
-
-            //validate sig
-            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
-            const addressFromSig = recoverPersonalSignature({
-                data: msgBufferHex,
-                sig: signature,
-            });
-            log.info(tag,"addressFromSig: ",addressFromSig)
-
-            //if valid sign and return token
-            if(addressFromSig === publicAddress){
-                log.info(tag,"valid signature: ")
-                let token = sign({
-                        payload: {
-                            id: "bla",
-                            publicAddress,
-                        },
-                    },
-                    config.secret,
-                    {
-                        algorithm: config.algorithms[0],
-                    })
-
-                //generate new nonce
-                let nonceNew = Math.floor(Math.random() * 10000);
-                let updateUser = await devsDB.update({publicAddress},{$set:{nonce:nonceNew}})
-                log.info("updateUser: ",updateUser)
-
-                await redis.hmset(token,{
-                    publicAddress
-                })
-                log.info("token: ",token)
-                return(token)
-            } else {
-                throw Error("Invalid signature")
-            }
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
-
 
 
     /** PATCH /users/:userId */
@@ -240,7 +190,7 @@ export class VUsersController extends Controller {
         try{
             log.info(tag,"authorization: ",authorization)
             let authInfo = await redis.hgetall(authorization)
-            if(!authInfo) throw Error("Token unknown or Expired!")
+            if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
 
             log.info(tag,"body: ",body)
             log.info(tag,"authInfo: ",authInfo)

@@ -105,7 +105,6 @@ if(!ADMIN_PUBLIC_ADDRESS) throw Error("Invalid ENV missing ADMIN_PUBLIC_ADDRESS"
 import {
     Error,
     ApiError,
-    Asset,
     BroadcastBody,
     GetFeesWithMemoBody,
     EstimateFeeBody,

@@ -64,7 +64,102 @@ export class ApiError extends Error {
 @Route('')
 export class XDevsController extends Controller {
 
+    /*
+        read
+    */
 
+    @Get('/devs')
+    public async listDevelopers() {
+        let tag = TAG + " | listDeveloper | "
+        try{
+            let apps = devsDB.find()
+            return(apps)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Get('/auth/dev')
+    public async getDevInfo(@Header('Authorization') authorization: string) {
+        let tag = TAG + " | getDevInfo | "
+        try{
+            let authInfo = await redis.hgetall(authorization)
+            log.info(tag,"authInfo: ",authInfo)
+            log.info(tag,"Object: ",Object.keys(authInfo))
+            if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
+            let publicAddress = authInfo.publicAddress
+            if(!publicAddress) throw Error("invalid auth key info!")
+
+
+
+            let user = await devsDB.findOne({publicAddress})
+            log.info(tag,"user: ",user)
+            return(user);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
+
+    //old
+    /*
+    Create
+
+     */
+
+    @Post('/devs/create')
+    //CreateAppBody
+    public async createDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | createDeveloper | "
+        try{
+            log.info(tag,"body: ",body)
+            let authInfo = await redis.hgetall(authorization)
+            log.info(tag,"authInfo: ",authInfo)
+            log.info(tag,"Object: ",Object.keys(authInfo))
+            if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
+            let publicAddress = authInfo.publicAddress
+            if(!publicAddress) throw Error("invalid auth key info!")
+
+            //get userInfo
+            let userInfo = await usersDB.findOne({publicAddress})
+            if(!userInfo) throw Error("First must register an account!")
+
+            //body
+            if(!body.email) throw Error("Developers must register an email!")
+            if(!body.github) throw Error("Developers must register a github!")
+            let devInfo = {
+                verified:false,
+                username:userInfo.username,
+                publicAddress,
+                email:body.email,
+                github:body.github
+            }
+            let dev = await devsDB.insert(devInfo)
+
+            return(dev);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
 
 
@@ -75,7 +170,7 @@ export class XDevsController extends Controller {
     @Post('/motd')
     //CreateAppBody
     public async updateMOTD(@Body() body: any): Promise<any> {
-        let tag = TAG + " | createUser | "
+        let tag = TAG + " | updateMOTD | "
         try{
             log.info(tag,"body: ",body)
             let publicAddress = body.publicAddress
@@ -118,71 +213,49 @@ export class XDevsController extends Controller {
         Verify
 
      */
-
-
-
-
-    /** PATCH /users/:userId */
-    @Post('/developer/{userId}')
+    @Post('/devs/verify')
     //CreateAppBody
-    public async updateDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-        let tag = TAG + " | /updateDeveloper | "
-        try{
-            log.info(tag,"authorization: ",authorization)
-            let authInfo = await redis.hgetall(authorization)
-            if(!authInfo) throw Error("Token unknown or Expired!")
-
-            log.info(tag,"body: ",body)
-            log.info(tag,"authInfo: ",authInfo)
-            //if username set username
-
-            //TODO
-            //if valid jwt
-            //return private info
-            let secretInfo = {
-                username:"foobar2",
-                nonce:1
-            }
-            return(secretInfo);
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
-
-
-
-
-
-
-    //old
-    /*
-    Create
-
- */
-
-    @Post('/devs/create')
-    //CreateAppBody
-    public async createDeveloper(@Body() body: any): Promise<any> {
+    public async verifyDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | transactions | "
         try{
             log.info(tag,"body: ",body)
-            //TODO
-            //is developer already in database?
+            let authInfo = await redis.hgetall(authorization)
+            log.info(tag,"authInfo: ",authInfo)
+            log.info(tag,"Object: ",Object.keys(authInfo))
+            if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
+            let publicAddress = authInfo.publicAddress
+            if(!publicAddress) throw Error("invalid auth key info!")
 
-            //does dev have ENS name
+            //verify address is admin
+            if(publicAddress !== ADMIN_PUBLIC_ADDRESS) throw Error("Not an admin!")
 
-            //validate github url
+            //verify action
+            let signature = body.signature
+            let message = body.message
+            if(!publicAddress) throw Error("Missing publicAddress!")
+            if(!signature) throw Error("Missing signature!")
+            if(!message) throw Error("Missing message!")
 
-            //send email confirmation
-            //
-            // let success = devsDB.insert(body)
-            return(true);
+            //validate sig
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+            if(addressFromSig === ADMIN_PUBLIC_ADDRESS){
+                //update MOTD
+                let devToVerify = message.split("VERIFY:")
+                devToVerify = devToVerify[1]
+                log.info(tag,"verify: ",devToVerify)
+
+                //update
+                let updateResult = await devsDB.update({username:devToVerify},{ $set:{isVerified: true }})
+                log.info(tag,"updateResult: ",updateResult)
+                return(updateResult);
+            } else {
+                throw Error("Not Signed by admin! actual: "+addressFromSig+" expected: "+ADMIN_PUBLIC_ADDRESS)
+            }
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -194,26 +267,11 @@ export class XDevsController extends Controller {
         }
     }
 
-    /*
-        read
-    */
 
-    @Get('/devs')
-    public async listDevelopers() {
-        let tag = TAG + " | listDeveloper | "
-        try{
-            let apps = devsDB.find()
-            return(apps)
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
+
+
+
+
 
 
 }

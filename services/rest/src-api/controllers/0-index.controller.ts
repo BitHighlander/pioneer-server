@@ -20,9 +20,13 @@ const axios = require('axios')
 const short = require('short-uuid');
 const { queryString } = require("object-query-string");
 const os = require("os")
-
+let connection  = require("@pioneer-platform/default-mongo")
 //globals
-
+let usersDB = connection.get('users')
+let txsDB = connection.get('transactions')
+let txsRawDB = connection.get('transactions-raw')
+let devsDB = connection.get('developers')
+let dapsDB = connection.get('dapps')
 //modules
 
 //rest-ts
@@ -84,5 +88,44 @@ export class IndexController extends Controller {
         Info
 
      */
+    //Info
+    @Get('/info')
+    public async info() {
+        let tag = TAG + " | info | "
+        try{
+
+            let info = await redis.hgetall("info:dapps")
+
+            if(!info){
+                //populate
+                let countUsers = await usersDB.count()
+                let countDevs = await devsDB.count()
+                let countDapps = await dapsDB.count()
+                log.info(tag,"countDevs: ",countDevs)
+                log.info(tag,"countDapps: ",countDapps)
+                info = {
+                    users:countUsers,
+                    devs:countDevs,
+                    dapps:countDapps
+                }
+                redis.hset("info:dapps",info)
+            }
+
+            //add MOTD
+            let motd = await redis.get("MOTD")
+            info.motd = motd
+
+            log.info(tag,"INFO: ",info)
+            return(info);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
 }

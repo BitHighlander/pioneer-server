@@ -5,8 +5,11 @@
 
 
  */
-let TAG = ' | API | '
 
+let TAG = ' | API | '
+import { recoverPersonalSignature } from 'eth-sig-util';
+import { bufferToHex } from 'ethereumjs-util';
+import {sign} from 'jsonwebtoken';
 const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
 log.debug(TAG,"PIONEER VERSION: ",pjson.version)
@@ -19,6 +22,8 @@ const usersDB = connection.get('users')
 const pubkeysDB = connection.get('pubkeys')
 const txsDB = connection.get('transactions')
 const utxosDB = connection.get('utxo')
+const util = require('util')
+
 const invocationsDB = connection.get('invocations')
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
@@ -27,6 +32,13 @@ utxosDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
+
+
+
+let config = {
+    algorithms: ['HS256' as const],
+    secret: 'shhhh', // TODO Put in process.env
+};
 
 const axios = require('axios')
 import { v4 as uuidv4 } from 'uuid';
@@ -609,6 +621,81 @@ export class pioneerPrivateController extends Controller {
                 return userInfo.context
             } else {
                 throw Error("102: invalid auth token!")
+            }
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+    LOGIN
+
+     */
+
+    /** POST /users */
+    @Post('/login')
+    //CreateAppBody
+    public async login(@Body() body: any): Promise<any> {
+        let tag = TAG + " | login | "
+        try{
+            log.info(tag,"body: ",body)
+            let publicAddress = body.publicAddress
+            let signature = body.signature
+            let message = body.message
+            if(!publicAddress) throw Error("Missing publicAddress!")
+            if(!signature) throw Error("Missing signature!")
+            if(!message) throw Error("Missing message!")
+
+            log.info(tag,{publicAddress,signature,message})
+            //get user
+            let user = await usersDB.findOne({publicAddress})
+            log.info(tag,"user: ",user)
+            if(!user) throw Error("User not found! publicAddress: "+publicAddress)
+            if(!user.nonce) throw Error("Invalid user saved!")
+            log.info(tag,"user: ",user.nonce)
+
+            //@TODO validate nonce
+
+            //validate sig
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+
+            //if valid sign and return token
+            if(addressFromSig === publicAddress){
+                log.info(tag,"valid signature: ")
+                let token = sign({
+                        payload: {
+                            id: "bla",
+                            publicAddress,
+                        },
+                    },
+                    config.secret,
+                    {
+                        algorithm: config.algorithms[0],
+                    })
+
+                //generate new nonce
+                let nonceNew = Math.floor(Math.random() * 10000);
+                let updateUser = await usersDB.update({publicAddress},{$set:{nonce:nonceNew}})
+                log.info("updateUser: ",updateUser)
+
+                await redis.hmset(token,{
+                    publicAddress
+                })
+                log.info("token: ",token)
+                return(token)
+            } else {
+                throw Error("Invalid signature")
             }
         }catch(e){
             let errorResp:Error = {
@@ -1392,6 +1479,8 @@ export class pioneerPrivateController extends Controller {
                     id:"pioneer:"+pjson.version+":"+uuidv4(), //user ID versioning!
                     username:body.username,
                     verified:true,
+                    nonce:Math.floor(Math.random() * 10000),
+                    publicAddress:body.publicAddress
                 }
                 if(!userInfoMongo){
                     output.resultSaveUserDB = await usersDB.insert(userInfo)
@@ -1491,10 +1580,12 @@ export class pioneerPrivateController extends Controller {
                 registered: new Date().getTime(),
                 id:"pioneer:"+pjson.version+":"+uuidv4(), //user ID versioning!
                 username:body.username,
+                publicAddress:body.publicAddress,
                 verified:true,
                 blockchains:body.blockchains,
                 wallets:[body.context], // just one wallet for now
-                walletDescriptions:[body.walletDescription]
+                walletDescriptions:[body.walletDescription],
+                nonce:Math.floor(Math.random() * 10000)
             }
 
             if(!userInfoMongo){
@@ -1503,7 +1594,6 @@ export class pioneerPrivateController extends Controller {
             }
 
             if(newKey){
-
                 //delete descriptions
                 delete userInfo.walletDescriptions
                 let redisSuccess = await redis.hmset(body.username,userInfo)
