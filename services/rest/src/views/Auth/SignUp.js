@@ -13,16 +13,71 @@ import {
   Text,
   useColorModeValue,
 } from "@chakra-ui/react";
+import {
+  useEffect
+} from 'react';
+import { PioneerService } from './Pioneer'
 // Assets
 import BgSignUp from "assets/img/community-web.jpg";
 import React from "react";
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
+
+const pioneer = new PioneerService()
 
 function SignUp() {
   const titleColor = useColorModeValue("black.300", "black.200");
   const textColor = useColorModeValue("gray.700", "white");
   const bgColor = useColorModeValue("white", "gray.700");
   const bgIcons = useColorModeValue("green.200", "rgba(255, 255, 255, 0.5)");
+
+  let onStart = async function (){
+    try{
+      console.log("On start of application")
+      console.log("onStartPioneer")
+      //
+      let queryKey = localStorage.getItem('queryKey')
+      let username = localStorage.getItem('username')
+        if (!queryKey) {
+            console.log("Creating new queryKey~!")
+            queryKey = 'key:' + uuidv4()
+            localStorage.setItem('queryKey', queryKey)
+        }
+        if (!username) {
+            console.log("Creating new username~!")
+            username = 'user:' + uuidv4()
+            username = username.substring(0, 13);
+            console.log("Creating new username~! username: ", username)
+            localStorage.setItem('username', username)
+        }
+        //TODO dont get blockchains here (Get from API)
+        let blockchains = [
+          'bitcoin', 'ethereum', 'thorchain', 'bitcoincash', 'litecoin', 'binance', 'cosmos', 'dogecoin', 'osmosis'
+        ]
+
+        const config = {
+          blockchains,
+          username,
+          queryKey,
+          service: 'pioneers.dev',
+          url: "pioneers.dev",
+          wss: "",
+          spec: "",
+          paths: []
+        }
+        console.log("config: ", config)
+
+        //Pioneer SDK
+        let pioneer = new SDK(config.spec, config)
+        console.log("config: ", config)
+    }catch(e){
+      console.error(e)
+    }
+  }
+  useEffect(() => {
+    onStart()
+  }, [])
+
+
   return (
     <Flex
       direction='column'

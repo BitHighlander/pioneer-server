@@ -25,43 +25,43 @@ import { SDK } from '@pioneer-sdk/sdk'
 import { v4 as uuidv4 } from 'uuid'
 
 export class PioneerService {
-    public App: any
-    public Api: any
-    public queryKey: string
-    public pairingCode: string | undefined
-    public isInitialized: boolean = false
-    public username: string | undefined
-    public context: string | undefined
-    public assetContext: string | undefined
-    public assetBalanceNativeContext: string | undefined
-    public assetBalanceUsdValueContext: string | undefined
-    public valueUsdContext: string | undefined
-    public wallets: any[] | undefined
-    public balances: any[]
-    public pubkeys: any[]
-    public invocations: any[]
-    public status: any
-    public events: any
-    public userParams: any
-    public user: any
-    public isBridgeOnline: boolean
-    public totalValueUsd: any
-    public walletsIds: any
-    public walletDescriptions: any
-    public sendToAddress: string | undefined
-    public sendToAmountNative: string | undefined
-    public sendToNetwork: string | undefined
-    public sendToAsset: string | undefined
-    public sendToFeeLevel: string | undefined
-    public sendInvocation: string | undefined
+    // public App
+    // public Api
+    // public queryKey
+    // public pairingCode
+    // public isInitialized
+    // public username
+    // public context
+    // public assetContext
+    // public assetBalanceNativeContext
+    // public assetBalanceUsdValueContext
+    // public valueUsdContext
+    // public wallets
+    // public balances
+    // public pubkeys
+    // public invocations
+    // public status
+    // public events
+    // public userParams
+    // public user
+    // public isBridgeOnline
+    // public totalValueUsd
+    // public walletsIds
+    // public walletDescriptions
+    // public sendToAddress
+    // public sendToAmountNative
+    // public sendToNetwork
+    // public sendToAsset
+    // public sendToFeeLevel
+    // public sendInvocation
     constructor() {
         this.isBridgeOnline = false
         this.invocations = []
         this.balances = []
         this.pubkeys = []
         this.events = {}
-        let queryKey: string | null = localStorage.getItem('queryKey')
-        let username: string | null = localStorage.getItem('username')
+        let queryKey = localStorage.getItem('queryKey')
+        let username = localStorage.getItem('username')
         if (!queryKey) {
             console.log("Creating new queryKey~!")
             queryKey = 'key:' + uuidv4()
@@ -82,30 +82,30 @@ export class PioneerService {
         }
     }
 
-    async getStatus(): Promise<any> {
+    async getStatus() {
         return this.status
     }
 
-    async getInvocationStatus(invocationId:string): Promise<any> {
-        let statusResp = await this.App.getInvocation(invocationId)
-        return statusResp
-    }
+    // async getInvocationStatus(invocationId) {
+    //     let statusResp = await this.App.getInvocation(invocationId)
+    //     return statusResp
+    // }
 
-    getQueryKey(): string {
+    getQueryKey() {
         return this.queryKey
     }
 
-    getUsername(): string {
-        return this.username as string
+    getUsername() {
+        return this.username
     }
 
-    forget(): boolean {
+    forget() {
         localStorage.removeItem('queryKey')
         localStorage.removeItem('username')
         return true
     }
 
-    async pairWallet(wallet: any): Promise<any> {
+    async pairWallet(wallet) {
         try{
 
             //
@@ -136,13 +136,13 @@ export class PioneerService {
         }
     }
 
-    async setSendInvocation(invocation: string): Promise<any> {
+    async setSendInvocation(invocation) {
         //console.log('sendToAsset: ', invocation)
         if(invocation) this.sendInvocation = invocation
         return true
     }
 
-    async setSendToFeeLevel(level: string): Promise<any> {
+    async setSendToFeeLevel(level) {
         //console.log('sendToAsset: ', level)
         if (this.sendToFeeLevel && this.sendToFeeLevel !== level) {
             //console.log('Context valid sending request')
@@ -154,7 +154,7 @@ export class PioneerService {
         }
     }
 
-    async setSendToAsset(asset: string): Promise<any> {
+    async setSendToAsset(asset) {
         //console.log('sendToAsset: ', asset)
         if (this.sendToAsset && this.sendToAsset !== asset) {
             this.sendToAsset = asset
@@ -167,7 +167,7 @@ export class PioneerService {
 
     /*        //if account not in balances object
             console.log("Register MetaMask Account")
-            let pairWalletOnboard:any = {
+            let pairWalletOnboard = {
               name:'MetaMask',
               network:1,
               initialized:true,
@@ -176,7 +176,7 @@ export class PioneerService {
             console.log("pairWalletOnboard: ",pairWalletOnboard)
             pioneer.pairWallet(pairWalletOnboard) */
 
-    async setSendToNetwork(network: string): Promise<any> {
+    async setSendToNetwork(network) {
         //console.log('sendToNetwork: ', network)
         if (this.sendToNetwork && this.sendToNetwork !== network) {
             this.sendToNetwork = network
@@ -187,7 +187,7 @@ export class PioneerService {
         }
     }
 
-    async setSendToAmountNative(amount: string): Promise<any> {
+    async setSendToAmountNative(amount) {
         //console.log('setSendToAddress: ', amount)
         if (this.sendToAmountNative && this.sendToAmountNative !== amount) {
             //console.log('Context valid sending request')
@@ -198,7 +198,7 @@ export class PioneerService {
         }
     }
 
-    async setSendToAddress(address: string): Promise<any> {
+    async setSendToAddress(address) {
         //console.log('setSendToAddress: ', address)
         if (this.sendToAddress && this.sendToAddress !== address) {
             //console.log('Context valid sending request')
@@ -210,7 +210,7 @@ export class PioneerService {
         }
     }
 
-    async setAssetContext(asset: string): Promise<any> {
+    async setAssetContext(asset) {
         //console.log('setting asset context: ', asset)
         if (this.assetContext && this.assetContext !== asset) {
             //console.log('Context valid sending request')
@@ -224,7 +224,7 @@ export class PioneerService {
         }
     }
 
-    async switchContext(context: any): Promise<any> {
+    async switchContext(context) {
         //console.log('Switching contexts: ', context)
         if (this.wallets && this.wallets.indexOf(context) >= 0) {
             //console.log('Context valid sending request')
@@ -239,7 +239,7 @@ export class PioneerService {
         }
     }
 
-    async init(): Promise<any> {
+    async init() {
         const network = 'mainnet'
         if (!this.queryKey) {
             throw Error('Failed to init! missing queryKey')
@@ -254,7 +254,7 @@ export class PioneerService {
                 'bitcoin','ethereum','thorchain','bitcoincash','litecoin','binance','cosmos','dogecoin','osmosis'
             ]
 
-            const config: any = {
+            const config = {
                 blockchains,
                 network,
                 username: this.username,
@@ -391,7 +391,7 @@ export class PioneerService {
             // }
             //
             // // handle events
-            // this.events.on('message', async (event: any) => {
+            // this.events.on('message', async (event) => {
             //   //console.log('message:', event)
             //   if (event.paired && event.username) {
             //     this.username = event.username
@@ -447,15 +447,15 @@ export class PioneerService {
         transfer object example:https://github.com/BitHighlander/pioneer/blob/master/e2e/sdk-transfers/osmosis-e2e-transfer/src/index.ts#L245
     * */
     //build transfer
-    async buildTx(transfer:any): Promise<any> {
+    async buildTx(transfer) {
 
     }
 
-    async createPairingCode(): Promise<any> {
+    async createPairingCode() {
         return this.pairingCode
     }
 
-    async onPair(): Promise<any> {
+    async onPair() {
         const info = await this.App.getUserInfo()
         if (info && !info.error) {
             //console.log('INFO: ', info)
@@ -477,7 +477,7 @@ export class PioneerService {
         }
     }
 
-    async refresh(): Promise<any> {
+    async refresh() {
         const info = await this.App.getUserInfo()
         if (info && !info.error) {
             //console.log('INFO: ', info)

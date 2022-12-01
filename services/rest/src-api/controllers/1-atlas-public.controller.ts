@@ -26,6 +26,7 @@ let pubkeysDB = connection.get('pubkeys')
 let txsDB = connection.get('transactions')
 let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
+let networksDB = connection.get('networks')
 
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
@@ -37,6 +38,16 @@ txsDB.createIndex({invocationId: 1})
 
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags } from 'tsoa';
+
+interface Network {
+    network: string;
+    symbol?: string;
+    pioneer?: string;
+    type: string;
+    tags: any;
+    pubkey: string;
+}
+
 
 //route
 @Tags('Atlas Endpoints')
@@ -54,10 +65,55 @@ export class pioneerPublicController extends Controller {
         let tag = TAG + " | atlas | "
         try{
 
-            //Get tracked contracts
+            //Get tracked networks
+            let networks = await networksDB.find()
 
+            return networks
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
+    /*
+     * CHART
+     *
+     *    Build an atlas on a new EVM network
+     *
+     * */
+    @Post('atlas/network/chart')
+    public async chartNetwork(@Body() body: any): Promise<any> {
+        let tag = TAG + " | pushTx | "
+        try{
+            log.debug(tag,"mempool tx: ",body)
+            if(body.type !== 'EVM') throw Error("Network Type Not Supported!")
+            if(!body.name) throw Error("Name is required!")
+            if(!body.type) throw Error("type is required!")
+            if(!body.tags) throw Error("tags is required!")
+            if(!body.chain) throw Error("chain is required!")
+            if(!body.rpc) throw Error("rpc is required!")
+            let evmNetwork:any = {
+                name:body.name,
+                type:body.type,
+                tags:body.tags,
+                blockchain:body.chain,
+                chainId:body.chainId,
+                network:body.rpc
+            }
+            if(body.infoURL) evmNetwork.infoURL = body.infoURL
+            if(body.shortName) evmNetwork.shortName = body.shortName
+            if(body.nativeCurrency) evmNetwork.nativeCurrency = body.nativeCurrency
+            if(body.faucets) evmNetwork.faucets = body.faucets
+            if(body.faucets) evmNetwork.faucets = body.faucets
 
+            let saveNetwork = await networksDB.insert(evmNetwork)
+
+            return saveNetwork
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -75,7 +131,7 @@ export class pioneerPublicController extends Controller {
      *    Build an atlas
      *
      * */
-    @Post('atlas/chart')
+    @Post('atlas/contract/chart')
     public async chart(@Body() body: Chart): Promise<any> {
         let tag = TAG + " | pushTx | "
         try{
