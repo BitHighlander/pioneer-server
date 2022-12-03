@@ -22,12 +22,14 @@ import {
 let connection  = require("@pioneer-platform/default-mongo")
 
 let usersDB = connection.get('users')
+let assetsDB = connection.get('assets')
 let pubkeysDB = connection.get('pubkeys')
 let txsDB = connection.get('transactions')
 let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
 let networksDB = connection.get('networks')
 
+networksDB.createIndex({service: 1}, {unique: true})
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
@@ -60,13 +62,98 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
-    @Get('/atlas/list')
-    public async atlas() {
-        let tag = TAG + " | atlas | "
+    @Get('/atlas/list/asset/{tagString}')
+    public async searchByTag(tagString:string) {
+        let tag = TAG + " | searchByName | "
+        try{
+            //Get tracked networks
+            let assets = await assetsDB.find({tags:{$all:[tagString]}})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/list/asset/{name}')
+    public async searchByName(name:string) {
+        let tag = TAG + " | searchByName | "
         try{
 
+            let escapeRegex = function (text) {
+                return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+            };
+
+            //TODO sanitize
+            const regex = new RegExp(escapeRegex(name), 'gi');
             //Get tracked networks
-            let networks = await networksDB.find()
+            let assets = await assetsDB.find({ "name": regex },{limit:4})
+            // let assets = await assetsDB.find({$and: [{ "name": regex },{tags:{$all:['KeepKeySupport']}}]},{limit:4})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/list/asset/{symbol}')
+    public async searchBySymbol(symbol:string) {
+        let tag = TAG + " | atlas | "
+        try{
+            //TODO sanitize
+            //Get tracked networks
+            let assets = await assetsDB.find({symbol},{limit:4})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/list/network/{blockchain}')
+    public async atlasNetwork(blockchain:string) {
+        let tag = TAG + " | atlas | "
+        try{
+            //TODO sanitize
+
+            //Get tracked networks
+            let networks = await networksDB.find({blockchain},{limit:10})
 
             return networks
         }catch(e){
@@ -86,9 +173,62 @@ export class pioneerPublicController extends Controller {
      *    Build an atlas on a new EVM network
      *
      * */
+    @Post('atlas/asset/chart')
+    public async chartAsset(@Body() body: any): Promise<any> {
+        let tag = TAG + " | chartAsset | "
+        try{
+            log.debug(tag,"mempool tx: ",body)
+            if(!body.type) throw Error("type is required!")
+            if(!body.name) throw Error("Name is required!")
+            if(!body.symbol) throw Error("symbol is required!")
+            if(!body.tags) throw Error("tags is required!")
+            if(!body.decimals) throw Error("decimals is required!")
+            let asset:any = {
+                name:body.name.toLowerCase(),
+                type:body.type,
+                tags:body.tags,
+                blockchain:body.blockchain.toLowerCase(),
+                symbol:body.symbol,
+                decimals:body.decimals
+            }
+            if(body.description) asset.description = body.description
+            if(body.website) asset.website = body.website
+            if(body.nativeCurrency) asset.nativeCurrency = body.nativeCurrency
+            if(body.explorer) asset.explorer = body.explorer
+            if(body.id) {
+                asset.id = body.id
+                asset.tags.push(body.id)
+            }
+
+            let output:any = {}
+            try{
+                output = await assetsDB.insert(asset)
+            }catch(e){
+                output.error = true
+                output.e = e.toString()
+            }
+
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * CHART
+     *
+     *    Build an atlas on a new EVM network
+     *
+     * */
     @Post('atlas/network/chart')
     public async chartNetwork(@Body() body: any): Promise<any> {
-        let tag = TAG + " | pushTx | "
+        let tag = TAG + " | chartNetwork | "
         try{
             log.debug(tag,"mempool tx: ",body)
             if(body.type !== 'EVM') throw Error("Network Type Not Supported!")
@@ -96,12 +236,14 @@ export class pioneerPublicController extends Controller {
             if(!body.type) throw Error("type is required!")
             if(!body.tags) throw Error("tags is required!")
             if(!body.chain) throw Error("chain is required!")
-            if(!body.rpc) throw Error("rpc is required!")
+            if(!body.service) throw Error("service is required!")
             let evmNetwork:any = {
                 name:body.name,
                 type:body.type,
                 tags:body.tags,
-                blockchain:body.chain,
+                blockchain:body.name.toLowerCase(),
+                symbol:body.chain.toUpperCase(),
+                service:body.service,
                 chainId:body.chainId,
                 network:body.rpc
             }
@@ -111,9 +253,15 @@ export class pioneerPublicController extends Controller {
             if(body.faucets) evmNetwork.faucets = body.faucets
             if(body.faucets) evmNetwork.faucets = body.faucets
 
-            let saveNetwork = await networksDB.insert(evmNetwork)
+            let output:any = {}
+            try{
+                output = await networksDB.insert(evmNetwork)
+            }catch(e){
+                output.error = true
+                output.e = e.toString()
+            }
 
-            return saveNetwork
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,

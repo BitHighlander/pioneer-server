@@ -120,6 +120,8 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 //swagger.json
 app.use('/spec', express.static('api/dist'));
 
+app.use('/coins', express.static('coins'));
+
 
 //REST API v1
 RegisterRoutes(app);  // and here
