@@ -77,6 +77,7 @@
     "@pioneer-platform/terra-network": "latest",
     "@pioneer-platform/thor-network": "^8.1.35",
     "@pioneer-platform/utxo-network": "^8.1.48",
+    "@pioneer-sdk/sdk": "^1.0.19",
     "@pioneer-sdk/tx-builder": "^1.0.3",
     "@types/jsonwebtoken": "^8.5.9",
     "@types/node": "^12.20.11",
