@@ -64,10 +64,29 @@ export class pioneerPublicController extends Controller {
      * */
     @Get('/atlas/list/asset/{tagString}')
     public async searchByTag(tagString:string) {
-        let tag = TAG + " | searchByName | "
+        let tag = TAG + " | searchByTag | "
         try{
             //Get tracked networks
             let assets = await assetsDB.find({tags:{$all:[tagString]}})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Get('/atlas/list/asset/native/{tagString}')
+    public async searchByTagNative(tagString:string) {
+        let tag = TAG + " | searchByTagNative | "
+        try{
+            //Get tracked networks
+            let assets = await assetsDB.find({tags:{$all:[tagString,'isNative']}})
 
             return assets
         }catch(e){
@@ -87,7 +106,7 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
-    @Get('/atlas/list/asset/{name}')
+    @Get('/atlas/list/asset/search/{name}')
     public async searchByName(name:string) {
         let tag = TAG + " | searchByName | "
         try{
@@ -99,8 +118,41 @@ export class pioneerPublicController extends Controller {
             //TODO sanitize
             const regex = new RegExp(escapeRegex(name), 'gi');
             //Get tracked networks
-            let assets = await assetsDB.find({ "name": regex },{limit:4})
+            let assets = await assetsDB.find({ "name": regex },{limit:10})
             // let assets = await assetsDB.find({$and: [{ "name": regex },{tags:{$all:['KeepKeySupport']}}]},{limit:4})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/list/asset/search/native/{name}')
+    public async searchByNameNative(name:string) {
+        let tag = TAG + " | searchByName | "
+        try{
+
+            let escapeRegex = function (text) {
+                return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+            };
+
+            //TODO sanitize
+            const regex = new RegExp(escapeRegex(name), 'gi');
+            //Get tracked networks
+            //let assets = await assetsDB.find({ "name": regex },{limit:10})
+            let assets = await assetsDB.find({$and: [{ "name": regex },{tags:{$all:['KeepKeySupport']}}]},{limit:4})
 
             return assets
         }catch(e){
@@ -183,13 +235,15 @@ export class pioneerPublicController extends Controller {
             if(!body.symbol) throw Error("symbol is required!")
             if(!body.tags) throw Error("tags is required!")
             if(!body.decimals) throw Error("decimals is required!")
+            if(!body.image) throw Error("decimals is required!")
             let asset:any = {
                 name:body.name.toLowerCase(),
                 type:body.type,
                 tags:body.tags,
                 blockchain:body.blockchain.toLowerCase(),
                 symbol:body.symbol,
-                decimals:body.decimals
+                decimals:body.decimals,
+                image:body.image
             }
             if(body.description) asset.description = body.description
             if(body.website) asset.website = body.website
