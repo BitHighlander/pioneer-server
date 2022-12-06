@@ -36,6 +36,7 @@ txsDB.createIndex({txid: 1}, {unique: true})
 utxosDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
+assetsDB.createIndex({name: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
 
 //rest-ts
@@ -85,10 +86,39 @@ export class pioneerPublicController extends Controller {
     public async searchByTagNative(tagString:string) {
         let tag = TAG + " | searchByTagNative | "
         try{
+            let output = []
             //Get tracked networks
             let assets = await assetsDB.find({tags:{$all:[tagString,'isNative']}})
 
-            return assets
+            //seed market data
+            let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+            marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
+            log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
+            for(let i = 0; i < assets.length; i++){
+                //NOTE this sucks because it assumes symbol matchs
+                let asset = assets[i]
+
+                if(marketCacheCoinGecko[asset.symbol.toUpperCase()]){
+                    asset.price = marketCacheCoinGecko[asset.symbol.toUpperCase()]?.current_price
+                } else {
+                    asset.price = 0
+                }
+                if(marketCacheCoinGecko[asset.symbol.toUpperCase()]){
+                    asset.rank = marketCacheCoinGecko[asset.symbol.toUpperCase()]?.market_cap_rank
+                } else {
+                    asset.rank = 99999999
+                }
+                output.push(asset)
+            }
+
+            //rank
+            output = output.sort((a, b) => {
+                if (a.rank < b.rank) {
+                    return -1;
+                }
+            });
+
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,
