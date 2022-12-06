@@ -220,6 +220,72 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
+     * CHART Dapp
+     *
+     *    Build an atlas on a new Dapp
+     *
+     * */
+    @Post('atlas/dapp/chart')
+    public async chartDapp(@Body() body: any): Promise<any> {
+        let tag = TAG + " | chartDapp | "
+        try{
+            log.debug(tag,"mempool tx: ",body)
+            if(!body.type) throw Error("type is required!")
+            if(!body.name) throw Error("Name is required!")
+            if(!body.symbol) throw Error("symbol is required!")
+            if(!body.tags) throw Error("tags is required!")
+            if(!body.decimals) throw Error("decimals is required!")
+            if(!body.image) throw Error("decimals is required!")
+            if(!body.signer) throw Error("signer address is required!")
+            if(!body.signature) throw Error("signature is required!")
+            if(!body.payload) throw Error("signature is required!")
+            let asset:any = {
+                name:body.name.toLowerCase(),
+                type:body.type,
+                tags:body.tags,
+                blockchain:body.blockchain.toLowerCase(),
+                symbol:body.symbol,
+                decimals:body.decimals,
+                image:body.image,
+                facts:[
+                    {
+                        signer:body.signer,
+                        payload:body.payload,
+                        signature:body.signature,
+                    }
+                ]
+            }
+            if(body.description) asset.description = body.description
+            if(body.website) asset.website = body.website
+            if(body.nativeCurrency) asset.nativeCurrency = body.nativeCurrency
+            if(body.explorer) asset.explorer = body.explorer
+            if(body.id) {
+                asset.id = body.id
+                asset.tags.push(body.id)
+            }
+
+            let output:any = {}
+            try{
+                output = await assetsDB.insert(asset)
+            }catch(e){
+                output.error = true
+                output.e = e.toString()
+            }
+
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
+    /*
      * CHART
      *
      *    Build an atlas on a new EVM network
@@ -236,6 +302,9 @@ export class pioneerPublicController extends Controller {
             if(!body.tags) throw Error("tags is required!")
             if(!body.decimals) throw Error("decimals is required!")
             if(!body.image) throw Error("decimals is required!")
+            if(!body.signer) throw Error("signer is required!")
+            if(!body.signature) throw Error("signature is required!")
+            if(!body.payload) throw Error("signature is required!")
             let asset:any = {
                 name:body.name.toLowerCase(),
                 type:body.type,
@@ -243,7 +312,14 @@ export class pioneerPublicController extends Controller {
                 blockchain:body.blockchain.toLowerCase(),
                 symbol:body.symbol,
                 decimals:body.decimals,
-                image:body.image
+                image:body.image,
+                facts:[
+                    {
+                        signer:body.signer,
+                        payload:body.payload,
+                        signature:body.signature,
+                    }
+                ]
             }
             if(body.description) asset.description = body.description
             if(body.website) asset.website = body.website
@@ -291,6 +367,9 @@ export class pioneerPublicController extends Controller {
             if(!body.tags) throw Error("tags is required!")
             if(!body.chain) throw Error("chain is required!")
             if(!body.service) throw Error("service is required!")
+            if(!body.signer) throw Error("signer address is required!")
+            if(!body.signature) throw Error("signature is required!")
+            if(!body.payload) throw Error("signature is required!")
             let evmNetwork:any = {
                 name:body.name,
                 type:body.type,
@@ -299,7 +378,14 @@ export class pioneerPublicController extends Controller {
                 symbol:body.chain.toUpperCase(),
                 service:body.service,
                 chainId:body.chainId,
-                network:body.rpc
+                network:body.rpc,
+                facts:[
+                    {
+                        signer:body.signer,
+                        payload:body.payload,
+                        signature:body.signature,
+                    }
+                ]
             }
             if(body.infoURL) evmNetwork.infoURL = body.infoURL
             if(body.shortName) evmNetwork.shortName = body.shortName
