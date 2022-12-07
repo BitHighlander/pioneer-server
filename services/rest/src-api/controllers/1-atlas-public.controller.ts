@@ -63,6 +63,33 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
+    @Get('/atlas/tokens/{contract}')
+    public async searchByContract(contract:string) {
+        let tag = TAG + " | searchByContract | "
+        try{
+            contract = contract.toLowerCase()
+            //Get tracked networks
+            let assets = await assetsDB.find({contract})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
     @Get('/atlas/list/asset/{tagString}')
     public async searchByTag(tagString:string) {
         let tag = TAG + " | searchByTag | "
