@@ -277,6 +277,39 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
+ * ATLAS
+ *
+ *    Get all live atlas
+ *
+ * */
+    @Get('/atlas/search/network/{blockchain}')
+    public async searchByNetworkName(blockchain:string) {
+        let tag = TAG + " | atlas | "
+        try{
+            //TODO sanitize
+
+            let escapeRegex = function (text) {
+                return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+            };
+
+            //TODO sanitize
+            const regex = new RegExp(escapeRegex(blockchain), 'gi');
+            //Get tracked networks
+            let networks = await networksDB.find({ "name": regex },{limit:10})
+
+            return networks
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
      * CHART Dapp
      *
      *    Build an atlas on a new Dapp
