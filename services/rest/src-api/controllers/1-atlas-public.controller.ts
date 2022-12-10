@@ -255,16 +255,26 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
-    @Get('/atlas/list/network')
+    @Get('/atlas/list/top')
     public async atlasNetwork() {
         let tag = TAG + " | atlas | "
         try{
-            //TODO sanitize
+            let limit = 10
+            let output = []
+            let cache = await redis.get("cache:network:top")
+            console.log(cache)
+            if(!cache){
+                for(let i = 1; i < limit; i++){
+                    let entry = await networksDB.findOne({chainId:i})
+                    if(entry)output.push(entry)
+                }
+                redis.set("cache:network:top",JSON.stringify(output))
+                redis.expire("cache:network:top",60000)
+            } else {
+                output = JSON.parse(cache)
+            }
 
-            //Get tracked networks db.collection.find().sort({ field: 1 }).limit(10)
-            let networks = await networksDB.find({},{limit:10})
-
-            return networks
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,
