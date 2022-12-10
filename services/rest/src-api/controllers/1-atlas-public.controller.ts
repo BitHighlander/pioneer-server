@@ -255,14 +255,14 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
-    @Get('/atlas/list/network/{blockchain}')
-    public async atlasNetwork(blockchain:string) {
+    @Get('/atlas/list/network')
+    public async atlasNetwork() {
         let tag = TAG + " | atlas | "
         try{
             //TODO sanitize
 
-            //Get tracked networks
-            let networks = await networksDB.find({blockchain},{limit:10})
+            //Get tracked networks db.collection.find().sort({ field: 1 }).limit(10)
+            let networks = await networksDB.find({},{limit:10})
 
             return networks
         }catch(e){

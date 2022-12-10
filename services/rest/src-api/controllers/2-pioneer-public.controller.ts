@@ -16,7 +16,7 @@ const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
 const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
 const midgard = require("@pioneer-platform/midgard-client")
-
+const axios = require('axios')
 let connection = require("@pioneer-platform/default-mongo")
 const markets = require('@pioneer-platform/markets')
 let usersDB = connection.get('users')
@@ -26,6 +26,8 @@ let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
 let devsDB = connection.get('developers')
 let dapsDB = connection.get('dapps')
+let networksDB = connection.get('networks')
+let assetsDB = connection.get('assets')
 
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
@@ -151,36 +153,6 @@ const parseThorchainAssetString = function(input:string){
     }
 }
 
-const getPermutations = function(list, maxLen) {
-    // Copy initial values as arrays
-    let perm = list.map(function(val) {
-        return [val];
-    });
-    // Our permutation generator
-    let generate = function(perm, maxLen, currLen) {
-        // Reached desired length
-        if (currLen === maxLen) {
-            return perm;
-        }
-        // For each existing permutation
-        for (let i = 0, len = perm.length; i < len; i++) {
-            let currPerm = perm.shift();
-            // Create new permutation
-            for (let k = 0; k < list.length; k++) {
-                let pair = currPerm.concat(list[k])
-                if(pair[0] !== pair[1]){
-                    perm.push(pair[0]+"_"+pair[1]);
-                }
-            }
-        }
-        // Recurse
-        return generate(perm, maxLen, currLen + 1);
-    };
-    // Start with size 1 because of initial values
-    return generate(perm, maxLen, 1);
-};
-
-
 //route
 @Tags('Public Endpoints')
 @Route('')
@@ -197,23 +169,54 @@ export class atlasPublicController extends Controller {
             let online = await redis.smembers('online')
 
 
-            let info = await redis.hgetall("info:dapps")
+            let info = await redis.hgetall("info:dbs")
 
-            if(!info){
+            if(Object.keys(info).length === 0){
                 //populate
                 let countUsers = await usersDB.count()
                 let countDevs = await devsDB.count()
                 let countDapps = await dapsDB.count()
+                let countAssets = await assetsDB.count()
+                let countNetworks = await networksDB.count()
                 log.info(tag,"countDevs: ",countDevs)
                 log.info(tag,"countDapps: ",countDapps)
                 globals.info = {
                     users:countUsers,
+                    assets:countAssets,
+                    networks:countNetworks,
                     devs:countDevs,
                     dapps:countDapps
                 }
-                redis.hset("info:dapps",info)
+                redis.hmset("info:dbs",globals.info)
+                redis.expire("info:dbs",CACHE_TIME)
+            } else {
+                globals.info = info
             }
 
+            //get downloads
+            let getDownloads = async function() {
+                const url = "https://api.github.com/repos/keepkey/keepkey-desktop/releases";
+                const response = await axios.get(url);
+                const releases = response.data;
+                let output = []
+                let totalDownloads = 0
+                releases.forEach(release => {
+                    //console.log(`Version ${release.tag_name} has been downloaded ${release.assets[0].download_count} times.`);
+                    totalDownloads = totalDownloads + parseInt(release.assets[0].download_count)
+                    output.push({
+                        version:release.tag_name,
+                        count:release.assets[0].download_count
+                    })
+                });
+                return {
+                    total:totalDownloads,
+                    breakdown:output
+                }
+            }
+
+            let result = await getDownloads();
+            console.log("result: ",result)
+            globals.downloads = result
             //add MOTD
             let motd = await redis.get("MOTD")
             globals.motd = motd
