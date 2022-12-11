@@ -163,72 +163,72 @@ export class WAppsController extends Controller {
 
      */
 
-    @Post('/apps/create')
-    //CreateAppBody
-    public async createApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-        let tag = TAG + " | transactions | "
-        try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
-            if(!authorization && !body.authorization) throw Error("authorization required!")
-            if(!authorization) authorization = body.authorization
-
-            //validate auth
-            let authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
-            if(!authInfo) throw Error("invalid token!")
-
-            let publicAddress = authInfo.publicAddress
-            if(!publicAddress) throw Error("invalid auth key info!")
-
-            //validate input
-            let homepage = body.homepage
-            let appName = body.name
-            let image = body.image
-
-
-            let entry:any = {
-                homepage,
-                name:appName,
-                image
-            }
-
-            //defaults
-            entry.isSpotlight = false
-            entry.whitelist = false
-            if(publicAddress === ADMIN_PUBLIC_ADDRESS) {
-                entry.whitelist = true
-            } else {
-                log.info(tag,"not an admin! given:"+publicAddress+" expected: "+ADMIN_PUBLIC_ADDRESS)
-            }
-
-            //defaults
-            entry.id = uuid.generate()
-            entry.created = new Date().getTime()
-            entry.trust = 0
-            entry.transparency = 0
-            entry.innovation = 0
-            entry.popularity = 0
-            entry.uploader = [publicAddress]
-            entry.developers = []
-            entry.blockchains = ['ethereum']
-            entry.protocol  = ['wallet-connect-v1']
-            entry.version = "wc-1"
-            entry.description = "app name is "+appName
-            entry.tags = ['ethereum']
-            let success = appsDB.insert(entry)
-
-            return(success);
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
+    // @Post('/apps/create')
+    // //CreateAppBody
+    // public async createApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+    //     let tag = TAG + " | transactions | "
+    //     try{
+    //         log.info(tag,"body: ",body)
+    //         log.info(tag,"authorization: ",authorization)
+    //         if(!authorization && !body.authorization) throw Error("authorization required!")
+    //         if(!authorization) authorization = body.authorization
+    //
+    //         //validate auth
+    //         let authInfo = await redis.hgetall(authorization)
+    //         log.info(tag,"authInfo: ",authInfo)
+    //         if(!authInfo) throw Error("invalid token!")
+    //
+    //         let publicAddress = authInfo.publicAddress
+    //         if(!publicAddress) throw Error("invalid auth key info!")
+    //
+    //         //validate input
+    //         let homepage = body.homepage
+    //         let appName = body.name
+    //         let image = body.image
+    //
+    //
+    //         let entry:any = {
+    //             homepage,
+    //             name:appName,
+    //             image
+    //         }
+    //
+    //         //defaults
+    //         entry.isSpotlight = false
+    //         entry.whitelist = false
+    //         if(publicAddress === ADMIN_PUBLIC_ADDRESS) {
+    //             entry.whitelist = true
+    //         } else {
+    //             log.info(tag,"not an admin! given:"+publicAddress+" expected: "+ADMIN_PUBLIC_ADDRESS)
+    //         }
+    //
+    //         //defaults
+    //         entry.id = uuid.generate()
+    //         entry.created = new Date().getTime()
+    //         entry.trust = 0
+    //         entry.transparency = 0
+    //         entry.innovation = 0
+    //         entry.popularity = 0
+    //         entry.uploader = [publicAddress]
+    //         entry.developers = []
+    //         entry.blockchains = ['ethereum']
+    //         entry.protocol  = ['wallet-connect-v1']
+    //         entry.version = "wc-1"
+    //         entry.description = "app name is "+appName
+    //         entry.tags = ['ethereum']
+    //         let success = appsDB.insert(entry)
+    //
+    //         return(success);
+    //     }catch(e){
+    //         let errorResp:Error = {
+    //             success:false,
+    //             tag,
+    //             e
+    //         }
+    //         log.error(tag,"e: ",{errorResp})
+    //         throw new ApiError("error",503,"error: "+e.toString());
+    //     }
+    // }
 
 
 }

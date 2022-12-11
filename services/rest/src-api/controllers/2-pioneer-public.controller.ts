@@ -25,7 +25,7 @@ let txsDB = connection.get('transactions')
 let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
 let devsDB = connection.get('developers')
-let dapsDB = connection.get('dapps')
+let dapsDB = connection.get('apps')
 let networksDB = connection.get('networks')
 let assetsDB = connection.get('assets')
 

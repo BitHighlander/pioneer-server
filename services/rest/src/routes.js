@@ -34,14 +34,14 @@ var dashRoutes = [
     component: Tables,
     layout: "/admin",
   },
-  {
-    path: "/billing",
-    name: "Billing",
-    rtlName: "لوحة القيادة",
-    icon: <CreditIcon color="inherit" />,
-    component: Billing,
-    layout: "/admin",
-  },
+  // {
+  //   path: "/billing",
+  //   name: "Billing",
+  //   rtlName: "لوحة القيادة",
+  //   icon: <CreditIcon color="inherit" />,
+  //   component: Billing,
+  //   layout: "/admin",
+  // },
   // {
   //   path: "/rtl-support-page",
   //   name: "RTL",

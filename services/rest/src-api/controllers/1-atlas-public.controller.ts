@@ -28,6 +28,7 @@ let txsDB = connection.get('transactions')
 let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
 let networksDB = connection.get('networks')
+let dappsDB = connection.get('apps')
 
 networksDB.createIndex({service: 1}, {unique: true})
 usersDB.createIndex({id: 1}, {unique: true})
@@ -56,6 +57,113 @@ interface Network {
 @Tags('Atlas Endpoints')
 @Route('')
 export class pioneerPublicController extends Controller {
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/dapps/list/{limit}/{skip}')
+    public async searchDappsPageniate(limit:number,skip:number) {
+        let tag = TAG + " | searchDappsPageniate | "
+        try{
+            log.info(tag,{limit,skip})
+            //Get tracked networksListApps
+            let dapps = await dappsDB.find({whitelist:true},{limit,skip})
+
+            return dapps
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/dapps/pending/{limit}/{skip}')
+    public async searchDappsPageniatePending(limit:number,skip:number) {
+        let tag = TAG + " | searchDappsPageniatePending | "
+        try{
+            //Get tracked networks
+            let dapps = await dappsDB.find({whitelist:false},{limit,skip})
+
+            return dapps
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/dapps/{developer}')
+    public async searchDappsByDeveloper(developer:string) {
+        let tag = TAG + " | searchDappsByDeveloper | "
+        try{
+            developer = developer.toLowerCase()
+            //Get tracked networks
+            let dapps = await dappsDB.find({developer})
+
+            return dapps
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/dapps/pending/{developer}')
+    public async searchDappsByDeveloperPendingTest(developer:any) {
+        let tag = TAG + " | searchDappsByDeveloperPending | "
+        try{
+            log.info(tag,"developer: ",developer)
+
+            developer = developer.toLowerCase()
+            log.info(tag,"developer: ",developer)
+            //Get tracked networks
+            // let dapps = await dappsDB.find()
+            let dapps = await dappsDB.find({$and: [{developer},{whitelist:false}]},{limit:10})
+
+            return dapps
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
     /*
      * ATLAS
@@ -262,7 +370,7 @@ export class pioneerPublicController extends Controller {
             let limit = 10
             let output = []
             let cache = await redis.get("cache:network:top")
-            console.log(cache)
+            //console.log(cache)
             if(!cache){
                 for(let i = 1; i < limit; i++){
                     let entry = await networksDB.findOne({chainId:i})
@@ -330,23 +438,19 @@ export class pioneerPublicController extends Controller {
         let tag = TAG + " | chartDapp | "
         try{
             log.debug(tag,"mempool tx: ",body)
-            if(!body.type) throw Error("type is required!")
             if(!body.name) throw Error("Name is required!")
-            if(!body.symbol) throw Error("symbol is required!")
+            if(!body.app) throw Error("app is required!")
             if(!body.tags) throw Error("tags is required!")
-            if(!body.decimals) throw Error("decimals is required!")
             if(!body.image) throw Error("decimals is required!")
             if(!body.signer) throw Error("signer address is required!")
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("signature is required!")
-            let asset:any = {
+            let dapp:any = {
                 name:body.name.toLowerCase(),
-                type:body.type,
+                app:body.app,
                 tags:body.tags,
-                blockchain:body.blockchain.toLowerCase(),
-                symbol:body.symbol,
-                decimals:body.decimals,
                 image:body.image,
+                developer:body.developer,
                 facts:[
                     {
                         signer:body.signer,
@@ -355,18 +459,28 @@ export class pioneerPublicController extends Controller {
                     }
                 ]
             }
-            if(body.description) asset.description = body.description
-            if(body.website) asset.website = body.website
-            if(body.nativeCurrency) asset.nativeCurrency = body.nativeCurrency
-            if(body.explorer) asset.explorer = body.explorer
+            if(body.description) dapp.description = body.description
+            if(body.homepage) dapp.homepage = body.homepage
+            if(body.explorer) dapp.explorer = body.explorer
             if(body.id) {
-                asset.id = body.id
-                asset.tags.push(body.id)
+                dapp.id = body.id
+                dapp.tags.push(body.id)
             }
+
+            dapp.isSpotlight = false
+            dapp.whitelist = false
+
+            //defaults
+            dapp.id = uuid.generate()
+            dapp.created = new Date().getTime()
+            dapp.trust = 0
+            dapp.transparency = 0
+            dapp.innovation = 0
+            dapp.popularity = 0
 
             let output:any = {}
             try{
-                output = await assetsDB.insert(asset)
+                output = await dappsDB.insert(dapp)
             }catch(e){
                 output.error = true
                 output.e = e.toString()
