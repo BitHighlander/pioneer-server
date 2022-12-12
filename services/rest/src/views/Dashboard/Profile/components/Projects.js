@@ -21,10 +21,33 @@ import CardHeader from "components/Card/CardHeader";
 import React from "react";
 import { FaPlus } from "react-icons/fa";
 import ProjectCard from "./ProjectCard";
+import { useEffect, useState } from 'react'
+import Client from '@pioneer-platform/pioneer-client'
+import DashboardTableRow from "../../../../components/Tables/DashboardTableRow";
 
 const Projects = ({ title, description }) => {
   // Chakra color mode
   const textColor = useColorModeValue("gray.700", "white");
+  const [dapps, setDapps] = useState(0)
+  //get Dapps by Dev
+  let getDappsByDev = async function () {
+    try {
+      //let spec = "https://pioneers.dev/spec/swagger.json"
+      let spec = "http://127.0.0.1:9001/spec/swagger.json"
+      let config = { queryKey: 'key:public', spec }
+      let Api = new Client(spec, config)
+      let api = await Api.init()
+      //TODO move to context
+      let pending = await api.SearchDappsByDeveloperPendingTest({developer:"0x3f2329c9adfbccd9a84f52c906e936a42da18cb8"})
+      console.log("pending: ",pending.data)
+      setDapps(pending.data)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+  useEffect(() => {
+    getDappsByDev()
+  }, [])
 
   return (
     <Card p='16px' my='24px'>
@@ -43,33 +66,46 @@ const Projects = ({ title, description }) => {
           templateColumns={{ sm: "1fr", md: "1fr 1fr", xl: "repeat(4, 1fr)" }}
           templateRows={{ sm: "1fr 1fr 1fr auto", md: "1fr 1fr", xl: "1fr" }}
           gap='24px'>
-          <ProjectCard
-            image={imageArchitect1}
-            name={"Project #1"}
-            category={"Modern"}
-            description={
-              "As Uber works through a huge amount of internal management turmoil."
-            }
-            avatars={[avatar2, avatar4, avatar6]}
-          />
-          <ProjectCard
-            image={imageArchitect2}
-            name={"Project #2"}
-            category={"Scandinavian"}
-            description={
-              "Music is something that every person has his or her own specific opinion about."
-            }
-            avatars={[avatar4, avatar2, avatar6, avatar4]}
-          />
-          <ProjectCard
-            image={imageArchitect3}
-            name={"Project #3"}
-            category={"Minimalist"}
-            description={
-              "Different people have different taste, especially various types of music."
-            }
-            avatars={[avatar2, avatar4, avatar6]}
-          />
+          {dapps.map((row) => {
+            return (
+                <ProjectCard
+                image={row.image}
+                name={row.name}
+                category={row.homepage}
+                description={
+                  row.description
+                }
+                avatars={[avatar2, avatar4, avatar6]}
+              />
+            );
+          })}
+          {/*<ProjectCard*/}
+          {/*  image={imageArchitect1}*/}
+          {/*  name={"Project #1"}*/}
+          {/*  category={"Modern"}*/}
+          {/*  description={*/}
+          {/*    "As Uber works through a huge amount of internal management turmoil."*/}
+          {/*  }*/}
+          {/*  avatars={[avatar2, avatar4, avatar6]}*/}
+          {/*/>*/}
+          {/*<ProjectCard*/}
+          {/*  image={imageArchitect2}*/}
+          {/*  name={"Project #2"}*/}
+          {/*  category={"Scandinavian"}*/}
+          {/*  description={*/}
+          {/*    "Music is something that every person has his or her own specific opinion about."*/}
+          {/*  }*/}
+          {/*  avatars={[avatar4, avatar2, avatar6, avatar4]}*/}
+          {/*/>*/}
+          {/*<ProjectCard*/}
+          {/*  image={imageArchitect3}*/}
+          {/*  name={"Project #3"}*/}
+          {/*  category={"Minimalist"}*/}
+          {/*  description={*/}
+          {/*    "Different people have different taste, especially various types of music."*/}
+          {/*  }*/}
+          {/*  avatars={[avatar2, avatar4, avatar6]}*/}
+          {/*/>*/}
           <Button
             p='0px'
             bg='transparent'
@@ -80,7 +116,7 @@ const Projects = ({ title, description }) => {
             <Flex direction='column' justifyContent='center' align='center'>
               <Icon as={FaPlus} fontSize='lg' mb='12px' />
               <Text fontSize='lg' fontWeight='bold'>
-                Create a New Project
+                Submit a New Dapp
               </Text>
             </Flex>
           </Button>

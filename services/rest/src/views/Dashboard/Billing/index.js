@@ -1,5 +1,6 @@
 // Chakra imports
 import { Box, Flex, Grid, Icon } from "@chakra-ui/react";
+import { useEffect, useState } from 'react'
 // Assets
 import BackgroundCard1 from "assets/img/BackgroundCard1.png";
 import { MastercardIcon, VisaIcon } from "components/Icons/Icons";
@@ -20,6 +21,9 @@ import PaymentStatistics from "./components/PaymentStatistics";
 import Transactions from "./components/Transactions";
 
 function Billing() {
+
+
+
   return (
     <Flex direction='column' pt={{ base: "120px", md: "75px" }}>
       <Grid templateColumns={{ sm: "1fr", lg: "2fr 1.2fr" }} templateRows='1fr'>

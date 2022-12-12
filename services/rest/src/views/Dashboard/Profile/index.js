@@ -14,30 +14,13 @@ import { useEffect, useState } from 'react'
 import Client from '@pioneer-platform/pioneer-client'
 
 function Profile() {
+    const [dapps, setDapps] = useState(0)
   // Chakra color mode
   const textColor = useColorModeValue("gray.700", "white");
   const bgProfile = useColorModeValue(
     "hsla(0,0%,100%,.8)",
     "linear-gradient(112.83deg, rgba(255, 255, 255, 0.21) 0%, rgba(255, 255, 255, 0) 110.84%)"
   );
-
-    //get Dapps by Dev
-    let getDappsByDev = async function () {
-        try {
-            //let spec = "https://pioneers.dev/spec/swagger.json"
-            let spec = "http://127.0.0.1:9001/spec/swagger.json"
-            let config = { queryKey: 'key:public', spec }
-            let Api = new Client(spec, config)
-            let api = await Api.init()
-            let info = await api.Globals()
-            console.log(info.data)
-        } catch (e) {
-            console.error(e)
-        }
-    }
-    useEffect(() => {
-        getDappsByDev()
-    }, [])
 
   return (
     <Flex direction='column'>

@@ -395,6 +395,32 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
+* ATLAS
+*
+*    Get all live atlas
+*
+* */
+    @Get('/atlas/network/chainId/{chainId}')
+    public async searchByNetworkId(chainId:number) {
+        let tag = TAG + " | atlas | "
+        try{
+
+            //Get tracked networks
+            let networks = await networksDB.find({ chainId },{limit:10})
+
+            return networks
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
  * ATLAS
  *
  *    Get all live atlas
