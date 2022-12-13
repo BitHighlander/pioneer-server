@@ -10,10 +10,10 @@ let TAG = ' | API | '
 const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
 const {subscriber, publisher, redis} = require('@pioneer-platform/default-redis')
-
+import { recoverPersonalSignature } from 'eth-sig-util';
+import { bufferToHex } from 'ethereumjs-util';
 //TODO if no mongo use nedb?
 //https://github.com/louischatriot/nedb
-
 let connection  = require("@pioneer-platform/default-mongo")
 let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
@@ -57,11 +57,11 @@ export class WAppsController extends Controller {
         read
     */
 
-    @Get('/apps')
-    public async listApps() {
+    @Get('/apps/{limit}/{skip}')
+    public async listApps(limit:number,skip:number) {
         let tag = TAG + " | health | "
         try{
-            let apps = appsDB.find({whitelist:true})
+            let apps = appsDB.find({whitelist:true},{limit,skip})
             return(apps)
         }catch(e){
             let errorResp:Error = {
@@ -103,7 +103,8 @@ export class WAppsController extends Controller {
     public async listAppsByDeveloper(developer:any) {
         let tag = TAG + " | listAppsByDeveloper | "
         try{
-            let apps = appsDB.find({whitelist:true})
+            developer = developer.toLowerCase()
+            let apps = appsDB.find({whitelist:true,developer})
             return(apps)
         }catch(e){
             let errorResp:Error = {
@@ -163,72 +164,74 @@ export class WAppsController extends Controller {
 
      */
 
-    // @Post('/apps/create')
-    // //CreateAppBody
-    // public async createApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-    //     let tag = TAG + " | transactions | "
-    //     try{
-    //         log.info(tag,"body: ",body)
-    //         log.info(tag,"authorization: ",authorization)
-    //         if(!authorization && !body.authorization) throw Error("authorization required!")
-    //         if(!authorization) authorization = body.authorization
-    //
-    //         //validate auth
-    //         let authInfo = await redis.hgetall(authorization)
-    //         log.info(tag,"authInfo: ",authInfo)
-    //         if(!authInfo) throw Error("invalid token!")
-    //
-    //         let publicAddress = authInfo.publicAddress
-    //         if(!publicAddress) throw Error("invalid auth key info!")
-    //
-    //         //validate input
-    //         let homepage = body.homepage
-    //         let appName = body.name
-    //         let image = body.image
-    //
-    //
-    //         let entry:any = {
-    //             homepage,
-    //             name:appName,
-    //             image
-    //         }
-    //
-    //         //defaults
-    //         entry.isSpotlight = false
-    //         entry.whitelist = false
-    //         if(publicAddress === ADMIN_PUBLIC_ADDRESS) {
-    //             entry.whitelist = true
-    //         } else {
-    //             log.info(tag,"not an admin! given:"+publicAddress+" expected: "+ADMIN_PUBLIC_ADDRESS)
-    //         }
-    //
-    //         //defaults
-    //         entry.id = uuid.generate()
-    //         entry.created = new Date().getTime()
-    //         entry.trust = 0
-    //         entry.transparency = 0
-    //         entry.innovation = 0
-    //         entry.popularity = 0
-    //         entry.uploader = [publicAddress]
-    //         entry.developers = []
-    //         entry.blockchains = ['ethereum']
-    //         entry.protocol  = ['wallet-connect-v1']
-    //         entry.version = "wc-1"
-    //         entry.description = "app name is "+appName
-    //         entry.tags = ['ethereum']
-    //         let success = appsDB.insert(entry)
-    //
-    //         return(success);
-    //     }catch(e){
-    //         let errorResp:Error = {
-    //             success:false,
-    //             tag,
-    //             e
-    //         }
-    //         log.error(tag,"e: ",{errorResp})
-    //         throw new ApiError("error",503,"error: "+e.toString());
-    //     }
-    // }
+    //admin
+        /*
+        read
+    */
+
+    @Get('/apps/pending/{limit}/{skip}')
+    public async listAppsPending(limit:number,skip:number) {
+        let tag = TAG + " | health | "
+        try{
+            let apps = appsDB.find({whitelist:false},{limit,skip})
+            return(apps)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Post('/apps/create')
+    //CreateAppBody
+    public async whitelistApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | transactions | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+
+            message = JSON.parse(message)
+            if(!message.name) throw Error("Ivalid message missing name")
+            if(!message.app) throw Error("Ivalid message missing app")
+
+            if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
+                let whitelist = true
+
+                let resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+
+            } else {
+                log.info(tag,"not an admin! given:"+addressFromSig+" expected: "+ADMIN_PUBLIC_ADDRESS)
+            }
+
+
+            return(true);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
 
 }
