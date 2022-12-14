@@ -363,17 +363,16 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
-    @Get('/atlas/list/top')
-    public async atlasNetwork() {
+    @Get('/atlas/list/top/{start}/{stop}/{limit}')
+    public async atlasNetwork(start:number,stop:number,limit:number) {
         let tag = TAG + " | atlas | "
         try{
-            let limit = 10
             let output = []
-            let cache = await redis.get("cache:network:top")
+            let cache = await redis.get("cache:network:top:"+start+":"+stop)
             //console.log(cache)
             if(!cache){
-                for(let i = 1; i < limit; i++){
-                    let entry = await networksDB.findOne({chainId:i})
+                for(let i = start; i < stop; i++){
+                    let entry = await networksDB.find({chainId:i},{limit})
                     if(entry)output.push(entry)
                 }
                 redis.set("cache:network:top",JSON.stringify(output))
