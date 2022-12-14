@@ -373,7 +373,10 @@ export class pioneerPublicController extends Controller {
             if(!cache){
                 for(let i = start; i < stop; i++){
                     let entry = await networksDB.find({chainId:i},{limit})
-                    if(entry)output.push(entry)
+                    for(let j = 0; j < entry.length; j++){
+                        let server = entry[j]
+                        if(entry)output.push(server)
+                    }
                 }
                 redis.set("cache:network:top",JSON.stringify(output))
                 redis.expire("cache:network:top",60000)
