@@ -25,8 +25,9 @@ let txsDB = connection.get('transactions')
 let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
 let devsDB = connection.get('developers')
-let dapsDB = connection.get('apps')
-let networksDB = connection.get('networks')
+let blockchainsDB = connection.get('networks')
+let dappsDB = connection.get('apps')
+let nodesDB = connection.get('nodes')
 let assetsDB = connection.get('assets')
 
 usersDB.createIndex({id: 1}, {unique: true})
@@ -175,15 +176,17 @@ export class atlasPublicController extends Controller {
                 //populate
                 let countUsers = await usersDB.count()
                 let countDevs = await devsDB.count()
-                let countDapps = await dapsDB.count()
+                let countDapps = await dappsDB.count()
                 let countAssets = await assetsDB.count()
-                let countNetworks = await networksDB.count()
+                let countBlockchains = await blockchainsDB.count()
+                let countNodes = await nodesDB.count()
                 log.info(tag,"countDevs: ",countDevs)
                 log.info(tag,"countDapps: ",countDapps)
                 globals.info = {
                     users:countUsers,
                     assets:countAssets,
-                    networks:countNetworks,
+                    blockchains:countBlockchains,
+                    countNodes:countNodes,
                     devs:countDevs,
                     dapps:countDapps
                 }

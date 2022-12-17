@@ -27,11 +27,11 @@ let pubkeysDB = connection.get('pubkeys')
 let txsDB = connection.get('transactions')
 let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
-let networksDB = connection.get('networks')
+let blockchainsDB = connection.get('blockchains')
 let dappsDB = connection.get('apps')
 let nodesDB = connection.get('nodes')
 
-networksDB.createIndex({blockchain: 1}, {unique: true})
+blockchainsDB.createIndex({blockchain: 1}, {unique: true})
 nodesDB.createIndex({service: 1}, {unique: true})
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
@@ -59,6 +59,36 @@ interface Network {
 @Tags('Atlas Endpoints')
 @Route('')
 export class pioneerPublicController extends Controller {
+
+    /*
+     * ATLAS
+     *
+     *    Get all live blockchains
+     *
+     * */
+    @Get('/atlas/blockchains/list/{limit}/{skip}')
+    public async searchBlockchainsPageniate(limit:number,skip:number) {
+        let tag = TAG + " | searchBlockchainsPageniate | "
+        try{
+            //rank by coinMarketCap
+
+            //keepkey support
+
+            log.info(tag,{limit,skip})
+            //Get tracked networksListApps
+            let dapps = await blockchainsDB.find({},{limit,skip})
+
+            return dapps
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
     /*
      * ATLAS
@@ -399,11 +429,11 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
-* ATLAS
-*
-*    Get all live atlas
-*
-* */
+    * ATLAS
+    *
+    *    Get all live atlas
+    *
+    * */
     @Get('/atlas/network/chainId/{chainId}')
     public async searchByNetworkId(chainId:number) {
         let tag = TAG + " | atlas | "
@@ -425,13 +455,13 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
- * ATLAS
- *
- *    Get all live atlas
- *
- * */
-    @Get('/atlas/search/network/{blockchain}')
-    public async searchByNetworkName(blockchain:string) {
+     * ATLAS
+     *
+     *    Get all live blockchains
+     *
+     * */
+    @Get('/atlas/search/blockchains/{blockchain}')
+    public async searchByBlockchainName(blockchain:string) {
         let tag = TAG + " | atlas | "
         try{
             //TODO sanitize
@@ -443,7 +473,7 @@ export class pioneerPublicController extends Controller {
             //TODO sanitize
             const regex = new RegExp(escapeRegex(blockchain), 'gi');
             //Get tracked networks
-            let networks = await nodesDB.find({ "name": regex },{limit:10})
+            let networks = await blockchainsDB.find({ "name": regex },{limit:10})
 
             return networks
         }catch(e){
@@ -600,17 +630,16 @@ export class pioneerPublicController extends Controller {
      *    Build an atlas on a new network
      *
      * */
-    @Post('atlas/network/chart')
-    public async chartNetwork(@Body() body: any): Promise<any> {
-        let tag = TAG + " | chartNetwork | "
+    @Post('atlas/blockchain/chart')
+    public async chartBlockchain(@Body() body: any): Promise<any> {
+        let tag = TAG + " | chartBlockchain | "
         try{
             log.debug(tag,"mempool tx: ",body)
-            if(body.type !== 'EVM') throw Error("Network Type Not Supported!")
             if(!body.name) throw Error("Name is required!")
             if(!body.type) throw Error("type is required!")
             if(!body.tags) throw Error("tags is required!")
             if(!body.chain) throw Error("chain is required!")
-            if(!body.service) throw Error("service is required!")
+            if(!body.blockchain) throw Error("blockchain is required!")
             if(!body.signer) throw Error("signer address is required!")
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("signature is required!")
@@ -639,7 +668,7 @@ export class pioneerPublicController extends Controller {
 
             let output:any = {}
             try{
-                output = await networksDB.insert(evmNetwork)
+                output = await blockchainsDB.insert(evmNetwork)
             }catch(e){
                 output.error = true
                 output.e = e.toString()
