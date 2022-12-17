@@ -29,8 +29,10 @@ let invocationsDB = connection.get('invocations')
 let utxosDB = connection.get('utxo')
 let networksDB = connection.get('networks')
 let dappsDB = connection.get('apps')
+let nodesDB = connection.get('nodes')
 
-networksDB.createIndex({service: 1}, {unique: true})
+networksDB.createIndex({blockchain: 1}, {unique: true})
+nodesDB.createIndex({service: 1}, {unique: true})
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
@@ -372,7 +374,7 @@ export class pioneerPublicController extends Controller {
             //console.log(cache)
             if(!cache){
                 for(let i = start; i < stop; i++){
-                    let entry = await networksDB.find({chainId:i},{limit})
+                    let entry = await nodesDB.find({chainId:i},{limit})
                     for(let j = 0; j < entry.length; j++){
                         let server = entry[j]
                         if(entry)output.push(server)
@@ -408,7 +410,7 @@ export class pioneerPublicController extends Controller {
         try{
 
             //Get tracked networks
-            let networks = await networksDB.find({ chainId },{limit:10})
+            let networks = await nodesDB.find({ chainId },{limit:10})
 
             return networks
         }catch(e){
@@ -441,7 +443,7 @@ export class pioneerPublicController extends Controller {
             //TODO sanitize
             const regex = new RegExp(escapeRegex(blockchain), 'gi');
             //Get tracked networks
-            let networks = await networksDB.find({ "name": regex },{limit:10})
+            let networks = await nodesDB.find({ "name": regex },{limit:10})
 
             return networks
         }catch(e){
@@ -595,7 +597,7 @@ export class pioneerPublicController extends Controller {
     /*
      * CHART
      *
-     *    Build an atlas on a new EVM network
+     *    Build an atlas on a new network
      *
      * */
     @Post('atlas/network/chart')
@@ -616,7 +618,7 @@ export class pioneerPublicController extends Controller {
                 name:body.name,
                 type:body.type,
                 tags:body.tags,
-                blockchain:body.name.toLowerCase(),
+                blockchain:body.blockchain,
                 symbol:body.chain.toUpperCase(),
                 service:body.service,
                 chainId:body.chainId,
@@ -656,9 +658,72 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
+     * Submit
+     *
+     *    Build an atlas on a new network
+     *
+     * */
+    @Post('atlas/node/submit')
+    public async submitNode(@Body() body: any): Promise<any> {
+        let tag = TAG + " | chartNetwork | "
+        try{
+            log.debug(tag,"mempool tx: ",body)
+            if(body.type !== 'EVM') throw Error("Network Type Not Supported!")
+            if(!body.name) throw Error("Name is required!")
+            if(!body.type) throw Error("type is required!")
+            if(!body.tags) throw Error("tags is required!")
+            if(!body.chain) throw Error("chain is required!")
+            if(!body.service) throw Error("service is required!")
+            if(!body.signer) throw Error("signer address is required!")
+            if(!body.signature) throw Error("signature is required!")
+            if(!body.payload) throw Error("signature is required!")
+            let evmNetwork:any = {
+                name:body.name,
+                type:body.type,
+                tags:body.tags,
+                blockchain:body.name.toLowerCase(),
+                symbol:body.chain.toUpperCase(),
+                service:body.service,
+                chainId:body.chainId,
+                network:body.rpc,
+                facts:[
+                    {
+                        signer:body.signer,
+                        payload:body.payload,
+                        signature:body.signature,
+                    }
+                ]
+            }
+            if(body.infoURL) evmNetwork.infoURL = body.infoURL
+            if(body.shortName) evmNetwork.shortName = body.shortName
+            if(body.nativeCurrency) evmNetwork.nativeCurrency = body.nativeCurrency
+            if(body.faucets) evmNetwork.faucets = body.faucets
+            if(body.faucets) evmNetwork.faucets = body.faucets
+
+            let output:any = {}
+            try{
+                output = await nodesDB.insert(evmNetwork)
+            }catch(e){
+                output.error = true
+                output.e = e.toString()
+            }
+
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
      * CHART
      *
-     *    Build an atlas
+     *    Build an atlas on a contract
      *
      * */
     @Post('atlas/contract/chart')
