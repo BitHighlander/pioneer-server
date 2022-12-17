@@ -77,7 +77,7 @@ function SignIn() {
       let nonce = user.data.nonce
       let message = `I am signing my one-time nonce: ${nonce}`
 
-        console.log("wallet: ",wallet)
+      console.log("wallet: ",wallet)
       console.log("wallet: ",wallet.provider)
       // console.log("wallet: ",await wallet.provider.request('personal_sign'))
       // console.log("wallet: ",wallet.provider.request(message,address))

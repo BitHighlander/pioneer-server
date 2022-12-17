@@ -23,12 +23,15 @@ import { FaPlus } from "react-icons/fa";
 import ProjectCard from "./ProjectCard";
 import { useEffect, useState } from 'react'
 import Client from '@pioneer-platform/pioneer-client'
+import { useConnectWallet } from '@web3-onboard/react'
 import DashboardTableRow from "../../../../components/Tables/DashboardTableRow";
+import {ethers} from "ethers";
 
 const Projects = ({ title, description }) => {
   // Chakra color mode
   const textColor = useColorModeValue("gray.700", "white");
-  const [dapps, setDapps] = useState(0)
+  const [dapps, setDapps] = useState([])
+
   //get Dapps by Dev
   let getDappsByDev = async function () {
     try {
@@ -40,7 +43,7 @@ const Projects = ({ title, description }) => {
       //TODO move to context
       let pending = await api.SearchDappsByDeveloperPendingTest({developer:"0x3f2329c9adfbccd9a84f52c906e936a42da18cb8"})
       console.log("pending: ",pending.data)
-      setDapps(pending.data)
+      if(pending.data.length > 0)setDapps(pending.data)
     } catch (e) {
       console.error(e)
     }
@@ -66,11 +69,12 @@ const Projects = ({ title, description }) => {
           templateColumns={{ sm: "1fr", md: "1fr 1fr", xl: "repeat(4, 1fr)" }}
           templateRows={{ sm: "1fr 1fr 1fr auto", md: "1fr 1fr", xl: "1fr" }}
           gap='24px'>
-          {dapps.map((row) => {
+          {dapps?.map((row) => {
             return (
                 <ProjectCard
                 image={row.image}
                 name={row.name}
+                app={row.app}
                 category={row.homepage}
                 description={
                   row.description

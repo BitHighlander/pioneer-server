@@ -10,10 +10,52 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import React from "react";
+import {useConnectWallet} from "@web3-onboard/react";
+import {ethers} from "ethers";
+import Client from '@pioneer-platform/pioneer-client'
 
-const ProjectCard = ({ image, name, category, avatars, description }) => {
+const ProjectCard = ({ image, name, app, category, avatars, description }) => {
   // Chakra color mode
   const textColor = useColorModeValue("gray.700", "white");
+
+  const [{ wallet, connecting }, connect, disconnect] = useConnectWallet()
+
+  //
+  let whitelistDapp = async function (name,app) {
+    try {
+      //let spec = "https://pioneers.dev/spec/swagger.json"
+      let spec = "http://127.0.0.1:9001/spec/swagger.json"
+      let config = { queryKey: 'key:public', spec }
+      let Api = new Client(spec, config)
+      let api = await Api.init()
+
+      //Sign
+      let payload = {
+        name,
+        app
+      }
+      payload = JSON.stringify(payload)
+
+      let address = wallet?.accounts[0]?.address
+      console.log("address: ",address)
+
+      // const ethersWallet = new ethers.Wallet(wallet.provider)
+      const ethersProvider = new ethers.providers.Web3Provider(wallet.provider, 'any')
+      const signer = ethersProvider.getSigner()
+      let signature = await signer.signMessage(payload,address)
+      let entry = {}
+      //submit
+      entry.signer = address
+      entry.payload = payload
+      entry.signature = signature
+
+      let resultWhitelist = await api.WhitelistApp("",entry)
+      console.log("resultWhitelist: ",resultWhitelist)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
 
   return (
     <Flex direction='column'>
@@ -39,13 +81,14 @@ const ProjectCard = ({ image, name, category, avatars, description }) => {
         </Text>
         <Flex justifyContent='space-between'>
           <Button
+            onClick={() => whitelistDapp(name,app)}
             variant='outline'
             colorScheme='teal'
             minW='110px'
             h='36px'
             fontSize='xs'
             px='1.5rem'>
-            VIEW PROJECT
+            Approve
           </Button>
           <AvatarGroup size='xs'>
             {avatars.map((el, idx) => {
