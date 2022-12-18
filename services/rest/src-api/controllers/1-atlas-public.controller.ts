@@ -70,15 +70,50 @@ export class pioneerPublicController extends Controller {
     public async searchBlockchainsPageniate(limit:number,skip:number) {
         let tag = TAG + " | searchBlockchainsPageniate | "
         try{
-            //rank by coinMarketCap
 
-            //keepkey support
+            let output = []
+            //blockchains Supported by keepkey
+            let blockchains = await blockchainsDB.find({tags:{$all:['KeepKeySupport']}})
+            log.info(tag,"blockchains: ",blockchains.length)
+            log.info(tag,"blockchains: ",blockchains[0])
 
-            log.info(tag,{limit,skip})
-            //Get tracked networksListApps
-            let dapps = await blockchainsDB.find({},{limit,skip})
+            //seed market data
+            let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+            marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
+            log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
+            let usedSymbold = []
+            for(let i = 0; i < blockchains.length; i++){
+                //NOTE this sucks because it assumes symbol matchs
+                let asset = blockchains[i]
+                log.info(tag,"asset: ",asset)
+                let symbol = asset.symbol.toUpperCase()
+                log.info(tag,"symbol: ",symbol)
+                if(symbol === "ETH" && asset.blockchain !== 'ethereum') symbol= "UNK"
+                if(marketCacheCoinGecko[symbol]){
+                    asset.price = marketCacheCoinGecko[symbol]?.current_price
+                } else {
+                    asset.price = 0
+                }
+                if(marketCacheCoinGecko[symbol]){
+                    asset.rank = marketCacheCoinGecko[symbol]?.market_cap_rank
+                } else {
+                    asset.rank = 99999999
+                }
+                //only 1 per symbol
+                if(usedSymbold.indexOf(asset.symbol) === -1){
+                    output.push(asset)
+                    usedSymbold.push(asset.symbol)
+                }
+            }
 
-            return dapps
+            //rank
+            output = output.sort((a, b) => {
+                if (a.rank < b.rank) {
+                    return -1;
+                }
+            });
+
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -637,18 +672,24 @@ export class pioneerPublicController extends Controller {
             log.debug(tag,"mempool tx: ",body)
             if(!body.name) throw Error("Name is required!")
             if(!body.type) throw Error("type is required!")
+            if(!body.image) throw Error("image is required!")
             if(!body.tags) throw Error("tags is required!")
+            if(!body.symbol) throw Error("symbol is required!")
             if(!body.chain) throw Error("chain is required!")
+            if(!body.explorer) throw Error("explorer is required!")
+            if(!body.description) throw Error("description is required!")
+            if(!body.explorer) throw Error("explorer is required!")
             if(!body.blockchain) throw Error("blockchain is required!")
             if(!body.signer) throw Error("signer address is required!")
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("signature is required!")
-            let evmNetwork:any = {
+            let blockchain:any = {
                 name:body.name,
                 type:body.type,
+                image:body.image,
                 tags:body.tags,
                 blockchain:body.blockchain,
-                symbol:body.chain.toUpperCase(),
+                symbol:body.symbol,
                 service:body.service,
                 chainId:body.chainId,
                 network:body.rpc,
@@ -660,15 +701,16 @@ export class pioneerPublicController extends Controller {
                     }
                 ]
             }
-            if(body.infoURL) evmNetwork.infoURL = body.infoURL
-            if(body.shortName) evmNetwork.shortName = body.shortName
-            if(body.nativeCurrency) evmNetwork.nativeCurrency = body.nativeCurrency
-            if(body.faucets) evmNetwork.faucets = body.faucets
-            if(body.faucets) evmNetwork.faucets = body.faucets
+            if(body.research) blockchain.research = body.research
+            if(body.explorer) blockchain.explorer = body.explorer
+            if(body.links) blockchain.links = body.links
+            if(body.decimals) blockchain.decimals = body.decimals
+            if(body.description) blockchain.description = body.description
+            if(body.faucets) blockchain.faucets = body.faucets
 
             let output:any = {}
             try{
-                output = await blockchainsDB.insert(evmNetwork)
+                output = await blockchainsDB.insert(blockchain)
             }catch(e){
                 output.error = true
                 output.e = e.toString()
@@ -701,6 +743,7 @@ export class pioneerPublicController extends Controller {
             if(!body.name) throw Error("Name is required!")
             if(!body.type) throw Error("type is required!")
             if(!body.tags) throw Error("tags is required!")
+            if(!body.image) throw Error("image is required!")
             if(!body.chain) throw Error("chain is required!")
             if(!body.service) throw Error("service is required!")
             if(!body.signer) throw Error("signer address is required!")
