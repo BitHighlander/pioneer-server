@@ -515,7 +515,7 @@ export class pioneerPublicController extends Controller {
 
                 //if chainId
                 if(blockchain.chainId){
-                    let nodes = await nodesDB.find({chainId:blockchain.chainId})
+                    let nodes = await nodesDB.find({chainId:blockchain.chainId}, {limit:10})
                     for(let j = 0; j < nodes.length; j++){
                         let node = nodes[j]
                         output.push(node)
