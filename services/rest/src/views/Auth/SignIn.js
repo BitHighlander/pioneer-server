@@ -70,7 +70,7 @@ function SignIn() {
       let pioneer = await client.init()
 
       //is address logged in?
-      let user = await pioneer.instance.GetUser({publicAddress:address})
+      let user = await pioneer.GetUser({publicAddress:address})
       console.log("user: ",user.data)
 
       //login
@@ -97,6 +97,15 @@ function SignIn() {
       const signer = ethersProvider.getSigner()
       let signature = await signer.signMessage(message,address)
       console.log("signature: ",signature)
+      console.log("address: ",address)
+      console.log("message: ",message)
+
+      //signin get api key
+      let loginResp = await pioneer.Login({},{publicAddress:address,signature,message})
+      console.log("loginResp: ",loginResp.data)
+
+      //store api key in localstoarage
+
 
       return true
     }catch(e){

@@ -33,7 +33,7 @@ ReactDOM.render(
                 <Route path={`/auth`} component={AuthLayout} />
                 <Route path={`/admin`} component={AdminLayout} />
                 <Route path={`/rtl`} component={RTLLayout} />
-                <Redirect from={`/`} to="/auth/signup" />
+                <Redirect from={`/`} to="/auth/signin" />
             </Switch>
         </HashRouter>
     </Web3OnboardProvider>,
