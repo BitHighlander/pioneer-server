@@ -782,8 +782,8 @@ export class pioneerPublicController extends Controller {
      *
      * */
     @Post('atlas/node/submit')
-    public async submitNode(@Body() body: any): Promise<any> {
-        let tag = TAG + " | chartNetwork | "
+    public async chartNode(@Body() body: any): Promise<any> {
+        let tag = TAG + " | chartNode | "
         try{
             log.debug(tag,"mempool tx: ",body)
             if(body.type !== 'EVM') throw Error("Network Type Not Supported!")
@@ -800,6 +800,7 @@ export class pioneerPublicController extends Controller {
                 name:body.name,
                 type:body.type,
                 tags:body.tags,
+                image:body.image,
                 blockchain:body.name.toLowerCase(),
                 symbol:body.chain.toUpperCase(),
                 service:body.service,
