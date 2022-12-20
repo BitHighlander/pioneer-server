@@ -20,7 +20,7 @@ let txsDB = connection.get('transactions')
 let txsRawDB = connection.get('transactions-raw')
 let appsDB = connection.get('apps')
 const uuid = require('short-uuid');
-
+const queue = require('@pioneer-platform/redis-queue');
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
 appsDB.createIndex({homepage: 1}, {unique: true})
@@ -209,19 +209,22 @@ export class WAppsController extends Controller {
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
             if(!message.app) throw Error("Ivalid message missing app")
-
+            let resultWhitelist:any = {}
             if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
-                let whitelist = true
-
-                let resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
+                resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
                 log.info(tag,"resultWhitelist: ",resultWhitelist)
-
             } else {
-                log.info(tag,"not an admin! given:"+addressFromSig+" expected: "+ADMIN_PUBLIC_ADDRESS)
+                //get fox balance of address
+                let work:any = {}
+                let queueId = uuid.generate()
+                work.queueId = queueId
+                work.payload = body
+                resultWhitelist.success = true
+                resultWhitelist.message = 'Address '+addressFromSig+' voted to submit app '+message.name+' to the dapp store!'
+                resultWhitelist.result = await redis.createWork("pioneer:facts:ingest",work)
             }
 
-
-            return(true);
+            return(resultWhitelist);
         }catch(e){
             let errorResp:Error = {
                 success:false,
