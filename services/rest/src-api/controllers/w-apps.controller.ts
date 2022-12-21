@@ -127,19 +127,37 @@ export class WAppsController extends Controller {
         let tag = TAG + " | transactions | "
         try{
             log.info(tag,"body: ",body)
+            log.info(tag,"body: ",body)
             log.info(tag,"authorization: ",authorization)
-            if(!authorization && !body.authorization) throw Error("authorization required!")
-            if(!authorization) authorization = body.authorization
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let message = body.payload
 
-            //validate auth
-            let authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
-            if(!authInfo) throw Error("invalid token!")
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
 
-            let publicAddress = authInfo.publicAddress
-            if(!publicAddress) throw Error("invalid auth key info!")
-
-            //body
+            message = JSON.parse(message)
+            if(!message.name) throw Error("Ivalid message missing name")
+            if(!message.app) throw Error("Ivalid message missing app")
+            let resultWhitelist:any = {}
+            if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
+                resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+            } else {
+                //get fox balance of address
+                let work:any = {}
+                let queueId = uuid.generate()
+                work.queueId = queueId
+                work.payload = body
+                resultWhitelist.success = true
+                resultWhitelist.message = 'Address '+addressFromSig+' voted to submit app '+message.name+' to the dapp store!'
+                resultWhitelist.result = await redis.createWork("pioneer:facts:ingest",work)
+            }
 
 
             return(true);
@@ -235,6 +253,4 @@ export class WAppsController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
-
-
 }
