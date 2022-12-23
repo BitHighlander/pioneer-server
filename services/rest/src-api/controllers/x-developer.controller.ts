@@ -68,11 +68,11 @@ export class XDevsController extends Controller {
         read
     */
 
-    @Get('/devs')
-    public async listDevelopers() {
+    @Get('/devs/{limit}/{skip}')
+    public async listDevelopers(limit:number,skip:number) {
         let tag = TAG + " | listDeveloper | "
         try{
-            let apps = devsDB.find()
+            let apps = devsDB.find({},{limit,skip})
             return(apps)
         }catch(e){
             let errorResp:Error = {

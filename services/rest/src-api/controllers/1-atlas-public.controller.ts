@@ -59,6 +59,71 @@ interface Network {
 @Tags('Atlas Endpoints')
 @Route('')
 export class pioneerPublicController extends Controller {
+    /*
+     * ATLAS
+     *
+     *    Get all live blockchains
+     *
+     * */
+    @Get('/atlas/assets/list/{limit}/{skip}')
+    public async searchAssetsPageniate(limit:number,skip:number) {
+        let tag = TAG + " | searchAssetsPageniate | "
+        try{
+
+            let output = []
+            //blockchains Supported by keepkey
+            let assets = await assetsDB.find({tags:{$all:['KeepKeySupport']}},{limit,skip})
+            log.info(tag,"assets: ",assets.length)
+            log.info(tag,"assets: ",assets[0])
+
+            //seed market data
+            let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+            marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
+            log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
+            let usedSymbold = []
+            for(let i = 0; i < assets.length; i++){
+                //NOTE this sucks because it assumes symbol matchs
+                let asset = assets[i]
+                log.info(tag,"asset: ",asset)
+                let symbol = asset.symbol.toUpperCase()
+                log.info(tag,"symbol: ",symbol)
+                if(symbol === "ETH" && asset.blockchain !== 'ethereum') symbol= "UNK"
+                if(marketCacheCoinGecko[symbol]){
+                    asset.price = marketCacheCoinGecko[symbol]?.current_price
+                } else {
+                    asset.price = 0
+                }
+                if(marketCacheCoinGecko[symbol]){
+                    asset.rank = marketCacheCoinGecko[symbol]?.market_cap_rank
+                } else {
+                    asset.rank = 99999999
+                }
+                //only 1 per symbol
+                if(usedSymbold.indexOf(asset.symbol) === -1){
+                    output.push(asset)
+                    usedSymbold.push(asset.symbol)
+                }
+            }
+
+            //rank
+            output = output.sort((a, b) => {
+                if (a.rank < b.rank) {
+                    return -1;
+                }
+            });
+
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
 
     /*
      * ATLAS
@@ -342,7 +407,7 @@ export class pioneerPublicController extends Controller {
     public async searchByName(name:string) {
         let tag = TAG + " | searchByName | "
         try{
-
+            name = name.toLowerCase()
             let escapeRegex = function (text) {
                 return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
             };
@@ -385,6 +450,32 @@ export class pioneerPublicController extends Controller {
             //Get tracked networks
             //let assets = await assetsDB.find({ "name": regex },{limit:10})
             let assets = await assetsDB.find({$and: [{ "name": regex },{tags:{$all:['KeepKeySupport']}}]},{limit:4})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
+    @Get('/atlas/list/asset/{limit}/{skip}')
+    public async searchAssetsList(limit:number,skip:number) {
+        let tag = TAG + " | searchAssetsList | "
+        try{
+            //TODO sanitize
+            //Get tracked networks
+            let assets = await assetsDB.find({},{limit,skip})
 
             return assets
         }catch(e){
@@ -452,6 +543,32 @@ export class pioneerPublicController extends Controller {
             }
 
             return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+        * ATLAS
+        *
+        *    Get all live nodes
+        *
+        * */
+    @Get('/atlas/nodes/{limit}/{skip}')
+    public async searchNodes(limit:number,skip:number) {
+        let tag = TAG + " | atlas | "
+        try{
+
+            //Get tracked networks
+            let networks = await nodesDB.find({ },{limit,skip})
+
+            return networks
         }catch(e){
             let errorResp:Error = {
                 success:false,

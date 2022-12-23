@@ -186,7 +186,7 @@ export class atlasPublicController extends Controller {
                     users:countUsers,
                     assets:countAssets,
                     blockchains:countBlockchains,
-                    countNodes:countNodes,
+                    nodes:countNodes,
                     devs:countDevs,
                     dapps:countDapps
                 }
@@ -656,7 +656,6 @@ export class atlasPublicController extends Controller {
                                 txInfo = await networks[output.network].getTransaction(txid)
                                 log.debug(tag,"txInfo: ",txInfo)
                             }
-
                             //@TODO standardize getTransaction in network
 
                             if(txInfo && txInfo.blockHeight && parseInt(txInfo.blockHeight) > 0){
