@@ -94,6 +94,7 @@
     "classnames": "2.3.1",
     "core-js": "^3.12.1",
     "cors": "^2.8.5",
+    "datadog-metrics": "^0.10.2",
     "dotenv": "^8.2.0",
     "eth-sig-util": "^3.0.1",
     "ethereumjs-util": "^7.1.5",

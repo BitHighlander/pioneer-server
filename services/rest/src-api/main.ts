@@ -18,6 +18,9 @@ import * as methodOverride from 'method-override';
 import { RegisterRoutes } from './routes/routes';  // here
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../api/dist/swagger.json')
+const metrics = require('datadog-metrics');
+let os = require('os')
+metrics.init({ host: os.hostname(), prefix: pjson.name });
 
 const markets = require('@pioneer-platform/markets')
 let connection  = require("@pioneer-platform/default-mongo")
@@ -41,6 +44,19 @@ const rateLimiterRedis = new RateLimiterRedis({
     points: RATE_LIMIT_RPM, // Number of points
     duration: 1, // Per second
 });
+
+const loggerDogMiddleWare = async (req, res, next) => {
+    try{
+        //
+        console.log("path",req.path)
+        metrics.increment('requests:total');
+        metrics.increment('path:'+req.path);
+        next();
+    }catch(e){
+        console.error(e)
+    }
+};
+
 
 //TODO handle broke redis
 // ReplyError: MISCONF Redis is configured
@@ -99,6 +115,7 @@ let corsOptions = {
 
 
 app.use(cors(corsOptions))
+app.use(loggerDogMiddleWare);
 // app.use(rateLimiterMiddleware);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
