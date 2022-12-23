@@ -1,0 +1,12 @@
+{
+  "short_name": "Pioneers.dev",
+  "name": "Pioneer Explorers",
+  "lang": "en",
+  "start_url": "/",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "dir": "ltr",
+  "display": "standalone",
+  "orientation": "portrait",
+  "prefer_related_applications": false
+}
