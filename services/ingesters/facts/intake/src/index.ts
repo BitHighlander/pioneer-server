@@ -74,7 +74,8 @@ let do_work = async function(){
                     sig: body.signature,
                 });
                 log.info(tag,"addressFromSig: ",addressFromSig)
-                if(addressFromSig !== body.signer) throw Error("Invalid signature!")
+                log.info(tag,"body.signer: ",body.signer)
+                if(addressFromSig.toLowerCase() !== body.signer.toLowerCase()) throw Error("Invalid signature!")
 
                 //get all facts for dapp
                 let allFactsUp = await redis.smembers("facts:votes:"+payload.name+":up")
@@ -123,7 +124,7 @@ let do_work = async function(){
                 //update global balance
                 let score = allUpVotesInFox - allDownVotesInFox
                 console.log("score: ",score)
-                let resultScore = await appsDB.update({name:message.name},{$set:{score}})
+                let resultScore = await appsDB.update({name:payload.name},{$set:{score}})
                 console.log("resultScore: ",resultScore)
             }
 
