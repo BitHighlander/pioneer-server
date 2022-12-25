@@ -25,6 +25,7 @@ const pjson = require('../package.json');
 const os = require("os")
 metrics.init({ host: os.hostname, prefix: pjson.name+'.'+process.env['NODE_ENV']+'.' });
 
+
 //for dev
 const fs = require("fs-extra");
 
@@ -37,6 +38,7 @@ let sleep = wait.sleep;
 let connection  = require("@pioneer-platform/default-mongo")
 let txsDB = connection.get('transactions')
 txsDB.createIndex({txid: 1}, {unique: true})
+let appsDB = connection.get('apps')
 
 let BATCH_SIZE = process.env['BATCH_SIZE_SCORE'] || 1
 
@@ -121,7 +123,8 @@ let do_work = async function(){
                 //update global balance
                 let score = allUpVotesInFox - allDownVotesInFox
                 console.log("score: ",score)
-
+                let resultScore = await appsDB.update({name:message.name},{$set:{score}})
+                console.log("resultScore: ",resultScore)
             }
 
             //if update
