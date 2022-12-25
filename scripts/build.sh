@@ -2,6 +2,8 @@
 cd services/ingesters/pubkeys && npm i && npm run build; cd ../../..;
 cd services/ingesters/txs/high && npm i && npm run build; cd ../../../..;
 cd services/ingesters/txs/low && npm i && npm run build; cd ../../../..;
+cd services/ingesters/facts/intake && npm i && npm run build; cd ../../../..;
+cd services/events/ethereum/blocks && npm i && npm run build; cd ../../../..;
 cd services/rest && npm i && npm run build; cd ../..;
 
 #iterate
