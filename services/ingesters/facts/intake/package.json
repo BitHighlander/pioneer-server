@@ -1,0 +1,39 @@
+{
+  "name": "pioneer-facts-ingester",
+  "version": "1.0.0",
+  "scripts": {
+    "npm": "npm i",
+    "lint": "prettier --write '**/**/*.ts'",
+    "start": "node lib/index",
+    "build": "tsc -p .",
+    "dev": "npm run build && node lib/index.js",
+    "test": "npm run build && node __tests__/test-module.js",
+    "prepublish": "rm -rf lib && npm run build",
+    "refresh": "rm -rf ./node_modules package-lock.json && npm install",
+    "docker:build": "docker build -t pioneer/pioneer-facts-ingester:latest .",
+    "docker:tag": "docker tag pioneer/pioneer-facts-ingester:latest registry.digitalocean.com/pioneer/pioneer/pioneer-facts-ingester:latest",
+    "docker:push": "docker push registry.digitalocean.com/pioneer/pioneer/pioneer-facts-ingester:latest",
+    "docker:push:all": "npm run docker:build && npm run docker:tag && npm run docker:push"
+  },
+  "dependencies": {
+    "@pioneer-platform/blockbook": "latest",
+    "@pioneer-platform/default-mongo": "latest",
+    "@pioneer-platform/eth-audit": "^8.1.19",
+    "@pioneer-platform/eth-network": "latest",
+    "@pioneer-platform/loggerdog": "latest",
+    "@pioneer-platform/redis-queue": "latest",
+    "chai": "^4.2.0",
+    "datadog-metrics": "^0.8.1",
+    "dotenv": "^8.1.0",
+    "eth-sig-util": "^3.0.1",
+    "request-promise": "^4.2.6",
+    "wait-promise": "^0.4.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.6",
+    "@types/node": "^13.13.12",
+    "nodemon": "^2.0.3",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
+  }
+}

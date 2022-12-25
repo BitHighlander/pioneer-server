@@ -118,13 +118,13 @@ export class WAppsController extends Controller {
     }
 
     /*
-        TODO
-        update
-     */
-    @Post('/apps/update')
+    TODO
+    update
+ */
+    @Post('/apps/vote')
     //CreateAppBody
-    public async updateApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-        let tag = TAG + " | transactions | "
+    public async voteOnApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | voteOnApp | "
         try{
             log.info(tag,"body: ",body)
             log.info(tag,"body: ",body)
@@ -143,10 +143,63 @@ export class WAppsController extends Controller {
 
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
-            if(!message.app) throw Error("Ivalid message missing app")
+            if(!message.vote) throw Error("Ivalid message missing value")
+            let resultWhitelist:any = {}
+            //get fox balance of address
+            let work:any = {}
+            let queueId = uuid.generate()
+            work.vote = true
+            work.queueId = queueId
+            work.name = message.name
+            work.payload = body
+            resultWhitelist.success = true
+            resultWhitelist.message = 'Address '+addressFromSig+' voted '+message.vote+' on  app '+message.name+' in the dapp store!'
+            resultWhitelist.result = await queue.createWork("pioneer:facts:ingest",work)
+
+            return(resultWhitelist);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+        TODO
+        update
+     */
+    @Post('/apps/update')
+    //CreateAppBody
+    public async updateApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | updateApp | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+
+            message = JSON.parse(message)
+            if(!message.name) throw Error("Ivalid message missing name")
+            if(!message.key) throw Error("Ivalid message missing key")
+            if(!message.value) throw Error("Ivalid message missing value")
             let resultWhitelist:any = {}
             if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
-                resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
+                delete message["_id"]
+                resultWhitelist = await appsDB.update({name:message.name},{$set:{[message.key]:message.value}})
                 log.info(tag,"resultWhitelist: ",resultWhitelist)
             } else {
                 //get fox balance of address
@@ -155,12 +208,12 @@ export class WAppsController extends Controller {
                 work.queueId = queueId
                 work.payload = body
                 resultWhitelist.success = true
-                resultWhitelist.message = 'Address '+addressFromSig+' voted to submit app '+message.name+' to the dapp store!'
-                resultWhitelist.result = await redis.createWork("pioneer:facts:ingest",work)
+                resultWhitelist.message = 'Address '+addressFromSig+' voted to update app '+message.name+' in the dapp store!'
+                resultWhitelist.result = await queue.createWork("pioneer:facts:ingest",work)
             }
 
 
-            return(true);
+            return(resultWhitelist);
         }catch(e){
             let errorResp:Error = {
                 success:false,
