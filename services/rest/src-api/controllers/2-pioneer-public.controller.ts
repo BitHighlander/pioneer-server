@@ -1045,18 +1045,26 @@ export class atlasPublicController extends Controller {
             //log.debug("networks: ",networks)
             //log.debug("networks: ",networks.ANY)
             let data = await networks.ANY.getPubkeyInfo(network,xpub)
-
+            log.debug("data: ",data)
             let changeIndex: number = 0
             let receiveIndex: number = 0
 
             //iterate
             if (data.tokens) {
-                for (let i = data.tokens.length - 1; i >= 0 && (changeIndex === null || receiveIndex === null); i--) {
-                    const splitPath = data.tokens[i].path?.split('/') || []
-                    const [, , , , change, index] = splitPath
+                console.log(tag, "checkpoint tokens: ",data.tokens)
+                for(let i = 0; i < data.tokens.length; i++){
+                    let token = data.tokens[i]
+                    const splitPath = token.path?.split('/') || []
+                    let [, , , , change, index] = splitPath
+                    console.log(tag, "splitPath: ",splitPath)
+                    console.log(tag, "change: ",change)
+                    console.log(tag, "index: ",index)
+                    index = parseInt(index)
+                    change = parseInt(change)
 
-                    if (change === '0') {
-                        if (receiveIndex === null) {
+                    //
+                    if (change === 0) {
+                        if (index >= receiveIndex) {
                             receiveIndex = Number(index) + 1
                         } else {
                             if (receiveIndex < Number(index)) {
@@ -1064,8 +1072,9 @@ export class atlasPublicController extends Controller {
                             }
                         }
                     }
-                    if (change === '1') {
-                        if (changeIndex === null) {
+
+                    if (change === 1) {
+                        if (index >= changeIndex) {
                             changeIndex = Number(index) + 1
                         } else {
                             if (changeIndex < Number(index)) {
@@ -1073,11 +1082,40 @@ export class atlasPublicController extends Controller {
                             }
                         }
                     }
+
+                    // if(token.changeIndex > changeIndex) changeIndex = token.changeIndex
+                    // if(token.receiveIndex > receiveIndex) receiveIndex = token.receiveIndex
                 }
+
+                // for (let i = data.tokens.length - 1; i >= 0 && (changeIndex === null || receiveIndex === null); i--) {
+                //     const splitPath = data.tokens[i].path?.split('/') || []
+                //     console.log(tag, "splitPath: ",splitPath)
+                //     const [, , , , change, index] = splitPath
+                //
+                //     if (index === '0') {
+                //         if (receiveIndex === null) {
+                //             receiveIndex = Number(index) + 1
+                //         } else {
+                //             if (receiveIndex < Number(index)) {
+                //                 receiveIndex = Number(index) + 1
+                //             }
+                //         }
+                //     }
+                //     if (change === '1') {
+                //         if (changeIndex === null) {
+                //             changeIndex = Number(index) + 1
+                //         } else {
+                //             if (changeIndex < Number(index)) {
+                //                 changeIndex = Number(index) + 1
+                //             }
+                //         }
+                //     }
+                // }
             }
 
             return {
-                changeIndex
+                changeIndex,
+                receiveIndex
             }
         }catch(e){
             let errorResp:Error = {
