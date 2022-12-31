@@ -1164,7 +1164,7 @@ export class pioneerPublicController extends Controller {
             log.info(tag,"addressFromSig: ",addressFromSig)
 
             message = JSON.parse(message)
-            if(!message.name) throw Error("Ivalid message missing blockchain")
+            if(!message.name) throw Error("Ivalid message missing name")
             if(!message.key) throw Error("Ivalid message missing key")
             if(!message.value) throw Error("Ivalid message missing value")
             let resultWhitelist:any = {}

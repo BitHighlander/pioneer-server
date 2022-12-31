@@ -2,6 +2,7 @@
   "name": "pioneer-server",
   "version": "1.0.0",
   "dependencies": {
-    "@pioneer-platform/thor-network": "^8.1.37"
+    "@pioneer-platform/thor-network": "^8.1.37",
+    "@pioneer-platform/utxo-network": "^8.1.53"
   }
 }

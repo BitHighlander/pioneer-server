@@ -59,6 +59,10 @@ if(process.env['FEATURE_BITCOINCASH_BLOCKCHAIN']){
     blockchains.push('bitcoincash')
 }
 
+if(process.env['FEATURE_DASH_BLOCKCHAIN']){
+    blockchains.push('dash')
+}
+
 if(process.env['FEATURE_LITECOIN_BLOCKCHAIN']){
     blockchains.push('litecoin')
 }
@@ -1867,18 +1871,30 @@ export class atlasPublicController extends Controller {
                                 throw Error("Type not supported! "+body.type)
                         }
                     } else if(UTXO_COINS.indexOf(network) >= 0){
+                        log.debug(tag,"123 UXTO DETECTED!: ",network)
                         //normal broadcast
                         await networks.ANY.init('full')
                         try{
+                            if(!body.serialized) throw Error("signature required!")
+                            if(!body.network) throw Error("network required!")
+                            log.debug(tag,"network: ",network)
+                            log.debug(tag,"body.serialized: ",body.serialized)
                             result = await networks['ANY'].broadcast(network,body.serialized)
-                            if(result.txid) output.txid = result.txid
+                            log.debug(tag,"result: ",result)
+                            // if(result && result.txid)
                             if(result.success){
                                 output.success = true
-                            } else {
-                                if(result.error) output.error = result.error
+                                output.txid = result.txid
                             }
+                            if(result.error){
+                                output.success = false
+                                output.error = result.error
+                            }
+                            if(!output.error && !output.success) output.error = "unknown error"
+                            if(!output.success) output.success = false
                             log.info(tag,"result: ",result)
                         }catch(e){
+                            log.error(tag,"ERRROR ON BROADCAST e: ",e)
                             result = {
                                 error:true,
                                 errorMsg: e.toString()
@@ -1932,23 +1948,23 @@ export class atlasPublicController extends Controller {
                 log.debug(tag,"updateResult: ",updateResult)
             }
 
-            let mongoEntry:any = body
-            //add to txsDB
-            let tags = ['internal',network,'pending']
-            if(invocationInfo.username) tags.push(invocationInfo.username)
-            if(invocationInfo.context) tags.push(invocationInfo.context)
-            if(invocationInfo.type) tags.push(invocationInfo.type)
-            if(invocationInfo.invocation && invocationInfo.invocation.address) tags.push(invocationInfo.invocation.address)
-            mongoEntry.tags = tags
-            //mongoEntry.result = result
-            mongoEntry.pending = true
-            mongoEntry.broadcasted = new Date().getTime()
-            try{
-                if(mongoEntry.txid && mongoEntry.txid !== "" && mongoEntry.txid !== "unknown")output.saveTx = await txsDB.insert(mongoEntry)
-            }catch(e){
-                log.error(tag,"e: ",e)
-                //duplicate
-            }
+            // let mongoEntry:any = body
+            // //add to txsDB
+            // let tags = ['internal',network,'pending']
+            // if(invocationInfo.username) tags.push(invocationInfo.username)
+            // if(invocationInfo.context) tags.push(invocationInfo.context)
+            // if(invocationInfo.type) tags.push(invocationInfo.type)
+            // if(invocationInfo.invocation && invocationInfo.invocation.address) tags.push(invocationInfo.invocation.address)
+            // mongoEntry.tags = tags
+            // //mongoEntry.result = result
+            // mongoEntry.pending = true
+            // mongoEntry.broadcasted = new Date().getTime()
+            // try{
+            //     if(mongoEntry.txid && mongoEntry.txid !== "" && mongoEntry.txid !== "unknown")output.saveTx = await txsDB.insert(mongoEntry)
+            // }catch(e){
+            //     log.error(tag,"e: ",e)
+            //     //duplicate
+            // }
 
             return(output);
         }catch(e){
