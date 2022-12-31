@@ -5,6 +5,8 @@
 
 
  */
+import {bufferToHex} from "ethereumjs-util";
+
 let TAG = ' | API | '
 
 const pjson = require('../../package.json');
@@ -18,6 +20,11 @@ import {
     ApiError,
     Chart,
 } from "@pioneer-platform/pioneer-types";
+
+//globals
+const ADMIN_PUBLIC_ADDRESS = process.env['ADMIN_PUBLIC_ADDRESS']
+if(!ADMIN_PUBLIC_ADDRESS) throw Error("Invalid ENV missing ADMIN_PUBLIC_ADDRESS")
+
 
 let connection  = require("@pioneer-platform/default-mongo")
 
@@ -43,7 +50,8 @@ assetsDB.createIndex({name: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
 
 //rest-ts
-import { Body, Controller, Get, Post, Route, Tags } from 'tsoa';
+import {Body, Controller, Get, Header, Post, Route, Tags} from 'tsoa';
+import {recoverPersonalSignature} from "eth-sig-util";
 
 interface Network {
     network: string;
@@ -1006,4 +1014,192 @@ export class pioneerPublicController extends Controller {
         }
     }
 
+    /*
+    update
+ */
+    @Post('/node/update')
+    //CreateAppBody
+    public async updateNode(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | updateApp | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+
+            message = JSON.parse(message)
+            if(!message.service) throw Error("Ivalid message missing service")
+            if(!message.key) throw Error("Ivalid message missing key")
+            if(!message.value) throw Error("Ivalid message missing value")
+            let resultWhitelist:any = {}
+
+            //get entry for name
+            let entry = await nodesDB.findOne({service:message.service})
+
+            if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
+                delete message["_id"]
+                resultWhitelist = await nodesDB.update({service:message.service},{$set:{[message.key]:message.value}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+            } else if(addressFromSig === entry.developer){
+                resultWhitelist = await nodesDB.update({service:message.service},{$set:{[message.key]:message.value}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+            } else {
+                //get fox balance of address
+                let work:any = {}
+                let queueId = uuid.generate()
+                work.queueId = queueId
+                work.payload = body
+                resultWhitelist.success = true
+                resultWhitelist.message = 'Address '+addressFromSig+' voted to update app '+message.name+' in the dapp store!'
+                resultWhitelist.result = await queue.createWork("pioneer:facts:ingest",work)
+            }
+
+
+            return(resultWhitelist);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+        update
+     */
+    @Post('/blockchain/update')
+    //CreateAppBody
+    public async updateBlockchain(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | updateApp | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+
+            message = JSON.parse(message)
+            if(!message.blockchain) throw Error("Ivalid message missing blockchain")
+            if(!message.key) throw Error("Ivalid message missing key")
+            if(!message.value) throw Error("Ivalid message missing value")
+            let resultWhitelist:any = {}
+
+            //get entry for name
+            let entry = await blockchainsDB.findOne({blockchain:message.blockchain})
+
+            if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
+                delete message["_id"]
+                resultWhitelist = await nodesDB.update({blockchain:message.blockchain},{$set:{[message.key]:message.value}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+            } else if(addressFromSig === entry.developer){
+                resultWhitelist = await nodesDB.update({blockchain:message.blockchain},{$set:{[message.key]:message.value}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+            } else {
+                //get fox balance of address
+                let work:any = {}
+                let queueId = uuid.generate()
+                work.queueId = queueId
+                work.payload = body
+                resultWhitelist.success = true
+                resultWhitelist.message = 'Address '+addressFromSig+' voted to update app '+message.name+' in the dapp store!'
+                resultWhitelist.result = await queue.createWork("pioneer:facts:ingest",work)
+            }
+
+
+            return(resultWhitelist);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+    update
+ */
+    @Post('/asset/update')
+    //CreateAppBody
+    public async updateAsset(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | updateApp | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+
+            message = JSON.parse(message)
+            if(!message.name) throw Error("Ivalid message missing blockchain")
+            if(!message.key) throw Error("Ivalid message missing key")
+            if(!message.value) throw Error("Ivalid message missing value")
+            let resultWhitelist:any = {}
+
+            //get entry for name
+            let entry = await assetsDB.findOne({name:message.name})
+
+            if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
+                delete message["_id"]
+                resultWhitelist = await assetsDB.update({name:message.name},{$set:{[message.key]:message.value}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+            } else if(addressFromSig === entry.developer){
+                resultWhitelist = await assetsDB.update({name:message.name},{$set:{[message.key]:message.value}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+            } else {
+                //get fox balance of address
+                let work:any = {}
+                let queueId = uuid.generate()
+                work.queueId = queueId
+                work.payload = body
+                resultWhitelist.success = true
+                resultWhitelist.message = 'Address '+addressFromSig+' voted to update app '+message.name+' in the dapp store!'
+                resultWhitelist.result = await queue.createWork("pioneer:facts:ingest",work)
+            }
+
+
+            return(resultWhitelist);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 }
