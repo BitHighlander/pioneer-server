@@ -545,6 +545,32 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
+ * ATLAS
+ *
+ *    Get all live atlas
+ *
+ * */
+    @Get('/atlas/list/asset/chainId/{chainId}/{limit}/{skip}')
+    public async searchAssetsListByChainId(chainId:number,limit:number,skip:number) {
+        let tag = TAG + " | searchAssetsListByChainId | "
+        try{
+            //TODO sanitize
+            //Get tracked networks
+            let assets = await assetsDB.find({},{limit,skip})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
      * ATLAS
      *
      *    Get all live atlas
