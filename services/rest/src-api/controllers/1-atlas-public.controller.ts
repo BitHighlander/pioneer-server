@@ -406,6 +406,79 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
+* ATLAS
+*
+*    Get all live atlas
+*
+* */
+    @Get('/atlas/list/asset/search/chainId/{chainId}/{name}')
+    public async searchByNameAndChainId(chainId:number,name:string) {
+        let tag = TAG + " | searchByName | "
+        try{
+            name = name.toLowerCase()
+            let escapeRegex = function (text) {
+                return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+            };
+
+            //TODO sanitize
+            let regex = new RegExp(escapeRegex(name), 'gi');
+            name = name.toUpperCase()
+            let regexUpper = new RegExp(escapeRegex(name), 'gi');
+            name = name.toLowerCase()
+            let regexLower = new RegExp(escapeRegex(name), 'gi')
+
+            //Get tracked networks
+            let assetsByName = await assetsDB.find({ "name": regex },{limit:100})
+            let assetsBySymbol = await assetsDB.find({ "symbol": regexUpper },{limit:100})
+            let assetsByContract = await assetsDB.find({ "contract": regexLower },{limit:100})
+
+            // let assets = await assetsDB.find({$and: [{ "name": regex },{tags:{$all:['KeepKeySupport']}}]},{limit:4})
+            let assets =  [...assetsByName, ...assetsBySymbol, ...assetsByContract]
+            let output = []
+            //sort assets by markcap
+            //seed market data
+            let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+            marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
+            log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
+            for(let i = 0; i < assets.length; i++){
+                //NOTE this sucks because it assumes symbol matchs
+                let asset = assets[i]
+
+                if(marketCacheCoinGecko[asset.symbol.toUpperCase()]){
+                    asset.price = marketCacheCoinGecko[asset.symbol.toUpperCase()]?.current_price
+                } else {
+                    asset.price = 0
+                }
+                if(marketCacheCoinGecko[asset.symbol.toUpperCase()]){
+                    asset.rank = marketCacheCoinGecko[asset.symbol.toUpperCase()]?.market_cap_rank
+                } else {
+                    asset.rank = 99999999
+                }
+                if(!asset.score) asset.score = 0
+                output.push(asset)
+            }
+
+            //rank
+            output = output.sort((a, b) => {
+                if (a.rank < b.rank) {
+                    return -1;
+                }
+            });
+
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
+    /*
      * ATLAS
      *
      *    Get all live atlas
