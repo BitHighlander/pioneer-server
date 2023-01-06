@@ -61,7 +61,53 @@ export class WAppsController extends Controller {
     public async listApps(limit:number,skip:number) {
         let tag = TAG + " | health | "
         try{
+            //Assume minVersion means no support
             let apps = appsDB.find({whitelist:true},{limit,skip})
+            let output = []
+            for(let i = 0; i < apps.length; i++){
+                let app = apps[i]
+                if(!app.minVersion){
+                    apps.push(app)
+                }
+            }
+            return(output)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+        read
+    */
+
+    @Get('/apps/byVersion/{minVersion}/{limit}/{skip}')
+    public async listAppsByVersion(minVersion:string,limit:number,skip:number) {
+        let tag = TAG + " | health | "
+        try{
+            let apps = appsDB.find({whitelist:true},{limit,skip})
+            let output = []
+            for(let i = 0; i < apps.length; i++){
+                let app = apps[i]
+                if(!app.minVersion){
+                    apps.push(app)
+                } else {
+                    //check major version
+                    let versions = app.minVersion.split('.')
+                    let majorVersion = versions[0]
+                    let patchVersion = versions[1]
+                    let minorVersion = versions[2]
+
+                    //check patch
+                    //check minor
+                    apps.push(app)
+                }
+            }
             return(apps)
         }catch(e){
             let errorResp:Error = {

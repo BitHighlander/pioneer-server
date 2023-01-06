@@ -209,9 +209,7 @@ export class pioneerPublicController extends Controller {
         let tag = TAG + " | searchDappsPageniate | "
         try{
             log.info(tag,{limit,skip})
-            //Get tracked networksListApps
             let dapps = await dappsDB.find({whitelist:true},{limit,skip})
-
             return dapps
         }catch(e){
             let errorResp:Error = {
