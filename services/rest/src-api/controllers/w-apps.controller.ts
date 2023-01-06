@@ -23,6 +23,7 @@ const uuid = require('short-uuid');
 const queue = require('@pioneer-platform/redis-queue');
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
+appsDB.createIndex({app: 1}, {unique: true})
 appsDB.createIndex({homepage: 1}, {unique: true})
 appsDB.createIndex({id: 1}, {unique: true})
 
@@ -62,14 +63,16 @@ export class WAppsController extends Controller {
         let tag = TAG + " | health | "
         try{
             //Assume minVersion means no support
-            let apps = appsDB.find({whitelist:true},{limit,skip})
+            let apps = await appsDB.find({whitelist:true},{limit,skip})
+            console.log("apps: ",apps)
             let output = []
             for(let i = 0; i < apps.length; i++){
                 let app = apps[i]
                 if(!app.minVersion){
-                    apps.push(app)
+                    output.push(app)
                 }
             }
+            console.log("output: ",output)
             return(output)
         }catch(e){
             let errorResp:Error = {
@@ -90,25 +93,25 @@ export class WAppsController extends Controller {
     public async listAppsByVersion(minVersion:string,limit:number,skip:number) {
         let tag = TAG + " | health | "
         try{
-            let apps = appsDB.find({whitelist:true},{limit,skip})
+            let apps = await appsDB.find({whitelist:true},{limit,skip})
             let output = []
             for(let i = 0; i < apps.length; i++){
                 let app = apps[i]
                 if(!app.minVersion){
-                    apps.push(app)
-                } else {
+                    output.push(app)
+                } else if(app.minVersion) {
                     //check major version
-                    let versions = app.minVersion.split('.')
+                    let versions = minVersion.split('.')
                     let majorVersion = versions[0]
                     let patchVersion = versions[1]
                     let minorVersion = versions[2]
 
                     //check patch
                     //check minor
-                    apps.push(app)
+                    output.push(app)
                 }
             }
-            return(apps)
+            return(output)
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -325,7 +328,7 @@ export class WAppsController extends Controller {
 
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
-            if(!message.app) throw Error("Ivalid message missing app")
+            if(!message.url) throw Error("Ivalid message missing url")
             let resultWhitelist:any = {}
             if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
                 resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
