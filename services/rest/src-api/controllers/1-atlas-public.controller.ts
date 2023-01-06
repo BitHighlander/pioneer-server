@@ -428,9 +428,17 @@ export class pioneerPublicController extends Controller {
             let regexLower = new RegExp(escapeRegex(name), 'gi')
 
             //Get tracked networks
-            let assetsByName = await assetsDB.find({ "name": regex },{limit:100})
-            let assetsBySymbol = await assetsDB.find({ "symbol": regexUpper },{limit:100})
-            let assetsByContract = await assetsDB.find({ "contract": regexLower },{limit:100})
+            let assetsByName = await assetsDB.find({ chainId,"name": regex },{limit:100})
+            let assetsBySymbol = await assetsDB.find({ chainId,"symbol": regexUpper },{limit:100})
+            let assetsByContract = await assetsDB.find({ chainId,"contract": regexLower },{limit:100})
+
+            console.log("assetsByName: ",assetsByName.length)
+            console.log("assetsBySymbol: ",assetsBySymbol.length)
+            console.log("assetsByContract: ",assetsByContract.length)
+
+            console.log("assetsByName: ",assetsByName[0])
+            console.log("assetsBySymbol: ",assetsBySymbol[0])
+            console.log("assetsByContract: ",assetsByContract[0])
 
             // let assets = await assetsDB.find({$and: [{ "name": regex },{tags:{$all:['KeepKeySupport']}}]},{limit:4})
             let assets =  [...assetsByName, ...assetsBySymbol, ...assetsByContract]
@@ -545,18 +553,18 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
- * ATLAS
- *
- *    Get all live atlas
- *
- * */
+     * ATLAS
+     *
+     *    Get all live atlas
+     *
+     * */
     @Get('/atlas/list/asset/chainId/{chainId}/{limit}/{skip}')
     public async searchAssetsListByChainId(chainId:number,limit:number,skip:number) {
         let tag = TAG + " | searchAssetsListByChainId | "
         try{
             //TODO sanitize
             //Get tracked networks
-            let assets = await assetsDB.find({},{limit,skip})
+            let assets = await assetsDB.find({chainId},{limit,skip})
 
             return assets
         }catch(e){
@@ -676,6 +684,102 @@ export class pioneerPublicController extends Controller {
             let networks = await nodesDB.find({ },{limit,skip})
 
             return networks
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+    * ATLAS
+    *
+    *    Get all live nodes
+    *
+    * */
+    @Get('/atlas/blockchains/{limit}/{skip}')
+    public async searchBlockchainsPaginate(limit:number,skip:number) {
+        let tag = TAG + " | atlas | "
+        try{
+            //Get tracked networks
+            let output = await blockchainsDB.find({},{limit,skip})
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+    * ATLAS
+    *
+    *    Get all live nodes
+    *
+    * */
+    @Get('/atlas/dapps/{limit}/{skip}')
+    public async searchDappsPaginate(limit:number,skip:number) {
+        let tag = TAG + " | searchDappsPaginate | "
+        try{
+            //Get tracked networks
+            let output = await dappsDB.find({},{limit,skip})
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+    * ATLAS
+    *
+    *    Get all live nodes
+    *
+    * */
+    @Get('/atlas/assets/{limit}/{skip}')
+    public async searchAppsPaginate(limit:number,skip:number) {
+        let tag = TAG + " | searchDappsPaginate | "
+        try{
+            //Get tracked networks
+            let output = await dappsDB.find({},{limit,skip})
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+    * ATLAS
+    *
+    *    Get all live nodes
+    *
+    * */
+    @Get('/atlas/pioneers/{limit}/{skip}')
+    public async searchPioneersPaginate(limit:number,skip:number) {
+        let tag = TAG + " | searchPioneersPaginate | "
+        try{
+            //Get tracked networks
+            let output = await usersDB.find({},{limit,skip})
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -810,13 +914,17 @@ export class pioneerPublicController extends Controller {
             if(!body.image) throw Error("decimals is required!")
             if(!body.signer) throw Error("signer address is required!")
             if(!body.signature) throw Error("signature is required!")
-            if(!body.payload) throw Error("signature is required!")
+            if(!body.payload) throw Error("payload is required!")
+            if(!body.protocols) throw Error("protocols is required!")
+            if(!body.blockchains) throw Error("blockchains is required!")
             let dapp:any = {
                 name:body.name.toLowerCase(),
                 app:body.app,
                 tags:body.tags,
                 image:body.image,
                 developer:body.developer,
+                protocols:body.protocols,
+                blockchains:body.blockchains,
                 facts:[
                     {
                         signer:body.signer,
@@ -825,6 +933,7 @@ export class pioneerPublicController extends Controller {
                     }
                 ]
             }
+            if(body.minVersion) dapp.minVersion = body.minVersion
             if(body.description) dapp.description = body.description
             if(body.homepage) dapp.homepage = body.homepage
             if(body.explorer) dapp.explorer = body.explorer
@@ -901,6 +1010,7 @@ export class pioneerPublicController extends Controller {
                     }
                 ]
             }
+            if(body.chainId) asset.chainId = body.chainId
             if(body.description) asset.description = body.description
             if(body.website) asset.website = body.website
             if(body.nativeCurrency) asset.nativeCurrency = body.nativeCurrency
