@@ -19,9 +19,11 @@ let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
 let txsRawDB = connection.get('transactions-raw')
 let appsDB = connection.get('apps')
+let blockchainsDB = connection.get('blockchains')
 const uuid = require('short-uuid');
 const queue = require('@pioneer-platform/redis-queue');
 const assetsDB = connection.get('assets')
+blockchainsDB.createIndex({blockchain: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
 appsDB.createIndex({app: 1}, {unique: true})
@@ -139,33 +141,52 @@ export class WAppsController extends Controller {
             log.info("skip: ",skip)
 
             let assetsByName = await assetsDB.find({ name:asset },{limit:100})
+            let blockchainsByName = await blockchainsDB.find({ name:asset },{limit:100})
             log.info("assetsByName: ",assetsByName)
-            let blockchains = []
-            for(let i = 0; i < assetsByName.length; i++){
-                let asset = assetsByName[i]
-                blockchains.push(asset.blockchain)
-            }
-            log.info("blockchains: ",blockchains)
-            // let apps = await appsDB.find({whitelist:true},{limit,skip})
-            let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$all:[blockchains[0]]}}]},{limit:100})
+            log.info("blockchainsByName: ",blockchainsByName)
 
             let output = []
-            for(let i = 0; i < apps.length; i++){
-                let app = apps[i]
-                if(!app.minVersion){
-                    output.push(app)
-                } else if(app.minVersion) {
-                    //check major version
-                    let versions = version.split('.')
-                    let majorVersion = versions[0]
-                    let patchVersion = versions[1]
-                    let minorVersion = versions[2]
+            if(assetsByName.length !== 0 || blockchainsByName.length !== 0) {
+                let blockchains = []
 
-                    //check patch
-                    //check minor
-                    output.push(app)
+                for(let i = 0; i < blockchainsByName.length; i++){
+                    let asset = blockchainsByName[i]
+                    blockchains.push(asset.name)
                 }
+                log.info("blockchains: ",blockchains)
+
+                for(let i = 0; i < assetsByName.length; i++){
+                    let asset = assetsByName[i]
+                    blockchains.push(asset.blockchain)
+                }
+                log.info("blockchains: ",blockchains)
+                if(!blockchains[0]) blockchains.push(asset)
+                // let apps = await appsDB.find({whitelist:true},{limit,skip})
+                log.info("blockchains: ",blockchains[0])
+                let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$all:[blockchains]}}]},{limit:100})
+                log.info("apps: ",apps)
+                log.info("apps: ",apps.length)
+
+                let output = []
+                for(let i = 0; i < apps.length; i++){
+                    let app = apps[i]
+                    if(!app.minVersion){
+                        output.push(app)
+                    } else if(app.minVersion) {
+                        //check major version
+                        let versions = version.split('.')
+                        let majorVersion = versions[0]
+                        let patchVersion = versions[1]
+                        let minorVersion = versions[2]
+
+                        //check patch
+                        //check minor
+                        output.push(app)
+                    }
+                }
+
             }
+
             return(output)
         }catch(e){
             let errorResp:Error = {

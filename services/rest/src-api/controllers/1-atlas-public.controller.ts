@@ -701,7 +701,7 @@ export class pioneerPublicController extends Controller {
     * */
     @Get('/atlas/blockchains/{limit}/{skip}')
     public async searchBlockchainsPaginate(limit:number,skip:number) {
-        let tag = TAG + " | atlas | "
+        let tag = TAG + " | searchBlockchainsPaginate | "
         try{
             //Get tracked networks
             let output = await blockchainsDB.find({},{limit,skip})
