@@ -21,12 +21,13 @@ let txsRawDB = connection.get('transactions-raw')
 let appsDB = connection.get('apps')
 const uuid = require('short-uuid');
 const queue = require('@pioneer-platform/redis-queue');
+const assetsDB = connection.get('assets')
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
 appsDB.createIndex({app: 1}, {unique: true})
 appsDB.createIndex({homepage: 1}, {unique: true})
 appsDB.createIndex({id: 1}, {unique: true})
-
+assetsDB.createIndex({name: 1}, {unique: true})
 //globals
 const ADMIN_PUBLIC_ADDRESS = process.env['ADMIN_PUBLIC_ADDRESS']
 if(!ADMIN_PUBLIC_ADDRESS) throw Error("Invalid ENV missing ADMIN_PUBLIC_ADDRESS")
@@ -122,6 +123,61 @@ export class WAppsController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
+
+    /*
+        listAppsByVersionAndAsset
+    */
+
+    @Get('/apps/byVersionAndAsset/{asset}/{version}/{limit}/{skip}')
+    public async listAppsByVersionAndAsset(asset:string,version:string,limit:number,skip:number) {
+        let tag = TAG + " | health | "
+        try{
+            asset = asset.toLowerCase()
+            log.info("asset: ",asset)
+            log.info("version: ",version)
+            log.info("limit: ",limit)
+            log.info("skip: ",skip)
+
+            let assetsByName = await assetsDB.find({ name:asset },{limit:100})
+            log.info("assetsByName: ",assetsByName)
+            let blockchains = []
+            for(let i = 0; i < assetsByName.length; i++){
+                let asset = assetsByName[i]
+                blockchains.push(asset.blockchain)
+            }
+            log.info("blockchains: ",blockchains)
+            // let apps = await appsDB.find({whitelist:true},{limit,skip})
+            let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$all:[blockchains[0]]}}]},{limit:100})
+
+            let output = []
+            for(let i = 0; i < apps.length; i++){
+                let app = apps[i]
+                if(!app.minVersion){
+                    output.push(app)
+                } else if(app.minVersion) {
+                    //check major version
+                    let versions = version.split('.')
+                    let majorVersion = versions[0]
+                    let patchVersion = versions[1]
+                    let minorVersion = versions[2]
+
+                    //check patch
+                    //check minor
+                    output.push(app)
+                }
+            }
+            return(output)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
 
     /*
         read
