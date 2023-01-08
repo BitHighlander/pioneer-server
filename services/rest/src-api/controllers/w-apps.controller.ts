@@ -145,8 +145,8 @@ export class WAppsController extends Controller {
             log.info("assetsByName: ",assetsByName)
             log.info("blockchainsByName: ",blockchainsByName)
 
-            let output = []
-            if(assetsByName.length !== 0 || blockchainsByName.length !== 0) {
+            let output = [...assetsByName,...blockchainsByName]
+            if(output.length > 0) {
                 let blockchains = []
 
                 for(let i = 0; i < blockchainsByName.length; i++){
