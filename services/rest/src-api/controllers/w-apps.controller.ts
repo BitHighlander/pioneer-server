@@ -145,8 +145,9 @@ export class WAppsController extends Controller {
             log.info("assetsByName: ",assetsByName)
             log.info("blockchainsByName: ",blockchainsByName)
 
-            let output = [...assetsByName,...blockchainsByName]
-            if(output.length > 0) {
+            let hits = [...assetsByName,...blockchainsByName]
+            let output:any = []
+            if(hits.length > 0) {
                 let blockchains = []
 
                 for(let i = 0; i < blockchainsByName.length; i++){
@@ -186,6 +187,17 @@ export class WAppsController extends Controller {
                 }
 
             }
+
+
+            //Rank by score
+            const sortArrayByScore = (arr) => {
+                return arr.sort((a, b) => {
+                    if (a.score === undefined) a.score = 0;
+                    if (b.score === undefined) b.score = 0;
+                    return b.score - a.score;
+                });
+            }
+            output = sortArrayByScore(output)
 
             return(output)
         }catch(e){
