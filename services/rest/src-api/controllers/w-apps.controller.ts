@@ -168,7 +168,7 @@ export class WAppsController extends Controller {
                 log.info("apps: ",apps)
                 log.info("apps: ",apps.length)
 
-                let output = []
+                output = []
                 for(let i = 0; i < apps.length; i++){
                     let app = apps[i]
                     if(!app.minVersion){
@@ -187,8 +187,6 @@ export class WAppsController extends Controller {
                 }
 
             }
-
-
             //Rank by score
             const sortArrayByScore = (arr) => {
                 return arr.sort((a, b) => {
