@@ -164,7 +164,10 @@ export class WAppsController extends Controller {
                 if(!blockchains[0]) blockchains.push(asset)
                 // let apps = await appsDB.find({whitelist:true},{limit,skip})
                 log.info("blockchains: ",blockchains[0])
-                let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$all:[blockchains]}}]},{limit:100})
+                // let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in:[blockchains]}}]},{limit:100})
+                // let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in: [/bitcoin/i]}}]},{limit:100})
+                let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in: blockchains}}]},{limit:100})
+                // let apps = await appsDB.find({whitelist:true},{limit:100})
                 log.info("apps: ",apps)
                 log.info("apps: ",apps.length)
 
