@@ -396,6 +396,64 @@ export class WAppsController extends Controller {
         }
     }
 
+    @Post('/apps/revoke')
+    //CreateAppBody
+    public async revokeApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | transactions | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+
+            message = JSON.parse(message)
+            if(!message.name) throw Error("Ivalid message missing name")
+            if(!message.url) throw Error("Ivalid message missing url")
+            let resultWhitelist:any = {}
+
+            //get entry from mongo
+            let entry = await appsDB.find({name:message.name})
+            log.info(tag,"entry: ",entry)
+            if(entry.length === 0) throw Error("Ivalid developer name not found!")
+            let developer = entry[0].developer
+
+
+            if(addressFromSig === developer || addressFromSig === ADMIN_PUBLIC_ADDRESS) {
+                resultWhitelist = await appsDB.deleteOne({name:message.name},{$set:{whitelist:true}})
+                log.info(tag,"resultWhitelist: ",resultWhitelist)
+            } else {
+                //get fox balance of address
+                let work:any = {}
+                let queueId = uuid.generate()
+                work.queueId = queueId
+                work.payload = body
+                resultWhitelist.success = true
+                resultWhitelist.message = 'Address '+addressFromSig+' voted to submit app '+message.name+' to the dapp store!'
+                resultWhitelist.result = await redis.createWork("pioneer:facts:ingest",work)
+            }
+
+            return(resultWhitelist);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
     @Post('/apps/create')
     //CreateAppBody
     public async whitelistApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {

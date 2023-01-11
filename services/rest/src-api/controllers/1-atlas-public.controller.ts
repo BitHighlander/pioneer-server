@@ -915,12 +915,16 @@ export class pioneerPublicController extends Controller {
             if(!body.payload) throw Error("payload is required!")
             if(!body.protocols) throw Error("protocols is required!")
             if(!body.blockchains) throw Error("blockchains is required!")
+            if(!body.features) throw Error("blockchains is required!")
+            if(!body.description) throw Error("description is required!")
             let dapp:any = {
                 name:body.name.toLowerCase(),
                 app:body.app,
                 tags:body.tags,
                 image:body.image,
+                description:body.description,
                 developer:body.developer,
+                features:body.features,
                 protocols:body.protocols,
                 blockchains:body.blockchains,
                 facts:[
