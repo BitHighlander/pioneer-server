@@ -92,7 +92,43 @@ export class WAppsController extends Controller {
         read
     */
 
-    @Get('/apps/byVersion/{minVersion}/{limit}/{skip}')
+    @Get('/appsbyName/{name}')
+    public async listAppsByName(name:string) {
+        let tag = TAG + " | byName | "
+        try{
+            // let apps = await appsDB.find({whitelist:true})
+            let apps = await appsDB.find({$and: [{whitelist:true},{name}]})
+
+            return(apps)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Get('/appsbyApp/{app}')
+    public async listAppsByApp(app:string) {
+        let tag = TAG + " | listAppsByApp | "
+        try{
+            let apps = await appsDB.find({whitelist:true, app})
+            return(apps)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Get('/appsbyVersion/{minVersion}/{limit}/{skip}')
     public async listAppsByVersion(minVersion:string,limit:number,skip:number) {
         let tag = TAG + " | health | "
         try{
@@ -130,7 +166,7 @@ export class WAppsController extends Controller {
         listAppsByVersionAndAsset
     */
 
-    @Get('/apps/byVersionAndAsset/{asset}/{version}/{limit}/{skip}')
+    @Get('/appsbyVersionAndAsset/{asset}/{version}/{limit}/{skip}')
     public async listAppsByVersionAndAsset(asset:string,version:string,limit:number,skip:number) {
         let tag = TAG + " | health | "
         try{
