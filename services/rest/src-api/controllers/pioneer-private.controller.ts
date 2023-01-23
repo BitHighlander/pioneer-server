@@ -558,8 +558,8 @@ export class pioneerPrivateController extends Controller {
                 log.info(tag,"pubkeysOwnedBySdk: ",pubkeysOwnedBySdk)
 
                 //for each wallet
-                let wallets = accountInfo.wallets
-                wallets = wallets.split(",")
+                let wallets = accountInfo.wallets || ""
+                if(wallets)wallets = wallets.split(",")
                 log.info(tag,"wallets: ",wallets)
 
                 let output:any = {
