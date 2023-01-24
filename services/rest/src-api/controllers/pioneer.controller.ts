@@ -53,8 +53,10 @@ export class pioneerController extends Controller {
 
 
     /*
-        Health endpoint
+        Get articles
     */
+
+
 
     /*
      * CHART Dapp

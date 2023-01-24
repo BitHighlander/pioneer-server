@@ -104,13 +104,7 @@ const loggerDogMiddleWare = async (req, res, next) => {
 // };
 
 let corsOptions = {
-    origin: function (origin, callback) {
-        if (true) {
-            callback(null, true)
-        } else {
-            callback(new Error('Not allowed by CORS'))
-        }
-    }
+    origin: '*',
 }
 
 
