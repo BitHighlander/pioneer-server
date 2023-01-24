@@ -119,7 +119,7 @@ app.use(methodOverride());
 let SOCKET_MAX_CONNECTIONS = parseInt(process.env["SOCKET_MAX_CONNECTIONS"]) || 20
 
 //socket-io
-let io = require('socket.io')(server);
+let io = require('socket.io')(server,{cors: {origin:'*'}});
 io.sockets.setMaxListeners(SOCKET_MAX_CONNECTIONS);
 
 //web
