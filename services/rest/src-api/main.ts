@@ -424,7 +424,7 @@ io.on('connection', async function(socket){
             let connectPayload = {
                 success:true,
             }
-            globalSockets[socket.id].emit('connect', connectPayload);
+            globalSockets[socket.id].emit('connected', connectPayload);
             log.info(tag,"sdk subscribed to apiKey: ",msg.queryKey)
             log.info(tag,"usersByKey: ",usersByKey)
         } else {
