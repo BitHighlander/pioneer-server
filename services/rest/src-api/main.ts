@@ -151,6 +151,7 @@ subscriber.subscribe('blocks');
 subscriber.subscribe('payments');
 subscriber.subscribe('pairings');
 subscriber.subscribe('invocations');
+subscriber.subscribe('pioneer');
 
 subscriber.on('message', async function (channel, payloadS) {
     let tag = TAG + ' | publishToFront | ';
@@ -325,6 +326,28 @@ subscriber.on('message', async function (channel, payloadS) {
                         log.info(tag,socketid+ " sending message to user! msg: ",context)
                     }
                 }
+            }
+        } else if(channel === 'pioneer'){
+            //push message to user
+            let context = JSON.parse(payloadS)
+            log.info(tag,"context: ",context)
+            log.info(tag,"context: ",context.username)
+            log.info(tag,"usersByUsername: ",usersByUsername)
+
+            //send to user
+            if(usersByUsername[context.username]){
+                let sockets = usersByUsername[context.username]
+                log.info(tag,"sockets: ",sockets)
+                for(let i =0; i < sockets.length; i++){
+                    let socketid = sockets[i]
+                    if(globalSockets[socketid]){
+                        context.event = 'context'
+                        globalSockets[socketid].emit('message', context);
+                        log.info(tag,socketid+ " sending message to user! msg: ",context)
+                    }
+                }
+            } else {
+                log.error("User is offline!")
             }
         }
 

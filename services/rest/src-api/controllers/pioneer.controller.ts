@@ -65,15 +65,20 @@ export class pioneerController extends Controller {
      *
      * */
     @Post('pioneer/query')
-    public async query(@Body() body: any): Promise<any> {
+    public async query(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
         let tag = TAG + " | query | "
         try{
             log.info(tag,"mempool tx: ",body)
             if(!body.query) throw Error("query is required!")
-
+            const authInfo = await redis.hgetall(authorization)
+            if(Object.keys(authInfo).length === 0) throw Error("You must register to use Query!")
+            log.info("authInfo: ",authInfo)
+            let queryId = short.generate()
             //save to mongo
             let work = {
+                username: authInfo.username,
                 query: body.query,
+                queryId,
             }
             //add to work
             let result = await queue.createWork('bots:pioneer:ingest',work)
@@ -81,7 +86,7 @@ export class pioneerController extends Controller {
 
             //submit to work
             let output = {
-                queryId:result
+                queryId
             }
 
             return output
