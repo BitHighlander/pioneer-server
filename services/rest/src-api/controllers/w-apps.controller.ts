@@ -177,6 +177,7 @@ export class WAppsController extends Controller {
             log.info("skip: ",skip)
 
             let assetsByName = await assetsDB.find({ name:asset },{limit:100})
+
             let blockchainsByName = await blockchainsDB.find({ name:asset },{limit:100})
             log.info("assetsByName: ",assetsByName)
             log.info("blockchainsByName: ",blockchainsByName)
@@ -224,7 +225,6 @@ export class WAppsController extends Controller {
                         output.push(app)
                     }
                 }
-
             }
             //Rank by score
             const sortArrayByScore = (arr) => {

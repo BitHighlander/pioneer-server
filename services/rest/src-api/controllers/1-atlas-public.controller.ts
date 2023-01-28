@@ -27,7 +27,6 @@ if(!ADMIN_PUBLIC_ADDRESS) throw Error("Invalid ENV missing ADMIN_PUBLIC_ADDRESS"
 
 
 let connection  = require("@pioneer-platform/default-mongo")
-
 let usersDB = connection.get('users')
 let assetsDB = connection.get('assets')
 let pubkeysDB = connection.get('pubkeys')
@@ -39,6 +38,7 @@ let dappsDB = connection.get('apps')
 let nodesDB = connection.get('nodes')
 
 blockchainsDB.createIndex({blockchain: 1}, {unique: true})
+// blockchainsDB.createIndex({chainId: 1}, {unique: true})
 nodesDB.createIndex({service: 1}, {unique: true})
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
@@ -46,7 +46,9 @@ txsDB.createIndex({txid: 1}, {unique: true})
 utxosDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
-assetsDB.createIndex({name: 1}, {unique: true})
+// assetsDB.createIndex({name: 1}, {unique: true})
+// assetsDB.createIndex({assetId: 1}, {unique: true})
+assetsDB.createIndex({caip: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
 
 //rest-ts
@@ -992,13 +994,15 @@ export class pioneerPublicController extends Controller {
             if(!body.symbol) throw Error("symbol is required!")
             if(!body.tags) throw Error("tags is required!")
             if(!body.decimals) throw Error("decimals is required!")
-            if(!body.image) throw Error("decimals is required!")
+            if(!body.image) throw Error("image is required!")
             if(!body.signer) throw Error("signer is required!")
             if(!body.signature) throw Error("signature is required!")
-            if(!body.payload) throw Error("signature is required!")
+            if(!body.payload) throw Error("payload is required!")
+            if(!body.caip) throw Error("caip is required!")
             let asset:any = {
                 name:body.name.toLowerCase(),
                 type:body.type,
+                caip:body.caip,
                 tags:body.tags,
                 blockchain:body.blockchain.toLowerCase(),
                 symbol:body.symbol,
@@ -1017,6 +1021,8 @@ export class pioneerPublicController extends Controller {
             if(body.website) asset.website = body.website
             if(body.nativeCurrency) asset.nativeCurrency = body.nativeCurrency
             if(body.explorer) asset.explorer = body.explorer
+            if(body.explorerAddressLink) asset.explorerAddressLink = body.explorerAddressLink
+            if(body.explorerTxLink) asset.explorerTxLink = body.explorerTxLink
             if(body.id) {
                 asset.id = body.id
                 asset.tags.push(body.id)
