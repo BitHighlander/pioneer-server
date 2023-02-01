@@ -78,6 +78,24 @@ export class pioneerOsmosisController extends Controller {
         }
     }
 
+    @Get('/osmosis/imperator/pools')
+    public async imperatorPools() {
+        let tag = TAG + " | price | "
+        try{
+            //https://api-osmosis.imperator.co/tokens/v2/CRBRUS
+            let result = await axios.get('https://api-osmosis.imperator.co/api/v1/osmosis/price/pools/v2/all?low_liquidity=true')
+            return result.data
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
     @Get('/osmosis/price/{token}')
     public async tokenPrice(token:string) {
         let tag = TAG + " | price | "
