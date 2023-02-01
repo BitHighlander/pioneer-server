@@ -30,7 +30,7 @@ let txsRawDB = connection.get('transactions-raw')
 let devsDB = connection.get('developers')
 let dapsDB = connection.get('dapps')
 //modules
-
+let harpie = require("@pioneer-platform/harpie-client")
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
 import * as express from 'express';
@@ -50,11 +50,34 @@ import {
 export class pioneerController extends Controller {
 
     //remove api key
-
-
     /*
-        Get articles
-    */
+ * CHART Dapp
+ *
+ *    Build an atlas on a new Dapp
+ *
+ * */
+    @Post('pioneer/evm/tx')
+    public async smartInsight(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
+        let tag = TAG + " | smartInsight | "
+        try{
+            log.info(tag,"mempool tx: ",body)
+            if(!body.to) throw Error("to is required!")
+            if(!body.from) throw Error("to is required!")
+            if(!body.data) throw Error("to is required!")
+            let result = await harpie.validateTransaction(body.to,body.from,body.data)
+            console.log("result: ",result)
+
+            return result
+        } catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
 
 
