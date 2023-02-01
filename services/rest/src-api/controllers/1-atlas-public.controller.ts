@@ -818,6 +818,40 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
+ * ATLAS
+ *
+ *    Get all live blockchains
+ *
+ * */
+    @Get('/atlas/search/assets/byName/{asset}')
+    public async searchAssetsByName(asset:string) {
+        let tag = TAG + " | SearchAssetsByName | "
+        try{
+            //TODO sanitize
+            let output = []
+            let escapeRegex = function (text) {
+                return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+            };
+
+            //TODO sanitize
+            const regex = new RegExp(escapeRegex(asset), 'gi');
+            //Get tracked networks
+            let assets = await assetsDB.find({ "name": regex },{limit:100})
+
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
      * ATLAS
      *
      *    Get all live blockchains

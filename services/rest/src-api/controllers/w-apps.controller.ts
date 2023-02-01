@@ -294,7 +294,7 @@ export class WAppsController extends Controller {
 
     /*
     TODO
-    update
+    vote
  */
     @Post('/apps/vote')
     //CreateAppBody

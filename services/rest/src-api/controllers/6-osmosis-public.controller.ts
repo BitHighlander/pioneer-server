@@ -5,6 +5,8 @@
 
 
  */
+import axios from "axios";
+
 let TAG = ' | API | '
 
 const pjson = require('../../package.json');
@@ -65,6 +67,24 @@ export class pioneerOsmosisController extends Controller {
         let tag = TAG + " | pools | "
         try{
             return networks['OSMO'].getPools()
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Get('/osmosis/price/{token}')
+    public async tokenPrice(token:string) {
+        let tag = TAG + " | price | "
+        try{
+            //https://api-osmosis.imperator.co/tokens/v2/CRBRUS
+            let result = await axios.get('https://api-osmosis.imperator.co/tokens/v2/'+token)
+            return result.data
         }catch(e){
             let errorResp:Error = {
                 success:false,
