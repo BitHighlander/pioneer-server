@@ -54,7 +54,7 @@
     "@fontsource/roboto": "^4.5.8",
     "@pioneer-platform/binance-network": "^8.1.21",
     "@pioneer-platform/blockbook": "^8.1.42",
-    "@pioneer-platform/blocknative-client": "^8.1.20",
+    "@pioneer-platform/blocknative-client": "^8.1.21",
     "@pioneer-platform/cosmos-network": "latest",
     "@pioneer-platform/default-mongo": "latest",
     "@pioneer-platform/default-redis": "latest",
