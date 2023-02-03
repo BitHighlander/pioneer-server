@@ -31,6 +31,9 @@ let devsDB = connection.get('developers')
 let dapsDB = connection.get('dapps')
 //modules
 let harpie = require("@pioneer-platform/harpie-client")
+let blocknative = require("@pioneer-platform/blocknative-client")
+blocknative.init()
+
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
 import * as express from 'express';
@@ -51,9 +54,8 @@ export class pioneerController extends Controller {
 
     //remove api key
     /*
- * CHART Dapp
+ * Harpie TX insight
  *
- *    Build an atlas on a new Dapp
  *
  * */
     @Post('pioneer/evm/tx')
@@ -62,8 +64,10 @@ export class pioneerController extends Controller {
         try{
             log.info(tag,"mempool tx: ",body)
             if(!body.to) throw Error("to is required!")
-            if(!body.from) throw Error("to is required!")
-            if(!body.data) throw Error("to is required!")
+            if(!body.from) throw Error("from is required!")
+            if(!body.data) throw Error("data is required!")
+
+
             let result = await harpie.validateTransaction(body.to,body.from,body.data)
             console.log("result: ",result)
 
@@ -79,6 +83,41 @@ export class pioneerController extends Controller {
         }
     }
 
+    /*
+    * Blocknative TX Simulator
+    *
+    *
+    * */
+    @Post('pioneer/evm/tx/simulate')
+    public async simulation(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
+        let tag = TAG + " | smartInsight | "
+        try{
+            log.info(tag,"mempool tx: ",body)
+            if(!body.to) throw Error("to is required!")
+            if(!body.from) throw Error("from is required!")
+            if(!body.data) throw Error("data is required!")
+            let transaction = {
+                "to":body.to,
+                "from":body.from,
+                "gas":body.gas || 10407056,
+                "maxFeePerGas":body.maxFeePerGas || 102306635634,
+                "maxPriorityFeePerGas":body.maxFeePerGas || 2.14,
+                "value":body.value || 100000000000000000,
+                "input":body.data
+            }
+            let result = await blocknative.simulateTx('ethereum',transaction)
+
+            return result
+        } catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
 
     /*

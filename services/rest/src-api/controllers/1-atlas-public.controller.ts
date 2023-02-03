@@ -871,10 +871,10 @@ export class pioneerPublicController extends Controller {
             const regex = new RegExp(escapeRegex(blockchain), 'gi');
             //Get tracked networks
             let blockchains = await blockchainsDB.find({ "name": regex },{limit:10})
-
+            console.log("blockchains: ",blockchains.length)
             for(let i = 0; i < blockchains.length; i++){
                 let blockchain = blockchains[i]
-
+                console.log("blockchain: ",blockchain)
                 //if chainId
                 if(blockchain.chainId){
                     let nodes = await nodesDB.find({chainId:blockchain.chainId}, {limit:10})
@@ -941,7 +941,7 @@ export class pioneerPublicController extends Controller {
     public async chartDapp(@Body() body: any): Promise<any> {
         let tag = TAG + " | chartDapp | "
         try{
-            log.debug(tag,"mempool tx: ",body)
+            log.debug(tag,"chartDapp: ",body)
             if(!body.name) throw Error("Name is required!")
             if(!body.app) throw Error("app is required!")
             if(!body.tags) throw Error("tags is required!")
@@ -1022,7 +1022,7 @@ export class pioneerPublicController extends Controller {
     public async chartAsset(@Body() body: any): Promise<any> {
         let tag = TAG + " | chartAsset | "
         try{
-            log.debug(tag,"mempool tx: ",body)
+            log.debug(tag,"chartAsset: ",body)
             if(!body.type) throw Error("type is required!")
             if(!body.name) throw Error("Name is required!")
             if(!body.symbol) throw Error("symbol is required!")
@@ -1092,7 +1092,7 @@ export class pioneerPublicController extends Controller {
     public async chartBlockchain(@Body() body: any): Promise<any> {
         let tag = TAG + " | chartBlockchain | "
         try{
-            log.debug(tag,"mempool tx: ",body)
+            log.debug(tag,"chartBlockchain: ",body)
             if(!body.name) throw Error("Name is required!")
             if(!body.type) throw Error("type is required!")
             if(!body.image) throw Error("image is required!")
@@ -1107,7 +1107,7 @@ export class pioneerPublicController extends Controller {
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("signature is required!")
             let blockchain:any = {
-                name:body.name,
+                name:body.name.toLowerCase(),
                 type:body.type,
                 image:body.image,
                 tags:body.tags,
