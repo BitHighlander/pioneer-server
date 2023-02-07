@@ -15,7 +15,7 @@ const util = require('util')
 import { recoverPersonalSignature } from 'eth-sig-util';
 import { bufferToHex } from 'ethereumjs-util';
 import {sign} from 'jsonwebtoken';
-
+import { v4 as uuidv4 } from 'uuid';
 //TODO if no mongo use nedb?
 //https://github.com/louischatriot/nedb
 
@@ -214,18 +214,37 @@ export class XDevsController extends Controller {
         Verify
 
      */
-    @Post('/devs/verify')
+    @Post('/devs/register')
     //CreateAppBody
-    public async verifyDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-        let tag = TAG + " | transactions | "
+    public async registerDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | registerDeveloper | "
         try{
             log.info(tag,"body: ",body)
+            if(!authorization) throw Error("Missing authorization!")
+            if(!body.publicAddress) throw Error("Missing publicAddress!")
+            if(!body.github) throw Error("Missing github!")
+            if(!body.email) throw Error("Missing email!")
+            if(!body.image) throw Error("Missing image!")
+            log.info(tag,"authorization: ",authorization)
             let authInfo = await redis.hgetall(authorization)
             log.info(tag,"authInfo: ",authInfo)
             log.info(tag,"Object: ",Object.keys(authInfo))
-            if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
+            if(!authInfo || Object.keys(authInfo).length === 0) {
+                //register
+                let userInfo:any = {
+                    registered: new Date().getTime(),
+                    id:"developer:"+pjson.version+":"+uuidv4(), //user ID versioning!
+                    username:body.username,
+                    verified:false,
+                    nonce:Math.floor(Math.random() * 10000),
+                    publicAddress:body.publicAddress
+                }
+                await redis.hmset(authorization,userInfo)
+            }
+            authInfo = await redis.hgetall(authorization)
+            log.info(tag,"authInfo: ",authInfo)
             let publicAddress = authInfo.publicAddress
-            if(!publicAddress) throw Error("invalid auth key info!")
+            if(!publicAddress) throw Error("invalid auth key info! missing publicAddress")
 
             //verify address is admin
             if(publicAddress !== ADMIN_PUBLIC_ADDRESS) throw Error("Not an admin!")
@@ -244,18 +263,25 @@ export class XDevsController extends Controller {
                 sig: signature,
             });
             log.info(tag,"addressFromSig: ",addressFromSig)
-            if(addressFromSig === ADMIN_PUBLIC_ADDRESS){
-                //update MOTD
-                let devToVerify = message.split("VERIFY:")
-                devToVerify = devToVerify[1]
-                log.info(tag,"verify: ",devToVerify)
+            if(addressFromSig.toLowerCase() == body.developer.toLowerCase()){
 
-                //update
-                let updateResult = await devsDB.update({username:devToVerify},{ $set:{isVerified: true }})
-                log.info(tag,"updateResult: ",updateResult)
-                return(updateResult);
+                let devInfo = {
+                    verified:false,
+                    username:body.username,
+                    developer:body.developer,
+                    publicAddress,
+                    email:body.email,
+                    github:body.github,
+                    image:body.image
+                }
+                let dev = await devsDB.insert(devInfo)
+                log.info(tag,"updateResult: ",dev)
+                return(dev);
             } else {
-                throw Error("Not Signed by admin! actual: "+addressFromSig+" expected: "+ADMIN_PUBLIC_ADDRESS)
+                return({
+                    success:false,
+                    error:"Invalid signature! must be signed by developer address!"
+                })
             }
         }catch(e){
             let errorResp:Error = {
@@ -267,12 +293,6 @@ export class XDevsController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
-
-
-
-
-
-
 
 
 }
