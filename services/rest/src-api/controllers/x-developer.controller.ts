@@ -246,9 +246,6 @@ export class XDevsController extends Controller {
             let publicAddress = authInfo.publicAddress
             if(!publicAddress) throw Error("invalid auth key info! missing publicAddress")
 
-            //verify address is admin
-            if(publicAddress !== ADMIN_PUBLIC_ADDRESS) throw Error("Not an admin!")
-
             //verify action
             let signature = body.signature
             let message = body.message
