@@ -29,6 +29,7 @@
     "@pioneer-platform/redis-queue": "latest",
     "@pioneer-platform/thor-network": "latest",
     "@pioneer-platform/utxo-network": "latest",
+    "@pioneer-platform/zapper-client": "^8.1.18",
     "chai": "^4.3.4",
     "dotenv": "^8.1.0",
     "wait-promise": "^0.4.1"

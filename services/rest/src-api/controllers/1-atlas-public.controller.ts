@@ -11,7 +11,7 @@ let TAG = ' | API | '
 
 const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
-const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
+const { subscriber, publisher, redis, redisQueue } = require('@pioneer-platform/default-redis')
 const midgard = require("@pioneer-platform/midgard-client")
 const uuid = require('short-uuid');
 const queue = require('@pioneer-platform/redis-queue');
@@ -722,6 +722,30 @@ export class pioneerPublicController extends Controller {
     /*
     * ATLAS
     *
+    *    Search blockchains by type
+    *
+    * */
+    @Get('/atlas/blockchains/byType/{type}/{limit}/{skip}')
+    public async searchBlockchainsByTagPaginate(type:string,limit:number,skip:number) {
+        let tag = TAG + " | searchBlockchainsByTagPaginate | "
+        try{
+            //Get tracked networks
+            let output = await blockchainsDB.find({},{limit,skip})
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+    * ATLAS
+    *
     *    Get all live nodes
     *
     * */
@@ -794,6 +818,33 @@ export class pioneerPublicController extends Controller {
     /*
     * ATLAS
     *
+    *    getBlockchainsBy ChainId
+    *
+    * */
+    @Get('/atlas/blockchains/chainId/{chainId}')
+    public async searchBlockchainByChainId(chainId:number) {
+        let tag = TAG + " | atlas | "
+        try{
+
+            //Get tracked networks
+            let networks = await blockchainsDB.find({ chainId },{limit:10})
+
+            return networks
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
+    /*
+    * ATLAS
+    *
     *    Get all live atlas
     *
     * */
@@ -818,11 +869,11 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
- * ATLAS
- *
- *    Get all live blockchains
- *
- * */
+     * SEARCH
+     *
+     *    Get all live blockchains
+     *
+     * */
     @Get('/atlas/search/assets/byName/{asset}')
     public async searchAssetsByName(asset:string) {
         let tag = TAG + " | SearchAssetsByName | "
@@ -837,7 +888,6 @@ export class pioneerPublicController extends Controller {
             const regex = new RegExp(escapeRegex(asset), 'gi');
             //Get tracked networks
             let assets = await assetsDB.find({ "name": regex },{limit:100})
-
 
             return assets
         }catch(e){
@@ -906,20 +956,40 @@ export class pioneerPublicController extends Controller {
      * */
     @Get('/atlas/search/blockchains/{blockchain}')
     public async searchByBlockchainName(blockchain:string) {
-        let tag = TAG + " | atlas | "
+        let tag = TAG + " | searchByBlockchainName | "
         try{
             //TODO sanitize
-
-            let escapeRegex = function (text) {
-                return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-            };
-
-            //TODO sanitize
-            const regex = new RegExp(escapeRegex(blockchain), 'gi');
-            //Get tracked networks
-            let networks = await blockchainsDB.find({ "name": regex },{limit:10})
-
-            return networks
+            //look for direct match
+            let directMatch = await blockchainsDB.findOne({ "name": blockchain })
+            log.info(tag,"directMatch: ",directMatch)
+            let blockchainInfo
+            if(!directMatch){
+                directMatch = await blockchainsDB.findOne({ "blockchain": blockchain })
+                log.info("No direct match found!")
+                if(!directMatch){
+                    //if miss then look for partial match
+                    let escapeRegex = function (text) {
+                        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+                    };
+                    //TODO sanitize
+                    const regex = new RegExp(escapeRegex(blockchain), 'gi');
+                    //Get tracked networks
+                    blockchainInfo = await blockchainsDB.find({ "name": regex },{limit:10})[0]
+                    if(!blockchainInfo){
+                        log.info("No REGEX match found on name!")
+                        blockchainInfo = await blockchainsDB.find({ "blockchain": regex },{limit:10})[0]
+                        if(!blockchainInfo){
+                            log.info("No REGEX match found on blockchain!")
+                            blockchainInfo = await blockchainsDB.find({ "symbol": regex },{limit:10})[0]
+                        }
+                    }
+                } else {
+                    blockchainInfo = directMatch
+                }
+            } else {
+                blockchainInfo = directMatch
+            }
+            return blockchainInfo
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -1102,6 +1172,7 @@ export class pioneerPublicController extends Controller {
             if(!body.explorer) throw Error("explorer is required!")
             if(!body.description) throw Error("description is required!")
             if(!body.explorer) throw Error("explorer is required!")
+            if(!body.caip) throw Error("caip is required!")
             if(!body.blockchain) throw Error("blockchain is required!")
             if(!body.signer) throw Error("signer address is required!")
             if(!body.signature) throw Error("signature is required!")
@@ -1111,11 +1182,12 @@ export class pioneerPublicController extends Controller {
                 type:body.type,
                 image:body.image,
                 tags:body.tags,
+                caip:body.caip,
                 blockchain:body.blockchain,
                 symbol:body.symbol,
                 service:body.service,
                 chainId:body.chainId,
-                network:body.rpc,
+                network:body.network || body.symbol,
                 facts:[
                     {
                         signer:body.signer,

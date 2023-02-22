@@ -18,6 +18,8 @@ const {subscriber,publisher,redis,redisQueue} = require('@pioneer-platform/defau
 const blockbook = require('@pioneer-platform/blockbook')
 const {baseAmountToNative,nativeToBaseAmount} = require('@pioneer-platform/pioneer-coins')
 
+let zapper = require("@pioneer-platform/zapper-client")
+
 let servers:any = {}
 if(process.env['BTC_BLOCKBOOK_URL']) servers['BTC'] = process.env['BTC_BLOCKBOOK_URL']
 if(process.env['ETH_BLOCKBOOK_URL']) servers['ETH'] = process.env['ETH_BLOCKBOOK_URL']
@@ -120,6 +122,8 @@ let do_work = async function(){
 
             //pubkey Balance
             let balances:any = []
+            let nfts:any = []
+            let positions:any = []
 
             if(work.type === "xpub" || work.type === "zpub"){
 
@@ -187,6 +191,33 @@ let do_work = async function(){
                     //     }
                     // }
 
+                    //get zapper dashboard
+                    let zapperInfo = await zapper.getPortfolio(work.pubkey)
+                    log.info(tag,"zapperInfo: ",zapperInfo)
+
+                    //forEach tokens
+                    if(zapperInfo && zapperInfo.tokens && zapperInfo.tokens.length > 0){
+                        for(let i = 0; i < zapperInfo.tokens.length; i++){
+                            let token = zapperInfo.tokens[i]
+
+                            //zapper map
+                            let balanceInfo:any = token.token
+                            balanceInfo.network = token.network
+                            balanceInfo.asset = token.token.symbol
+                            balanceInfo.symbol = token.token.symbol
+                            balanceInfo.contract = token.token.address
+                            if(token.token.address !== '0x0000000000000000000000000000000000000000'){
+                                balanceInfo.isToken = true
+                                balanceInfo.protocal = 'erc20'
+                            }
+                            balanceInfo.lastUpdated = new Date().getTime()
+                            balanceInfo.balance = token.token.balance.toString()
+                            balances.push(balanceInfo)
+                        }
+                    }
+                    if(zapperInfo && zapperInfo.nfts.length > 0){
+                        nfts = zapperInfo.nfts
+                    }
                     //blockbookInfo
                     let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
                     log.debug(tag,'blockbookInfo: ',blockbookInfo)
@@ -208,7 +239,7 @@ let do_work = async function(){
                                     decimals:tokenInfo.decimals,
                                     balance:tokenInfo.balance / Math.pow(10, Number(tokenInfo.decimals)),
                                     balanceNative:tokenInfo.balance / Math.pow(10, Number(tokenInfo.decimals)),
-                                    source:"ethplorer" //TODO get this network module
+                                    source:"blockbook" //TODO get this network module
                                 }
                                 if(tokenInfo.holdersCount === 1){
                                     balanceInfo.nft = true
@@ -390,13 +421,11 @@ let do_work = async function(){
                 pubkeyInfo = {
                     balances: []
                 }
-
-                //insert pubkey with balance
-
-
             }
+            if(!pubkeyInfo.nfts) pubkeyInfo.nfts = []
             log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
             log.debug(tag,"pubkeyInfo: ",pubkeyInfo.balances)
+            log.debug(tag,"nfts: ",pubkeyInfo.nfts)
             let saveActions = []
 
             //push update
@@ -435,6 +464,31 @@ let do_work = async function(){
                             "filter": {pubkey:work.pubkey},
                             "update": {$addToSet: { balances: balance }}
                     }})
+                }
+            }
+
+            for(let i = 0; i < nfts.length; i++){
+                let nft = nfts[i]
+
+                //find balance with symbol
+                let balanceMongo = pubkeyInfo.nfts.filter((e:any) => e.symbol === nft.token.name)
+                log.debug(tag,"balanceMongo: ",balanceMongo)
+
+                //if update
+                if(balanceMongo.length > 0){
+                    //if value is diff
+                    log.debug(tag,"balanceMongo: ",balanceMongo[0])
+                    //TODO verify this actually works
+                    saveActions.push({updateOne: {
+                            "filter": {"pubkey.nfts.":work.pubkey},
+                            "update": {$Set: { nfts: nft }},
+                        }})
+                } else {
+                    //if new push
+                    saveActions.push({updateOne: {
+                            "filter": {pubkey:work.pubkey},
+                            "update": {$addToSet: { nfts: nft }}
+                        }})
                 }
             }
 
