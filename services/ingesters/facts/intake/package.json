@@ -21,6 +21,7 @@
     "@pioneer-platform/eth-audit": "^8.1.19",
     "@pioneer-platform/eth-network": "latest",
     "@pioneer-platform/loggerdog": "latest",
+    "@pioneer-platform/poap-client": "^8.1.19",
     "@pioneer-platform/redis-queue": "latest",
     "chai": "^4.2.0",
     "datadog-metrics": "^0.8.1",

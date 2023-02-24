@@ -25,6 +25,7 @@ const pjson = require('../package.json');
 const os = require("os")
 metrics.init({ host: os.hostname, prefix: pjson.name+'.'+process.env['NODE_ENV']+'.' });
 
+const poap = require('@pioneer-platform/poap-client')
 
 //for dev
 const fs = require("fs-extra");
@@ -110,15 +111,28 @@ let do_work = async function(){
                 let allUpVotesInFox = 0
                 let allDownVotesInFox = 0
 
+                //if poap add 1k fox
+                let isPoap = false
+                let paopInfo = await poap.getNFTs(addressFromSig)
+                log.info(tag,"paopInfo: ",paopInfo)
+                for(let i = 0; i < paopInfo.length; i++){
+                    let event = paopInfo[i]
+                    if(event.id === "100142"){
+                        isPoap = true
+                    }
+                }
+
                 for(let i = 0; i < allFactsUp.length; i++){
                     let address = allFactsUp[i]
                     let balanceFox = await network.getBalanceToken(address,"0xc770eefad204b5180df6a14ee197d99d808ee52d")
+                    if(isPoap) balanceFox = balanceFox + 1000
                     allUpVotesInFox = allUpVotesInFox + parseFloat(balanceFox)
                 }
 
                 for(let i = 0; i < allFactsDown.length; i++){
                     let address = allFactsDown[i]
                     let balanceFox = await network.getBalanceToken(address,"0xc770eefad204b5180df6a14ee197d99d808ee52d")
+                    if(isPoap) balanceFox = balanceFox + 1000
                     allDownVotesInFox = allUpVotesInFox + parseFloat(balanceFox)
                 }
                 //update global balance

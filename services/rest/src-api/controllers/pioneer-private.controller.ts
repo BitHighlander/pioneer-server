@@ -263,6 +263,7 @@ export class pioneerPrivateController extends Controller {
 
                         //get value map
                         userInfo.walletDescriptions = []
+                        userInfo.nfts = userInfoMongo.nfts || []
                         userInfo.pubkeys = []
                         userInfo.balances = []
                         let totalValueUsd = 0
