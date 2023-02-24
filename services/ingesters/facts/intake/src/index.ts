@@ -117,7 +117,7 @@ let do_work = async function(){
                 log.info(tag,"paopInfo: ",paopInfo)
                 for(let i = 0; i < paopInfo.length; i++){
                     let event = paopInfo[i]
-                    if(event.id === "100142"){
+                    if(event.event.id === "100142"){
                         isPoap = true
                     }
                 }
