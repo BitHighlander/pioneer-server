@@ -23,6 +23,7 @@
     "@pioneer-platform/loggerdog": "latest",
     "@pioneer-platform/poap-client": "^8.1.19",
     "@pioneer-platform/redis-queue": "latest",
+    "axios": "^1.3.4",
     "chai": "^4.2.0",
     "datadog-metrics": "^0.8.1",
     "dotenv": "^8.1.0",
