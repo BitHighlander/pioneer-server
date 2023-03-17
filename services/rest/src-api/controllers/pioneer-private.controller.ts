@@ -495,19 +495,20 @@ export class pioneerPrivateController extends Controller {
 
     @Get('/invocations')
     public async invocations(@Header('Authorization') authorization: string): Promise<any> {
-        let tag = TAG + " | unapproved | "
+        let tag = TAG + " | invocations | "
         try{
             log.debug(tag,"queryKey: ",authorization)
 
             let accountInfo = await redis.hgetall(authorization)
-            if(!accountInfo) {
+            if(!accountInfo || Object.keys(accountInfo).length === 0) {
                 return {
                     success:false,
-                    error:"QueryKey not registerd!"
+                    error:"QueryKey not registered!"
                 }
             } else {
                 log.debug(tag,"accountInfo: ",accountInfo)
                 let username = accountInfo.username
+                if(!username) throw Error("invalid accountInfo: missing username!")
                 let userInfo = await redis.hgetall(username)
                 log.debug(tag,"userInfo: ",userInfo)
                 if(Object.keys(userInfo).length === 0){

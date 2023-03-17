@@ -299,40 +299,35 @@ export class pioneerInvocationController extends Controller {
             }
 
             //build invocation
-            if(onlineUsers.indexOf(body.username) >= 0){
-                body.invocationId = invocationId
-                //auth (app needs to verify!)
-                body.auth = authorization
-                body.type = 'signRequest'
-                //send
-                publisher.publish("invocations",JSON.stringify(body))
+            body.invocationId = invocationId
+            //auth (app needs to verify!)
+            body.auth = authorization
+            body.type = 'signRequest'
+            //send
+            publisher.publish("invocations",JSON.stringify(body))
 
-                //if sync
-                if(mode === 'sync'){
-                    // :( but this was cool
-                    //block till confirmation
-                    log.debug(tag," STARTING BLOCKING INVOKE id: ",invocationId)
-                    let timeStart = new Date().getTime()
+            //if sync
+            if(mode === 'sync'){
+                // :( but this was cool
+                //block till confirmation
+                log.debug(tag," STARTING BLOCKING INVOKE id: ",invocationId)
+                let timeStart = new Date().getTime()
 
-                    let txid = await redisQueue.blpop(invocationId,BLOCKING_TIMEOUT_INVOCATION)
-                    let timeEnd = new Date().getTime()
-                    log.debug(tag," END BLOCKING INVOKE T: ",(timeEnd - timeStart)/1000)
+                let txid = await redisQueue.blpop(invocationId,BLOCKING_TIMEOUT_INVOCATION)
+                let timeEnd = new Date().getTime()
+                log.debug(tag," END BLOCKING INVOKE T: ",(timeEnd - timeStart)/1000)
 
-                    //if
-                    if(!txid[1]) throw Error("Failed to broadcast! timeout!")
-                    //TODO if timeout return invocationId
-                    output.success = true
-                    output.txid = txid[1]
-                    output.ttr = (timeEnd - timeStart)/1000
-                    if(body.invocation.noBroadcast) output.broadcast = false
-                }else{
-                    output.invocationId = body.invocationId
-                }
-
-            } else {
-                output.success = false
-                output.msg = "User is offline! username:"+body.invocation.username
+                //if
+                if(!txid[1]) throw Error("Failed to broadcast! timeout!")
+                //TODO if timeout return invocationId
+                output.success = true
+                output.txid = txid[1]
+                output.ttr = (timeEnd - timeStart)/1000
+                if(body.invocation.noBroadcast) output.broadcast = false
+            }else{
+                output.invocationId = body.invocationId
             }
+
 
             return output
         }catch(e){
