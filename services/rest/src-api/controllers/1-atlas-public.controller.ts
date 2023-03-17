@@ -83,20 +83,20 @@ export class pioneerPublicController extends Controller {
             let output = []
             //blockchains Supported by keepkey
             let assets = await assetsDB.find({tags:{$all:['KeepKeySupport']}},{limit,skip})
-            log.info(tag,"assets: ",assets.length)
-            log.info(tag,"assets: ",assets[0])
+            log.debug(tag,"assets: ",assets.length)
+            log.debug(tag,"assets: ",assets[0])
 
             //seed market data
             let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
             marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
-            log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
+            log.debug(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
             let usedSymbold = []
             for(let i = 0; i < assets.length; i++){
                 //NOTE this sucks because it assumes symbol matchs
                 let asset = assets[i]
-                log.info(tag,"asset: ",asset)
+                log.debug(tag,"asset: ",asset)
                 let symbol = asset.symbol.toUpperCase()
-                log.info(tag,"symbol: ",symbol)
+                log.debug(tag,"symbol: ",symbol)
                 if(symbol === "ETH" && asset.blockchain !== 'ethereum') symbol= "UNK"
                 if(marketCacheCoinGecko[symbol]){
                     asset.price = marketCacheCoinGecko[symbol]?.current_price
@@ -149,20 +149,20 @@ export class pioneerPublicController extends Controller {
             let output = []
             //blockchains Supported by keepkey
             let blockchains = await blockchainsDB.find({tags:{$all:['KeepKeySupport']}})
-            log.info(tag,"blockchains: ",blockchains.length)
-            log.info(tag,"blockchains: ",blockchains[0])
+            log.debug(tag,"blockchains: ",blockchains.length)
+            log.debug(tag,"blockchains: ",blockchains[0])
 
             //seed market data
             let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
             marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
-            log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
+            log.debug(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
             let usedSymbold = []
             for(let i = 0; i < blockchains.length; i++){
                 //NOTE this sucks because it assumes symbol matchs
                 let asset = blockchains[i]
-                log.info(tag,"asset: ",asset)
+                log.debug(tag,"asset: ",asset)
                 let symbol = asset.symbol.toUpperCase()
-                log.info(tag,"symbol: ",symbol)
+                log.debug(tag,"symbol: ",symbol)
                 if(symbol === "ETH" && asset.blockchain !== 'ethereum') symbol= "UNK"
                 if(marketCacheCoinGecko[symbol]){
                     asset.price = marketCacheCoinGecko[symbol]?.current_price
@@ -210,7 +210,7 @@ export class pioneerPublicController extends Controller {
     public async searchDappsPageniate(limit:number,skip:number) {
         let tag = TAG + " | searchDappsPageniate | "
         try{
-            log.info(tag,{limit,skip})
+            log.debug(tag,{limit,skip})
             let dapps = await dappsDB.find({whitelist:true},{limit,skip})
             return dapps
         }catch(e){
@@ -285,10 +285,10 @@ export class pioneerPublicController extends Controller {
     public async searchDappsByDeveloperPendingTest(developer:any) {
         let tag = TAG + " | searchDappsByDeveloperPending | "
         try{
-            log.info(tag,"developer: ",developer)
+            log.debug(tag,"developer: ",developer)
 
             developer = developer.toLowerCase()
-            log.info(tag,"developer: ",developer)
+            log.debug(tag,"developer: ",developer)
             //Get tracked networks
             // let dapps = await dappsDB.find()
             let dapps = await dappsDB.find({$and: [{developer},{whitelist:false}]},{limit:10})
@@ -368,7 +368,7 @@ export class pioneerPublicController extends Controller {
             //seed market data
             let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
             marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
-            log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
+            log.debug(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
             for(let i = 0; i < assets.length; i++){
                 //NOTE this sucks because it assumes symbol matchs
                 let asset = assets[i]
@@ -447,7 +447,7 @@ export class pioneerPublicController extends Controller {
             //seed market data
             let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
             marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
-            log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
+            log.debug(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
             for(let i = 0; i < assets.length; i++){
                 //NOTE this sucks because it assumes symbol matchs
                 let asset = assets[i]
@@ -961,11 +961,11 @@ export class pioneerPublicController extends Controller {
             //TODO sanitize
             //look for direct match
             let directMatch = await blockchainsDB.findOne({ "name": blockchain })
-            log.info(tag,"directMatch: ",directMatch)
+            log.debug(tag,"directMatch: ",directMatch)
             let blockchainInfo
             if(!directMatch){
                 directMatch = await blockchainsDB.findOne({ "blockchain": blockchain })
-                log.info("No direct match found!")
+                log.debug("No direct match found!")
                 if(!directMatch){
                     //if miss then look for partial match
                     let escapeRegex = function (text) {
@@ -976,10 +976,10 @@ export class pioneerPublicController extends Controller {
                     //Get tracked networks
                     blockchainInfo = await blockchainsDB.find({ "name": regex },{limit:10})[0]
                     if(!blockchainInfo){
-                        log.info("No REGEX match found on name!")
+                        log.debug("No REGEX match found on name!")
                         blockchainInfo = await blockchainsDB.find({ "blockchain": regex },{limit:10})[0]
                         if(!blockchainInfo){
-                            log.info("No REGEX match found on blockchain!")
+                            log.debug("No REGEX match found on blockchain!")
                             blockchainInfo = await blockchainsDB.find({ "symbol": regex },{limit:10})[0]
                         }
                     }
@@ -1345,9 +1345,9 @@ export class pioneerPublicController extends Controller {
     public async updateNode(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | updateApp | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             if(!body.signer) throw Error("invalid signed payload missing signer!")
             if(!body.payload) throw Error("invalid signed payload missing payload!")
             if(!body.signature) throw Error("invalid signed payload missing !")
@@ -1358,7 +1358,7 @@ export class pioneerPublicController extends Controller {
                 data: msgBufferHex,
                 sig: body.signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
 
             message = JSON.parse(message)
             if(!message.service) throw Error("Ivalid message missing service")
@@ -1372,10 +1372,10 @@ export class pioneerPublicController extends Controller {
             if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
                 delete message["_id"]
                 resultWhitelist = await nodesDB.update({service:message.service},{$set:{[message.key]:message.value}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else if(addressFromSig === entry.developer){
                 resultWhitelist = await nodesDB.update({service:message.service},{$set:{[message.key]:message.value}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else {
                 //get fox balance of address
                 let work:any = {}
@@ -1408,9 +1408,9 @@ export class pioneerPublicController extends Controller {
     public async updateBlockchain(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | updateApp | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             if(!body.signer) throw Error("invalid signed payload missing signer!")
             if(!body.payload) throw Error("invalid signed payload missing payload!")
             if(!body.signature) throw Error("invalid signed payload missing !")
@@ -1421,7 +1421,7 @@ export class pioneerPublicController extends Controller {
                 data: msgBufferHex,
                 sig: body.signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
 
             message = JSON.parse(message)
             if(!message.blockchain) throw Error("Ivalid message missing blockchain")

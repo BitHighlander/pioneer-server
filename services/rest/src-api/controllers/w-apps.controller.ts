@@ -171,16 +171,16 @@ export class WAppsController extends Controller {
         let tag = TAG + " | health | "
         try{
             asset = asset.toLowerCase()
-            log.info("asset: ",asset)
-            log.info("version: ",version)
-            log.info("limit: ",limit)
-            log.info("skip: ",skip)
+            log.debug("asset: ",asset)
+            log.debug("version: ",version)
+            log.debug("limit: ",limit)
+            log.debug("skip: ",skip)
 
             let assetsByName = await assetsDB.find({ name:asset },{limit:100})
 
             let blockchainsByName = await blockchainsDB.find({ name:asset },{limit:100})
-            log.info("assetsByName: ",assetsByName)
-            log.info("blockchainsByName: ",blockchainsByName)
+            log.debug("assetsByName: ",assetsByName)
+            log.debug("blockchainsByName: ",blockchainsByName)
 
             let hits = [...assetsByName,...blockchainsByName]
             let output:any = []
@@ -191,22 +191,22 @@ export class WAppsController extends Controller {
                     let asset = blockchainsByName[i]
                     blockchains.push(asset.name)
                 }
-                log.info("blockchains: ",blockchains)
+                log.debug("blockchains: ",blockchains)
 
                 for(let i = 0; i < assetsByName.length; i++){
                     let asset = assetsByName[i]
                     blockchains.push(asset.blockchain)
                 }
-                log.info("blockchains: ",blockchains)
+                log.debug("blockchains: ",blockchains)
                 if(!blockchains[0]) blockchains.push(asset)
                 // let apps = await appsDB.find({whitelist:true},{limit,skip})
-                log.info("blockchains: ",blockchains[0])
+                log.debug("blockchains: ",blockchains[0])
                 // let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in:[blockchains]}}]},{limit:100})
                 // let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in: [/bitcoin/i]}}]},{limit:100})
                 let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in: blockchains}}]},{limit:100})
                 // let apps = await appsDB.find({whitelist:true},{limit:100})
-                log.info("apps: ",apps)
-                log.info("apps: ",apps.length)
+                log.debug("apps: ",apps)
+                log.debug("apps: ",apps.length)
 
                 output = []
                 for(let i = 0; i < apps.length; i++){
@@ -301,9 +301,9 @@ export class WAppsController extends Controller {
     public async voteOnApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | voteOnApp | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             if(!body.signer) throw Error("invalid signed payload missing signer!")
             if(!body.payload) throw Error("invalid signed payload missing payload!")
             if(!body.signature) throw Error("invalid signed payload missing !")
@@ -314,7 +314,7 @@ export class WAppsController extends Controller {
                 data: msgBufferHex,
                 sig: body.signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
 
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
@@ -352,9 +352,9 @@ export class WAppsController extends Controller {
     public async updateApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | updateApp | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             if(!body.signer) throw Error("invalid signed payload missing signer!")
             if(!body.payload) throw Error("invalid signed payload missing payload!")
             if(!body.signature) throw Error("invalid signed payload missing !")
@@ -365,7 +365,7 @@ export class WAppsController extends Controller {
                 data: msgBufferHex,
                 sig: body.signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
 
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
@@ -375,7 +375,7 @@ export class WAppsController extends Controller {
             if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
                 delete message["_id"]
                 resultWhitelist = await appsDB.update({name:message.name},{$set:{[message.key]:message.value}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else {
                 //get fox balance of address
                 let work:any = {}
@@ -437,8 +437,8 @@ export class WAppsController extends Controller {
     public async revokeApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | transactions | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             if(!body.signer) throw Error("invalid signed payload missing signer!")
             if(!body.payload) throw Error("invalid signed payload missing payload!")
             if(!body.signature) throw Error("invalid signed payload missing !")
@@ -450,7 +450,7 @@ export class WAppsController extends Controller {
                 data: msgBufferHex,
                 sig: body.signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
 
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
@@ -459,14 +459,14 @@ export class WAppsController extends Controller {
 
             //get entry from mongo
             let entry = await appsDB.find({name:message.name})
-            log.info(tag,"entry: ",entry)
+            log.debug(tag,"entry: ",entry)
             if(entry.length === 0) throw Error("Ivalid developer name not found!")
             let developer = entry[0].developer
 
 
             if(addressFromSig === developer || addressFromSig === ADMIN_PUBLIC_ADDRESS) {
                 resultWhitelist = await appsDB.deleteOne({name:message.name},{$set:{whitelist:true}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else {
                 //get fox balance of address
                 let work:any = {}
@@ -495,8 +495,8 @@ export class WAppsController extends Controller {
     public async whitelistApp(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | transactions | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             if(!body.signer) throw Error("invalid signed payload missing signer!")
             if(!body.payload) throw Error("invalid signed payload missing payload!")
             if(!body.signature) throw Error("invalid signed payload missing !")
@@ -508,7 +508,7 @@ export class WAppsController extends Controller {
                 data: msgBufferHex,
                 sig: body.signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
 
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
@@ -516,7 +516,7 @@ export class WAppsController extends Controller {
             let resultWhitelist:any = {}
             if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
                 resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else {
                 //get fox balance of address
                 let work:any = {}

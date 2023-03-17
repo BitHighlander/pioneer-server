@@ -546,7 +546,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
 
         for (let i = 0; i < pubkeys.length; i++) {
             let pubkeyInfo = pubkeys[i]
-            log.info(tag,"pubkeyInfo: ",pubkeyInfo)
+            log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
             let nativeAsset = getNativeAssetForBlockchain(pubkeyInfo.blockchain)
             if(!nativeAsset) throw Error("104: invalid pubkey! unsupported by coins module!")
             if(!pubkeyInfo.pubkey) throw Error("104: invalid pubkey! missing pubkey!")

@@ -56,7 +56,7 @@ let do_work = async function(){
         await sleep(300)
         let work = await redis.lpop("pioneer:facts:ingest",BATCH_SIZE)
         if(work){
-            log.info(tag,"work: ",work)
+            log.debug(tag,"work: ",work)
             work = JSON.parse(work[0])
             let body = work.payload
             //validate sig
@@ -74,8 +74,8 @@ let do_work = async function(){
                     data: msgBufferHex,
                     sig: body.signature,
                 });
-                log.info(tag,"addressFromSig: ",addressFromSig)
-                log.info(tag,"body.signer: ",body.signer)
+                log.debug(tag,"addressFromSig: ",addressFromSig)
+                log.debug(tag,"body.signer: ",body.signer)
                 if(addressFromSig.toLowerCase() !== body.signer.toLowerCase()) throw Error("Invalid signature!")
 
                 //get all facts for dapp
@@ -114,7 +114,7 @@ let do_work = async function(){
                 //if poap add 1k fox
                 let isPoap = false
                 let paopInfo = await poap.getNFTs(addressFromSig)
-                log.info(tag,"paopInfo: ",paopInfo)
+                log.debug(tag,"paopInfo: ",paopInfo)
                 for(let i = 0; i < paopInfo.length; i++){
                     let event = paopInfo[i]
                     if(event.event.id === "100142"){
