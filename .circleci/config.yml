@@ -36,7 +36,7 @@ jobs:
       - run:
           command: "doctl auth init -t $DIGITALOCEAN_TOKEN && doctl registry login"
       - run:
-          command: "make push"
+          command: "make -j 5 push"
   update:
     executor: node
     parameters:
@@ -54,14 +54,9 @@ workflows:
   version: 2
   build-master:
     jobs:
-      - make:
-          name: make
-          env: prod
       - push:
           name: push image
           env: prod
-          requires:
-            - make
 #      - update:
 #          name: deploy
 #          env: prod
