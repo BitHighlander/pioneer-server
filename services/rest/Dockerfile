@@ -9,11 +9,13 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 COPY package.json /usr/src/app/
 
+#NPM_TOKEN used for private packages
 RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/app/.npmrc
-RUN npm install
+RUN npm ci --only=production
 
-COPY . /usr/src/app
-RUN npm run build:all-stage
+#copy all files except node_modules folder
+COPY . .
+RUN npm run build:all-stage --production
 
 ENV NODE_ENV docker
 
