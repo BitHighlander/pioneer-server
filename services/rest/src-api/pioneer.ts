@@ -258,8 +258,8 @@ let register_zpub = async function (username:string, pubkey:any, context:string)
         let account = 0
         let index = 0
         let address = await get_address_from_xpub(pubkey.zpub,pubkey.scriptType,pubkey.symbol,account,index,false,false)
-        log.debug(tag,"Master(Local): ",address)
-        log.debug(tag,"Master(hdwallet): ",pubkey.master)
+        log.info(tag,"Master(Local): ",address)
+        log.info(tag,"Master(hdwallet): ",pubkey.master)
         if(address !== pubkey.master){
             log.error(tag,"Local Master NOT VALID!!")
             //revert to pubkey (assume hdwallet right)
