@@ -69,7 +69,7 @@
     "@pioneer-platform/osmosis-network": "^8.1.36",
     "@pioneer-platform/pioneer-client": "^8.1.29",
     "@pioneer-platform/pioneer-coins": "^8.1.54",
-    "@pioneer-platform/pioneer-invoke": "latest",
+    "@pioneer-platform/pioneer-invoke": "^8.1.37",
     "@pioneer-platform/pioneer-types": "^8.1.49",
     "@pioneer-platform/redis-queue": "latest",
     "@pioneer-platform/ripple-network": "^8.1.45",
