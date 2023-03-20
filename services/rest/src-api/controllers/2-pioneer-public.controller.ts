@@ -67,6 +67,10 @@ if(process.env['FEATURE_LITECOIN_BLOCKCHAIN']){
     blockchains.push('litecoin')
 }
 
+if(process.env['FEATURE_DOGECOIN_BLOCKCHAIN']){
+    blockchains.push('dogecoin')
+}
+
 if(process.env['FEATURE_ETHEREUM_BLOCKCHAIN']){
     blockchains.push('ethereum')
     networks['ETH'] = require('@pioneer-platform/eth-network')
@@ -184,8 +188,8 @@ export class atlasPublicController extends Controller {
                 let countAssets = await assetsDB.count()
                 let countBlockchains = await blockchainsDB.count()
                 let countNodes = await nodesDB.count()
-                log.info(tag,"countDevs: ",countDevs)
-                log.info(tag,"countDapps: ",countDapps)
+                log.debug(tag,"countDevs: ",countDevs)
+                log.debug(tag,"countDapps: ",countDapps)
                 globals.info = {
                     users:countUsers,
                     assets:countAssets,
@@ -291,7 +295,7 @@ export class atlasPublicController extends Controller {
                 let metaInfo = await rangoClient.getAllMetadata()
                 if(metaInfo){
                     let updateRedis = await redis.set('rango:markets',JSON.stringify(metaInfo))
-                    log.info(tag,"updateRedis: ",updateRedis)
+                    log.debug(tag,"updateRedis: ",updateRedis)
                 }
             }
             try{

@@ -279,16 +279,16 @@ export class pioneerPrivateController extends Controller {
                             walletInfo.pubkeys = pubkeys
                             if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
                             //hydrate market data for all pubkeys
-                            log.info(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
-                            log.info(tag,"pre: buildBalance: pubkeys: ",JSON.stringify(pubkeys))
-                            log.info(tag,"pre: buildBalance: marketCacheCoinCap: ",JSON.stringify(marketCacheCoinCap))
-                            log.info(tag,"pre: buildBalance: marketCacheCoinGecko: ",JSON.stringify(marketCacheCoinGecko))
-                            log.info(tag,"pre: buildBalance: context: ",context)
+                            log.debug(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
+                            log.debug(tag,"pre: buildBalance: pubkeys: ",JSON.stringify(pubkeys))
+                            log.debug(tag,"pre: buildBalance: marketCacheCoinCap: ",JSON.stringify(marketCacheCoinCap))
+                            log.debug(tag,"pre: buildBalance: marketCacheCoinGecko: ",JSON.stringify(marketCacheCoinGecko))
+                            log.debug(tag,"pre: buildBalance: context: ",context)
 
                             let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, context)
-                            log.info(tag,"responseMarkets: ",responseMarkets.balances[0])
-                            log.info(tag,"responseMarkets: ",responseMarkets.balances[23])
-                            log.info(tag,"responseMarkets: ",responseMarkets.balances.length)
+                            log.debug(tag,"responseMarkets: ",responseMarkets.balances[0])
+                            log.debug(tag,"responseMarkets: ",responseMarkets.balances[23])
+                            log.debug(tag,"responseMarkets: ",responseMarkets.balances.length)
 
                             for(let i = 0; i < responseMarkets.balances.length; i++){
                                 let balance = responseMarkets.balances[i]
@@ -545,7 +545,7 @@ export class pioneerPrivateController extends Controller {
 
             let accountInfo = await redis.hgetall(authorization)
             if(!accountInfo) throw Error("unknown token! token:"+authorization)
-            log.info(tag,"accountInfo: ",accountInfo)
+            log.debug(tag,"accountInfo: ",accountInfo)
 
 
             if(accountInfo){
@@ -557,12 +557,12 @@ export class pioneerPrivateController extends Controller {
 
                 //get all pubkeys for username
                 let pubkeysOwnedBySdk = await pubkeysDB.find({tags:{ $all: [accountInfo.username]}})
-                log.info(tag,"pubkeysOwnedBySdk: ",pubkeysOwnedBySdk)
+                log.debug(tag,"pubkeysOwnedBySdk: ",pubkeysOwnedBySdk)
 
                 //for each wallet
                 let wallets = accountInfo.wallets || ""
                 if(wallets)wallets = wallets.split(",")
-                log.info(tag,"wallets: ",wallets)
+                log.debug(tag,"wallets: ",wallets)
 
                 let output:any = {
                     success:true,
@@ -570,7 +570,7 @@ export class pioneerPrivateController extends Controller {
                 }
                 for(let i = 0; i < wallets.length; i++){
                     let wallet = wallets[i]
-                    log.info(tag,"wallet: ",wallet)
+                    log.debug(tag,"wallet: ",wallet)
 
                     //pubkeys filter by wallet
 
@@ -578,7 +578,7 @@ export class pioneerPrivateController extends Controller {
 
                     //re-submit to pubkey ingester
                     let result = await pioneer.register(accountInfo.username, pubkeysOwnedBySdk,wallet)
-                    log.info(tag,"resultPioneer: ",result)
+                    log.debug(tag,"resultPioneer: ",result)
                     output.results.push(result)
                 }
 
@@ -646,7 +646,7 @@ export class pioneerPrivateController extends Controller {
     public async login(@Body() body: any): Promise<any> {
         let tag = TAG + " | login | "
         try{
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
             let publicAddress = body.publicAddress
             let signature = body.signature
             let message = body.message
@@ -654,13 +654,13 @@ export class pioneerPrivateController extends Controller {
             if(!signature) throw Error("Missing signature!")
             if(!message) throw Error("Missing message!")
 
-            log.info(tag,{publicAddress,signature,message})
+            log.debug(tag,{publicAddress,signature,message})
             //get user
             let user = await usersDB.findOne({publicAddress})
-            log.info(tag,"user: ",user)
+            log.debug(tag,"user: ",user)
             if(!user) throw Error("User not found! publicAddress: "+publicAddress)
             if(!user.nonce) throw Error("Invalid user saved!")
-            log.info(tag,"user: ",user.nonce)
+            log.debug(tag,"user: ",user.nonce)
 
             //@TODO validate nonce
 
@@ -670,11 +670,11 @@ export class pioneerPrivateController extends Controller {
                 data: msgBufferHex,
                 sig: signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
 
             //if valid sign and return token
             if(addressFromSig === publicAddress){
-                log.info(tag,"valid signature: ")
+                log.debug(tag,"valid signature: ")
                 let token = sign({
                         payload: {
                             id: "bla",
@@ -689,12 +689,12 @@ export class pioneerPrivateController extends Controller {
                 //generate new nonce
                 let nonceNew = Math.floor(Math.random() * 10000);
                 let updateUser = await usersDB.update({publicAddress},{$set:{nonce:nonceNew}})
-                log.info("updateUser: ",updateUser)
+                log.debug("updateUser: ",updateUser)
 
                 await redis.hmset(token,{
                     publicAddress
                 })
-                log.info("token: ",token)
+                log.debug("token: ",token)
                 return(token)
             } else {
                 throw Error("Invalid signature")
@@ -899,12 +899,12 @@ export class pioneerPrivateController extends Controller {
             log.debug(tag,"body: ",body)
             log.debug(tag,"Authorization: ",Authorization)
             let userInfo = await redis.hgetall(Authorization)
-            log.info(tag,"userInfo: ",userInfo)
+            log.debug(tag,"userInfo: ",userInfo)
             //TODO auth
             //get invocation owner
             let invocationInfo = await invocationsDB.findOne({invocationId:body.invocationId})
             if(invocationInfo.username === userInfo.username){
-                log.info(tag," auth success")
+                log.debug(tag," auth success")
                 //TODO use auth
                 //update database
                 let updateResult
@@ -1592,7 +1592,7 @@ export class pioneerPrivateController extends Controller {
 
             if(!userInfoMongo){
                 output.resultSaveUserDB = await usersDB.insert(userInfo)
-                log.info(tag,"output.resultSaveUserDB: ",output.resultSaveUserDB)
+                log.debug(tag,"output.resultSaveUserDB: ",output.resultSaveUserDB)
             }
 
             if(newKey){

@@ -577,9 +577,9 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
             }
 
             if (pubkeyInfo.type === "xpub") {
-                log.info(tag,"pubkeyInfo: ",pubkeyInfo)
+                log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
                 let xpub = pubkeyInfo.pubkey
-                log.info(tag,"xpub: ",xpub)
+                log.debug(tag,"xpub: ",xpub)
 
                 entryMongo.pubkey = xpub
                 entryMongo.xpub = xpub

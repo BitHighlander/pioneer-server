@@ -1435,10 +1435,10 @@ export class pioneerPublicController extends Controller {
             if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
                 delete message["_id"]
                 resultWhitelist = await nodesDB.update({blockchain:message.blockchain},{$set:{[message.key]:message.value}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else if(addressFromSig === entry.developer){
                 resultWhitelist = await nodesDB.update({blockchain:message.blockchain},{$set:{[message.key]:message.value}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else {
                 //get fox balance of address
                 let work:any = {}
@@ -1471,9 +1471,9 @@ export class pioneerPublicController extends Controller {
     public async updateAsset(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | updateApp | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             if(!body.signer) throw Error("invalid signed payload missing signer!")
             if(!body.payload) throw Error("invalid signed payload missing payload!")
             if(!body.signature) throw Error("invalid signed payload missing !")
@@ -1484,7 +1484,7 @@ export class pioneerPublicController extends Controller {
                 data: msgBufferHex,
                 sig: body.signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
 
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
@@ -1498,10 +1498,10 @@ export class pioneerPublicController extends Controller {
             if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
                 delete message["_id"]
                 resultWhitelist = await assetsDB.update({name:message.name},{$set:{[message.key]:message.value}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else if(addressFromSig === entry.developer){
                 resultWhitelist = await assetsDB.update({name:message.name},{$set:{[message.key]:message.value}})
-                log.info(tag,"resultWhitelist: ",resultWhitelist)
+                log.debug(tag,"resultWhitelist: ",resultWhitelist)
             } else {
                 //get fox balance of address
                 let work:any = {}
