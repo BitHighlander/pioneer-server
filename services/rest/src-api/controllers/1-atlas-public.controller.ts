@@ -338,7 +338,7 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
-    @Get('/atlas/list/asset/{tagString}')
+    @Get('/atlas/searchByTag/asset/{tagString}')
     public async searchByTag(tagString:string) {
         let tag = TAG + " | searchByTag | "
         try{
@@ -610,7 +610,7 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
-    @Get('/atlas/list/asset/{symbol}')
+    @Get('/atlas/searchBySymbol/asset/{symbol}')
     public async searchBySymbol(symbol:string) {
         let tag = TAG + " | atlas | "
         try{
