@@ -11,7 +11,6 @@ COPY package.json /usr/src/app/
 
 #NPM_TOKEN used for private packages
 RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/app/.npmrc
-RUN npm
 
 #copy all files except node_modules folder
 COPY . .
