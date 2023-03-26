@@ -565,6 +565,7 @@ let register_pubkeys = async function (username: string, pubkeys: any, context: 
             //save to mongo
             let entryMongo: any = {
                 pubkey: pubkeyInfo.pubkey,
+                type: pubkeyInfo.type,
                 blockchain: pubkeyInfo.blockchain,
                 symbol:nativeAsset,
                 asset: pubkeyInfo.blockchain,

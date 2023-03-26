@@ -267,11 +267,12 @@ export class pioneerPrivateController extends Controller {
                         userInfo.pubkeys = []
                         userInfo.balances = []
                         let totalValueUsd = 0
-                        for(let i = 0; i < userInfoMongo.wallets.length; i++){
-                            let context = userInfoMongo.wallets[i]
+                        for(let i = 0; i < userInfoMongo.walletDescriptions.length; i++){
+                            //let context = userInfoMongo.walletDescriptions[i]
                             let walletInfo:any = userInfoMongo.walletDescriptions[i]
-                            log.debug(tag,"walletDescription: ",walletInfo)
-                            log.debug(tag,"building walletDescription for context: ",context)
+                            let context = walletInfo.context
+                            log.info(tag,"walletDescription: ",walletInfo)
+                            //log.debug(tag,"building walletDescription for context: ",context)
                             let { pubkeys } = await pioneer.getPubkeys(username,context)
                             log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
                             userInfo.pubkeys = userInfo.pubkeys.concat(pubkeys)
@@ -283,7 +284,7 @@ export class pioneerPrivateController extends Controller {
                             log.debug(tag,"pre: buildBalance: pubkeys: ",JSON.stringify(pubkeys))
                             log.debug(tag,"pre: buildBalance: marketCacheCoinCap: ",JSON.stringify(marketCacheCoinCap))
                             log.debug(tag,"pre: buildBalance: marketCacheCoinGecko: ",JSON.stringify(marketCacheCoinGecko))
-                            log.debug(tag,"pre: buildBalance: context: ",context)
+                            // log.debug(tag,"pre: buildBalance: context: ",context)
 
                             let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, context)
                             log.debug(tag,"responseMarkets: ",responseMarkets.balances[0])
@@ -1437,14 +1438,14 @@ export class pioneerPrivateController extends Controller {
 
             //if auth found in redis
             const authInfo = await redis.hgetall(authorization)
-            log.debug(tag,"authInfo: ",authInfo)
+            log.info(tag,"authInfo: ",authInfo)
             let isTestnet = authInfo.isTestnet || false
             if(body.isTestnet && Object.keys(authInfo).length != 0 && !isTestnet) throw Error(" Username already registerd on mainnet! please create a new")
             log.debug(tag,"authInfo: ",authInfo)
 
             let username
             if(Object.keys(authInfo).length > 0){
-                log.debug(tag,"checkpoint 1 auth key known")
+                log.info(tag,"checkpoint 1 auth key known")
 
                 username = authInfo.username
 
@@ -1475,6 +1476,7 @@ export class pioneerPrivateController extends Controller {
             log.debug(tag,"userInfoMongo: ",userInfoMongo)
 
             if(newKey){
+                log.info(tag,"checkpoint 2 new key")
                 //create user
                 let userInfo:any = {
                     registered: new Date().getTime(),
@@ -1539,17 +1541,17 @@ export class pioneerPrivateController extends Controller {
             if(!body.context) throw Error("102: context required on body!")
             if(!body.blockchains) throw Error("103: blockchains required on body!")
             if(typeof(body.walletDescription) === 'string') throw Error("104: Invalid Wallet Description!")
-
+            if(!body.data.pubkeys) throw Error("105: pubkeys required on body!")
             //if auth found in redis
             const authInfo = await redis.hgetall(authorization)
-            log.debug(tag,"authInfo: ",authInfo)
+            log.info(tag,"authInfo: ",authInfo)
             let isTestnet = authInfo.isTestnet || false
             if(body.isTestnet && Object.keys(authInfo).length != 0 && !isTestnet) throw Error(" Username already registerd on mainnet! please create a new")
             log.debug(tag,"authInfo: ",authInfo)
 
             let username
             if(Object.keys(authInfo).length > 0){
-                log.debug(tag,"checkpoint 1 auth key known")
+                log.info(tag,"checkpoint 1 auth key known")
                 username = authInfo.username
                 //does username match register request
                 if(username !== body.username){
@@ -1575,22 +1577,44 @@ export class pioneerPrivateController extends Controller {
             if(!username) username = body.username
 
             let userInfoMongo:any = await usersDB.findOne({username})
-            log.debug(tag,"userInfoMongo: ",userInfoMongo)
+            log.info(tag,"userInfoMongo: ",userInfoMongo)
+
+
 
             //create user
             let userInfo:any = {
-                registered: new Date().getTime(),
-                id:"pioneer:"+pjson.version+":"+uuidv4(), //user ID versioning!
                 username:body.username,
                 publicAddress:body.publicAddress,
-                verified:true,
-                blockchains:body.blockchains,
-                wallets:[body.context], // just one wallet for now
-                walletDescriptions:[body.walletDescription],
-                nonce:Math.floor(Math.random() * 10000)
+                verified:false,
+                blockchains:body.blockchains
+            }
+
+            let isNewWallet = true // @TODO hacked to debug
+            if(userInfoMongo){
+                //verify info
+                if(userInfoMongo.username !== body.username) throw Error("username mismatch!")
+                if(userInfoMongo.publicAddress !== body.publicAddress) {
+                    log.info(tag,"userInfoMongo.publicAddress: ",userInfoMongo.publicAddress)
+                    log.info(tag,"body.publicAddress: ",body.publicAddress)
+                    //throw Error("publicAddress mismatch!")
+                }
+                //TODO add?
+                //if(userInfoMongo.blockchains !== body.blockchains) throw Error("blockchains mismatch!")
+
+                //is wallet in wallets
+                if(userInfoMongo.wallets && userInfoMongo.wallets.indexOf(body.context) >= 0){
+                    log.info(tag,"wallet already registered!")
+                    userInfo.wallets = userInfoMongo.wallets
+                } else {
+                    isNewWallet = true
+                    userInfo.wallets = [body.context] // just one wallet for now
+                }
             }
 
             if(!userInfoMongo){
+                userInfo.id = "pioneer:"+pjson.version+":"+uuidv4()
+                userInfo.registered = new Date().getTime()
+                userInfo.nonce = Math.floor(Math.random() * 10000)
                 output.resultSaveUserDB = await usersDB.insert(userInfo)
                 log.debug(tag,"output.resultSaveUserDB: ",output.resultSaveUserDB)
             }
@@ -1606,10 +1630,6 @@ export class pioneerPrivateController extends Controller {
 
                 //Continue and register wallet
                 userInfoMongo = userInfo
-
-                //Assume wallet new
-                output.result = await pioneer.register(body.username, body.data.pubkeys,body.context)
-                log.debug(tag,"resultPioneer: ",output.result)
 
                 //set user context to only wallet
                 await redis.hset(body.username,'context',body.context)
@@ -1627,13 +1647,13 @@ export class pioneerPrivateController extends Controller {
             await redis.sadd(username+':wallets',body.context)
 
             //if current ! found
-            if(userWallets.indexOf(body.context) < 0){
-                log.debug(tag,"Registering new wallet! context:",body.context)
+            if(isNewWallet){
+                log.info(tag,"Registering new wallet! context:",body.context)
                 //Register wallet! (this ONLY hits when already registered
                 output.newWallet = true
                 let pubkeys = body.data.pubkeys
                 output.result = await pioneer.register(body.username, pubkeys, body.context)
-                log.debug(tag,"resultPioneer: ",output.result)
+                log.info(tag,"resultPioneer: ",output.result)
 
                 //set current context to newly registred wallet
                 //TODO flag to leave context? (silent register new wallet?)
@@ -1641,16 +1661,15 @@ export class pioneerPrivateController extends Controller {
 
                 //push new wallet to wallets
                 output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "wallets": body.context } })
-                output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "walletDescriptions": body.walletDescription } })
+                //output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "walletDescriptions": body.walletDescription } })
             } else {
                 //wallet already known!
-                log.debug(tag,"Wallet already known! context: ",body.context)
-
+                log.info(tag,"Wallet already known! context: ",body.context)
                 //get pubkey array
                 output.result = await pioneer.update(body.username, body.data.pubkeys,body.context)
             }
 
-            log.debug("checkpoint 3")
+            log.info(tag,"checkpoint 3")
             let userInfoRedis = await redis.hgetall(username)
             log.debug(tag,"userInfoRedis: ",userInfoRedis)
             log.debug("checkpoint 4 final ")
@@ -1698,9 +1717,21 @@ export class pioneerPrivateController extends Controller {
             }
 
             let { pubkeys, masters } = await pioneer.getPubkeys(username)
-            log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
+            // log.info(tag,"pubkeys: ",JSON.stringify(body.data.pubkeys))
+            // log.info(tag,"pubkeys: ",body.data.pubkeys.length)
             let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, output.context)
-            log.debug(tag,"responseMarkets: ",responseMarkets)
+            log.info(tag,"responseMarkets: ",responseMarkets)
+
+            let walletDescription = {
+                context:output.context,
+                type:body.walletDescription.type,
+                // pubkeys,
+                // balances:responseMarkets.balances,
+                valueUsdContext:responseMarkets.total
+            }
+            if(isNewWallet){
+                output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "walletDescriptions": walletDescription } })
+            }
 
             let statusNetwork = await redis.get('cache:status')
             if(statusNetwork){
@@ -1728,7 +1759,6 @@ export class pioneerPrivateController extends Controller {
             } else {
                 log.error(tag,'Missing cache for network status!')
             }
-
 
             output.masters = masters
             output.pubkeys = pubkeys
