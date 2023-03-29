@@ -942,16 +942,23 @@ export class pioneerPublicController extends Controller {
         let tag = TAG + " | SearchByNetworkName | "
         try{
             //TODO sanitize
+            let blockchains
             let output = []
-            let escapeRegex = function (text) {
-                return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
-            };
+            let blockchainsExact = await blockchainsDB.find({ "name": blockchain },{limit:10})
+            let blockchainsExact2 = await blockchainsDB.find({ "blockchain": blockchain },{limit:10})
+            if(blockchainsExact) blockchains=blockchainsExact
+            if(blockchainsExact2) blockchains=blockchainsExact2
+            if(!blockchains){
+                let escapeRegex = function (text) {
+                    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+                };
 
-            //TODO sanitize
-            const regex = new RegExp(escapeRegex(blockchain), 'gi');
-            //Get tracked networks
-            let blockchains = await blockchainsDB.find({ "name": regex },{limit:10})
-            console.log("blockchains: ",blockchains.length)
+                //TODO sanitize
+                const regex = new RegExp(escapeRegex(blockchain), 'gi');
+                //Get tracked networks
+                blockchains = await blockchainsDB.find({ "name": regex },{limit:10})
+                console.log("blockchains: ",blockchains)
+            }
             for(let i = 0; i < blockchains.length; i++){
                 let blockchain = blockchains[i]
                 console.log("blockchain: ",blockchain)
@@ -993,25 +1000,26 @@ export class pioneerPublicController extends Controller {
             let directMatch = await blockchainsDB.findOne({ "name": blockchain })
             let directMatchChainId = await blockchainsDB.findOne({ "chainId": parseInt(blockchain) })
             if(directMatchChainId) directMatch = directMatchChainId
-            log.debug(tag,"directMatch: ",directMatch)
+            log.info(tag,"directMatch: ",directMatch)
             let blockchainInfo
             if(!directMatch){
-                directMatch = await blockchainsDB.findOne({ "blockchain": blockchain })
-                log.debug("No direct match found!")
+                directMatch = await blockchainsDB.findOne({ $or: [{ "blockchain": blockchain },{ "name": blockchain }] })
+                log.info("No direct match found!")
                 if(!directMatch){
                     //if miss then look for partial match
                     let escapeRegex = function (text) {
                         return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
                     };
                     //TODO sanitize
-                    const regex = new RegExp(escapeRegex(blockchain), 'gi');
+                    const regex = new RegExp(escapeRegex(blockchain) + ".*", 'gi');
                     //Get tracked networks
-                    blockchainInfo = await blockchainsDB.find({ "name": regex },{limit:10})[0]
+                    log.info("regex: ",regex)
+                    blockchainInfo = await blockchainsDB.find({ "blockchain": regex },{limit:10})[0]
                     if(!blockchainInfo){
-                        log.debug("No REGEX match found on name!")
+                        log.info("No REGEX match found on name!")
                         blockchainInfo = await blockchainsDB.find({ "blockchain": regex },{limit:10})[0]
                         if(!blockchainInfo){
-                            log.debug("No REGEX match found on blockchain!")
+                            log.info("No REGEX match found on blockchain!")
                             blockchainInfo = await blockchainsDB.find({ "symbol": regex },{limit:10})[0]
                         }
                     }
