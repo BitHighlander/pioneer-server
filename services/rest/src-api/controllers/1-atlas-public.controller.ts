@@ -141,7 +141,7 @@ export class pioneerPublicController extends Controller {
      *    Get all live blockchains
      *
      * */
-    @Get('/atlas/blockchains/list/{limit}/{skip}')
+    @Get('/atlas/search/blockchains/list/{limit}/{skip}')
     public async searchBlockchainsPageniate(limit:number,skip:number) {
         let tag = TAG + " | searchBlockchainsPageniate | "
         try{
@@ -822,10 +822,14 @@ export class pioneerPublicController extends Controller {
     *
     * */
     @Get('/atlas/blockchains/chainId/{chainId}')
-    public async searchBlockchainByChainId(chainId:number) {
-        let tag = TAG + " | atlas | "
+    public async searchBlockchainByChainId(chainId:string) {
+        let tag = TAG + " | searchBlockchainByChainId | "
         try{
-
+            log.info(tag,"chainId: ",chainId)
+            log.info(tag,"chainId: ",typeof(chainId))
+            // @ts-ignore
+            chainId = parseInt(chainId)
+            log.info(tag,"chainId: ",typeof(chainId))
             //Get tracked networks
             let networks = await blockchainsDB.find({ chainId },{limit:10})
 
@@ -851,6 +855,32 @@ export class pioneerPublicController extends Controller {
     @Get('/atlas/network/chainId/{chainId}')
     public async searchByNetworkId(chainId:number) {
         let tag = TAG + " | atlas | "
+        try{
+
+            //Get tracked networks
+            let networks = await nodesDB.find({ chainId },{limit:10})
+
+            return networks
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+    * ATLAS
+    *
+    *    Get all live atlas
+    *
+    * */
+    @Get('/atlas/nodes/network/chainId/{chainId}')
+    public async searchNodesByNetworkId(chainId:number) {
+        let tag = TAG + " | searchNodesByNetworkId | "
         try{
 
             //Get tracked networks
@@ -961,6 +991,8 @@ export class pioneerPublicController extends Controller {
             //TODO sanitize
             //look for direct match
             let directMatch = await blockchainsDB.findOne({ "name": blockchain })
+            let directMatchChainId = await blockchainsDB.findOne({ "chainId": parseInt(blockchain) })
+            if(directMatchChainId) directMatch = directMatchChainId
             log.debug(tag,"directMatch: ",directMatch)
             let blockchainInfo
             if(!directMatch){

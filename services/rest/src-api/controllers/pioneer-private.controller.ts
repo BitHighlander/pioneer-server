@@ -817,6 +817,59 @@ export class pioneerPrivateController extends Controller {
     }
 
     /**
+     * Update current account blockchain context
+     * @param request This is an application pairing submission
+     */
+
+    @Post('/setBlockchainContext')
+    //TODO bump and add type back
+    public async setBlockchainContext(@Body() body: any, @Header() Authorization: any): Promise<any> {
+        let tag = TAG + " | setBlockchainContext | "
+        try{
+            log.debug(tag,"account: ",body)
+            log.debug(tag,"Authorization: ",Authorization)
+            let output:any = {}
+            // get auth info
+            let authInfo = await redis.hgetall(Authorization)
+            log.debug(tag,"authInfo: ",authInfo)
+            if(!authInfo) throw Error("108: unknown token! ")
+            if(!body.blockchain) throw Error("1011: invalid body missing blockchain")
+
+            // get user info
+            let userInfo = await redis.hgetall(authInfo.username)
+            if(!userInfo) throw Error("109: unknown username! ")
+            log.debug(tag,"userInfo: ",userInfo)
+            output.username = authInfo.username
+
+            if(userInfo.blockchainContext !== body.blockchain) {
+                let contextSwitch = {
+                    type:"blockchainContext",
+                    username:userInfo.username,
+                    blockchain:body.asset
+                }
+                publisher.publish('context',JSON.stringify(contextSwitch))
+                output.success = true
+                //update Redis to new context
+                let updateRedis = await redis.hset(authInfo.username,'blockchainContext',body.blockchain)
+                output.updateDB = updateRedis
+            } else {
+                output.success = false
+                output.error = 'context already set to body.context:'+body.context
+            }
+
+            return output
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /**
      * Update current account context
      * @param request This is an application pairing submission
      */
