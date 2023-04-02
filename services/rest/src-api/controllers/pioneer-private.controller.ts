@@ -264,6 +264,8 @@ export class pioneerPrivateController extends Controller {
                         //get value map
                         userInfo.walletDescriptions = []
                         userInfo.nfts = userInfoMongo.nfts || []
+                        userInfo.code = userInfoMongo.code || ""
+                        userInfo.discordId = userInfoMongo.discordId || ""
                         userInfo.pubkeys = []
                         userInfo.balances = []
                         let totalValueUsd = 0
@@ -470,7 +472,7 @@ export class pioneerPrivateController extends Controller {
                 let userInfoMongo = await usersDB.findOne({username})
                 log.debug(tag,"userInfoMongo: ",userInfoMongo)
                 //migrations
-                if(!userInfoMongo) throw Error("102: unknown user! username: "+username)
+                if(!userInfoMongo) throw Error("103: unknown user! username: "+username)
                 walletInfo.wallets = userInfoMongo?.wallets
                 walletInfo.blockchains = userInfoMongo?.blockchains
 
@@ -1665,6 +1667,12 @@ export class pioneerPrivateController extends Controller {
             }
 
             if(!userInfoMongo){
+                //create random code
+                let code = randomstring.generate(6)
+                code = code.toUpperCase()
+                log.debug(tag,"code: ",code)
+                userInfo.code = code
+                userInfo.auth = authorization
                 userInfo.id = "pioneer:"+pjson.version+":"+uuidv4()
                 userInfo.registered = new Date().getTime()
                 userInfo.nonce = Math.floor(Math.random() * 10000)
