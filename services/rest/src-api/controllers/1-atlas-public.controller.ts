@@ -641,8 +641,8 @@ export class pioneerPublicController extends Controller {
         let tag = TAG + " | atlas | "
         try{
             let output = []
-            let cache = await redis.get("cache:network:top:"+start+":"+stop)
-
+            //let cache = await redis.get("cache:network:top:"+start+":"+stop)
+            let cache = false
             let ALL_CHAINS = [
                 { name: 'ethereum', chain_id: 1, symbol: 'ETH' },
                 { name: 'optimism', chain_id: 10, symbol: 'ETH' },
@@ -710,9 +710,12 @@ export class pioneerPublicController extends Controller {
                     let chainId = chainInfo.chain_id
                     log.info(tag,"chainId: ",chainId)
                     let entry = await nodesDB.find({chainId},{limit})
-                    for(let j = 0; j < entry.length; j++){
-                        let server = entry[j]
-                        if(entry)output.push(server)
+                    log.info(tag,"entry: ",entry.length)
+                    if(entry.length > 1){
+                        for(let j = 0; j < entry.length; j++){
+                            let server = entry[j]
+                            if(entry)output.push(server)
+                        }
                     }
                 }
                 redis.set("cache:network:top",JSON.stringify(output))
