@@ -868,23 +868,28 @@ export class atlasPublicController extends Controller {
     public async getPubkeyBalance(asset:string,pubkey:string) {
         let tag = TAG + " | getPubkeyBalance | "
         try{
-            log.debug(tag,{asset,pubkey})
+            log.info(tag,{asset,pubkey})
             let output = await redis.get("cache:balance:"+pubkey+":"+asset)
-            networks.ETH.init({testnet:true})
+            networks.ETH.init()
             if(!output || CACHE_OVERRIDE){
                 //if coin = token, network = ETH
                 if(false){
                     //TODO
                     output = await networks['ETH'].getBalanceToken(pubkey,asset)
                 } else if(asset === 'ETH'){
+                    log.info(tag,"asset ETH path")
                     output = await networks['ETH'].getBalanceAddress(pubkey)
                 } else if(UTXO_COINS.indexOf(asset) >= 0){
+                    log.info(tag,"UTXO_COINS path")
                     //get xpub/zpub
                     output = await networks['ANY'].getBalanceByXpub(asset,pubkey)
                 } else {
                     if(!networks[asset]) {
                         throw Error("109: asset not supported! coin: "+asset)
                     } else {
+                        log.info(tag,"default path")
+                        log.info(tag,"default asset: ",asset)
+                        log.info(tag,"default pubkey: ",pubkey)
                         output = await networks[asset].getBalance(pubkey)
                     }
                 }
