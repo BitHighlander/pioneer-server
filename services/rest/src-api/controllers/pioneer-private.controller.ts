@@ -22,11 +22,13 @@ const usersDB = connection.get('users')
 const pubkeysDB = connection.get('pubkeys')
 const txsDB = connection.get('transactions')
 const utxosDB = connection.get('utxo')
+const redemptionsDB = connection.get('redemptions')
 const util = require('util')
 
 const invocationsDB = connection.get('invocations')
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
+redemptionsDB.createIndex({txid: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
 utxosDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
@@ -626,6 +628,71 @@ export class pioneerPrivateController extends Controller {
                 return userInfo.context
             } else {
                 throw Error("102: invalid auth token!")
+            }
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+        Redeem
+
+         */
+
+    /** POST /users */
+    @Post('/redemption')
+    //CreateAppBody
+    public async redemption(@Body() body: any): Promise<any> {
+        let tag = TAG + " | redeem | "
+        try{
+            log.debug(tag,"body: ",body)
+            let publicAddress = body.publicAddress
+            let signature = body.signature
+            let message = body.message
+            if(!publicAddress) throw Error("Missing publicAddress!")
+            if(!signature) throw Error("Missing signature!")
+            if(!message) throw Error("Missing message!")
+
+            log.debug(tag,{publicAddress,signature,message})
+            //get user
+            let user = await usersDB.findOne({publicAddress})
+            log.debug(tag,"user: ",user)
+            if(!user) throw Error("User not found! publicAddress: "+publicAddress)
+            if(!user.nonce) throw Error("Invalid user saved!")
+            log.debug(tag,"user: ",user.nonce)
+
+            //@TODO validate nonce
+
+            //validate sig
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: signature,
+            });
+            log.debug(tag,"addressFromSig: ",addressFromSig)
+
+            //if valid sign and return token
+            if(addressFromSig === publicAddress){
+                log.debug(tag,"valid signature: ")
+                //validate last time a redemption occurred
+
+                //if < 1 week ago allow redemption
+
+                //credits 100 * balance fox
+
+                // await redis.hmset(token,{
+                //     publicAddress
+                // })
+                // log.debug("token: ",token)
+                // return(token)
+            } else {
+                throw Error("Invalid signature")
             }
         }catch(e){
             let errorResp:Error = {

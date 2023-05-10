@@ -171,18 +171,19 @@ export class WAppsController extends Controller {
         let tag = TAG + " | health | "
         try{
             asset = asset.toLowerCase()
-            log.debug("asset: ",asset)
-            log.debug("version: ",version)
-            log.debug("limit: ",limit)
-            log.debug("skip: ",skip)
+            log.info("asset: ",asset)
+            log.info("version: ",version)
+            log.info("limit: ",limit)
+            log.info("skip: ",skip)
 
             let assetsByName = await assetsDB.find({ name:asset },{limit:100})
-
+            let assetsBySymbol = await assetsDB.find({ name:asset.toUpperCase() },{limit:100})
             let blockchainsByName = await blockchainsDB.find({ name:asset },{limit:100})
-            log.debug("assetsByName: ",assetsByName)
-            log.debug("blockchainsByName: ",blockchainsByName)
+            log.info("assetsByName: ",assetsByName)
+            log.info("assetsBySymbol: ",assetsBySymbol)
+            log.info("blockchainsByName: ",blockchainsByName)
 
-            let hits = [...assetsByName,...blockchainsByName]
+            let hits = [...assetsByName,...blockchainsByName,...assetsBySymbol]
             let output:any = []
             if(hits.length > 0) {
                 let blockchains = []
@@ -191,39 +192,40 @@ export class WAppsController extends Controller {
                     let asset = blockchainsByName[i]
                     blockchains.push(asset.name)
                 }
-                log.debug("blockchains: ",blockchains)
+                log.info("blockchains: ",blockchains)
 
                 for(let i = 0; i < assetsByName.length; i++){
                     let asset = assetsByName[i]
                     blockchains.push(asset.blockchain)
                 }
-                log.debug("blockchains: ",blockchains)
+                log.info("blockchains: ",blockchains)
                 if(!blockchains[0]) blockchains.push(asset)
                 // let apps = await appsDB.find({whitelist:true},{limit,skip})
-                log.debug("blockchains: ",blockchains[0])
+                log.info("blockchains: ",blockchains[0])
                 // let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in:[blockchains]}}]},{limit:100})
                 // let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in: [/bitcoin/i]}}]},{limit:100})
                 let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in: blockchains}}]},{limit:100})
                 // let apps = await appsDB.find({whitelist:true},{limit:100})
-                log.debug("apps: ",apps)
-                log.debug("apps: ",apps.length)
+                log.info("apps: ",apps)
+                log.info("apps: ",apps.length)
 
                 output = []
                 for(let i = 0; i < apps.length; i++){
                     let app = apps[i]
-                    if(!app.minVersion){
-                        output.push(app)
-                    } else if(app.minVersion) {
-                        //check major version
-                        let versions = version.split('.')
-                        let majorVersion = versions[0]
-                        let patchVersion = versions[1]
-                        let minorVersion = versions[2]
-
-                        //check patch
-                        //check minor
-                        output.push(app)
-                    }
+                    output.push(app)
+                    // if(!app.minVersion){
+                    //     output.push(app)
+                    // } else if(app.minVersion) {
+                    //     //check major version
+                    //     let versions = version.split('.')
+                    //     let majorVersion = versions[0]
+                    //     let patchVersion = versions[1]
+                    //     let minorVersion = versions[2]
+                    //
+                    //     //check patch
+                    //     //check minor
+                    //     output.push(app)
+                    // }
                 }
             }
             //Rank by score
