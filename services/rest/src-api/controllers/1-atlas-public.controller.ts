@@ -1279,7 +1279,7 @@ export class pioneerPublicController extends Controller {
 
             let output:any = {}
             try{
-                output = await blockchainsDB.insert(blockchain)
+                output = await blockchainsDB.upsert(blockchain)
             }catch(e){
                 output.error = true
                 output.e = e.toString()
@@ -1344,7 +1344,7 @@ export class pioneerPublicController extends Controller {
 
             let output:any = {}
             try{
-                output = await nodesDB.insert(evmNetwork)
+                output = await nodesDB.upsert(evmNetwork)
             }catch(e){
                 output.error = true
                 output.e = e.toString()
