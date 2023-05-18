@@ -646,6 +646,7 @@ export class pioneerPublicController extends Controller {
             let ALL_CHAINS = [
                 { name: 'ethereum', chain_id: 1, symbol: 'ETH' },
                 { name: 'polygon', chain_id: 137, symbol: 'MATIC' },
+                { name: 'pulsechain', chain_id: 369, symbol: 'PLS' },
                 { name: 'optimism', chain_id: 10, symbol: 'ETH' },
                 { name: 'gnosis', chain_id: 100, symbol: 'xDAI' },
                 { name: 'binance-smart-chain', chain_id: 56, symbol: 'BNB' },
