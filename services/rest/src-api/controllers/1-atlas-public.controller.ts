@@ -1280,7 +1280,11 @@ export class pioneerPublicController extends Controller {
 
             let output:any = {}
             try{
-                output = await blockchainsDB.upsert(blockchain)
+                let query = { blockchain: blockchain.blockchain };
+                let update = { $set: blockchain };
+                let options = { upsert: true };
+
+                output = await blockchainsDB.update(query, update, options)
             }catch(e){
                 output.error = true
                 output.e = e.toString()
@@ -1345,7 +1349,11 @@ export class pioneerPublicController extends Controller {
 
             let output:any = {}
             try{
-                output = await nodesDB.upsert(evmNetwork)
+                let query = { service: evmNetwork.service };
+                let update = { $set: evmNetwork };
+                let options = { upsert: true };
+
+                output = await nodesDB.update(query, update, options)
             }catch(e){
                 output.error = true
                 output.e = e.toString()

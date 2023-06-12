@@ -76,7 +76,7 @@ export class pioneerAiController extends Controller {
         let tag = TAG + " | skills | "
         try{
             //TODO give 10 top skills
-            let status:any = await skillsDB.find({},{limit:5})
+            let status:any = await skillsDB.find({},{limit:10})
 
             return(status)
         }catch(e){
@@ -89,6 +89,29 @@ export class pioneerAiController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
+
+    /*
+    CRUD on skills
+ */
+    @Get('/skill/:id')
+    public async skill(id:string) {
+        let tag = TAG + " | skills | "
+        try{
+            //TODO give 10 top skills
+            let status:any = await skillsDB.findOne({scriptName:id})
+
+            return(status)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
 
     // Create a skill
     @Post('/skills/create')
@@ -107,6 +130,7 @@ export class pioneerAiController extends Controller {
                 score: 0,
                 stability: 0,
                 author: "TODO",
+                scriptName: skill.scriptName,
                 script: skill.script,
                 summary: skill.summary,
                 inputs: skill.inputs,
