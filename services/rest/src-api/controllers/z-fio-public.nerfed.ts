@@ -27,7 +27,7 @@ import {
 //route
 @Tags('Fio Endpoints')
 @Route('')
-export class ZFioPublicController extends Controller {
+export class ZFioPublicNerfed extends Controller {
 
 
     /**
