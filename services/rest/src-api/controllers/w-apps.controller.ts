@@ -400,7 +400,6 @@ export class WAppsController extends Controller {
                 resultWhitelist.result = await queue.createWork("pioneer:facts:ingest",work)
             }
 
-
             return(resultWhitelist);
         }catch(e){
             let errorResp:Error = {
@@ -472,43 +471,51 @@ export class WAppsController extends Controller {
             if(body.homepage.indexOf("https") === -1) {
                 body.homepage = "https://"+body.homepage
             }
+            let textContent = ""
+            try{
+                //read page
+                // Launch a headless browser
+                const browser = await puppeteer.launch();
+                const page = await browser.newPage();
 
-            //read page
-            // Launch a headless browser
-            const browser = await puppeteer.launch();
-            const page = await browser.newPage();
+                // Navigate to the URL
+                await page.goto(body.homepage);
 
-            // Navigate to the URL
-            await page.goto(body.homepage);
+                // Wait for the JavaScript to execute on the page
+                await page.waitForTimeout(2000); // Adjust the timeout as needed
 
-            // Wait for the JavaScript to execute on the page
-            await page.waitForTimeout(2000); // Adjust the timeout as needed
+                // Get all images from the webpage
+                const imageUrls = await page.$$eval('img', images => images.map(img => img.src));
 
-            // Get all images from the webpage
-            const imageUrls = await page.$$eval('img', images => images.map(img => img.src));
+                // Get the HTML content after JavaScript execution
+                const htmlContent = await page.content();
 
-            // Get the HTML content after JavaScript execution
-            const htmlContent = await page.content();
+                // Close the browser
+                await browser.close();
 
-            // Close the browser
-            await browser.close();
+                // Use cheerio to parse the HTML content
+                const $ = cheerio.load(htmlContent);
 
-            // Use cheerio to parse the HTML content
-            const $ = cheerio.load(htmlContent);
+                // Remove all script and style elements
+                $('script, style').remove();
 
-            // Remove all script and style elements
-            $('script, style').remove();
+                // Get the text content of the webpage
+                textContent = $('body').text();
 
-            // Get the text content of the webpage
-            let textContent = $('body').text();
+                // Remove all white space from the text
+                textContent = textContent.replace(/\s+/g, ' ');
 
-            // Remove all white space from the text
-            textContent = textContent.replace(/\s+/g, ' ');
+                // Log the text and image content
+                console.log("textContent: ", textContent);
+                console.log("imageUrls: ", imageUrls);
+                textContent = textContent + " " + imageUrls.join(" ")
+            }catch(e){
+                textContent = "loading failed, just guess"
+            }
 
-            // Log the text and image content
-            console.log("textContent: ", textContent);
-            console.log("imageUrls: ", imageUrls);
-            textContent = textContent + " " + imageUrls.join(" ")
+
+            //trim to length
+
             const schema = {
                 name: "name of the DApp",
                 app: "official app of the DApp",
