@@ -34,6 +34,10 @@ let harpie = require("@pioneer-platform/harpie-client")
 let blocknative = require("@pioneer-platform/blocknative-client")
 blocknative.init()
 
+//explore
+let explore = require('@pioneer-platform/pioneer-explore')
+explore.init({})
+
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
 import * as express from 'express';
@@ -129,26 +133,45 @@ export class pioneerController extends Controller {
     @Post('pioneer/query')
     public async query(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
         let tag = TAG + " | query | "
+        let timingResults = {};
         try{
-            log.info(tag,"mempool tx: ",body)
+            let startTime = Date.now();
+
+            log.info(tag,"Query Body:  ",body)
             if(!body.query) throw Error("query is required!")
+
+            let authTimeStart = Date.now();
             const authInfo = await redis.hgetall(authorization)
+            timingResults['auth'] = Date.now() - authTimeStart;
             if(Object.keys(authInfo).length === 0) throw Error("You must register to use Query!")
             log.info("authInfo: ",authInfo)
-            let queryId = short.generate()
-            //save to mongo
-            let work = {
-                username: authInfo.username,
-                query: body.query,
-                queryId,
-            }
-            //add to work
-            let result = await queue.createWork('bots:pioneer:ingest',work)
-            log.debug(tag,"result: ",result)
 
-            //submit to work
+            let userDataTimeStart = Date.now();
+            const userData = await redis.get(authorization + ":user");
+            log.info("userData: ",userData)
+            timingResults['userData'] = Date.now() - userDataTimeStart;
+
+            let memory = ["data.txt"]
+            let loadKnowledgeTimeStart = Date.now();
+            await explore.loadKnowledge(memory)
+            timingResults['loadKnowledge'] = Date.now() - loadKnowledgeTimeStart;
+
+            if(userData){
+                await explore.loadString(userData)
+            }
+
+            let queryTimeStart = Date.now();
+            let query = body.query
+            log.info("query: ",query)
+            if(!query) throw Error("Must have query!")
+            let response = await explore.query(body.query)
+            if(!response) throw Error("Failed to build response!")
+            timingResults['query'] = Date.now() - queryTimeStart;
+            timingResults['total'] = Date.now() - startTime;
+
             let output = {
-                queryId
+                response,
+                timings: timingResults
             }
 
             return output
@@ -162,4 +185,5 @@ export class pioneerController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
+
 }

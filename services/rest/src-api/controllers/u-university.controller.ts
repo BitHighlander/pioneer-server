@@ -64,17 +64,21 @@ export class ApiError extends Error {
 export class UniversityController extends Controller {
 
     //Info
-    @Get('/info')
-    public async info() {
-        let tag = TAG + " | info | "
+    @Get('/university')
+    public async university() {
+        let tag = TAG + " | university | "
         try{
+            //TODO
             //Get university course map
 
             //get your progress
 
             //get awards
 
-
+            return {
+                success:true,
+                online:false
+            }
         }catch(e){
             let errorResp:Error = {
                 success:false,

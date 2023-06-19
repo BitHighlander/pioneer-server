@@ -1138,12 +1138,13 @@ export class pioneerPublicController extends Controller {
 
             let output:any = {}
             try{
-                output = await dappsDB.insert(dapp)
+                let resultSave = await dappsDB.insert(dapp)
+                output.result = resultSave
             }catch(e){
                 output.error = true
                 output.e = e.toString()
             }
-
+            output.success = true
             return output
         }catch(e){
             let errorResp:Error = {

@@ -25,13 +25,12 @@ let config = {
 let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
 let txsRawDB = connection.get('transactions-raw')
-let devsDB = connection.get('developers')
 let dapsDB = connection.get('dapps')
 
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
 // devsDB.createIndex({username: 1}, {unique: true})
-devsDB.createIndex({publicAddress: 1}, {unique: true})
+usersDB.createIndex({publicAddress: 1}, {unique: true})
 // dapsDB.createIndex({id: 1}, {unique: true})
 //globals
 
@@ -155,7 +154,7 @@ export class VUsersController extends Controller {
         try{
             log.info(tag,"publicAddress: ",publicAddress)
 
-            let devs = await devsDB.findOne({publicAddress})
+            let devs = await usersDB.findOne({publicAddress})
             log.info(tag,"devs: ",devs)
 
             if(!devs){
@@ -164,7 +163,7 @@ export class VUsersController extends Controller {
                     publicAddress,
                     nonce : Math.floor(Math.random() * 10000)
                 }
-                let success = await devsDB.insert(devs)
+                let success = await usersDB.insert(devs)
                 log.info(tag,"success: ",success)
             }
 

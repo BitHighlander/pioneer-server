@@ -180,12 +180,17 @@ export class pioneerPrivateController extends Controller {
         let tag = TAG + " | user | "
         try{
             log.debug(tag,"queryKey: ",authorization)
+            // Check if cache exists for the function
+            const cachedData = await redis.get(authorization + ":user");
+            if (cachedData) {
+                return JSON.parse(cachedData);
+            }
 
             let accountInfo = await redis.hgetall(authorization)
             if(Object.keys(accountInfo).length === 0) {
                 return {
                     success:false,
-                    error:"QueryKey not registerd!"
+                    error:"QueryKey not registered!"
                 }
             } else {
                 log.debug(tag,"accountInfo: ",accountInfo)
@@ -208,6 +213,7 @@ export class pioneerPrivateController extends Controller {
                         //wallets
                         let userInfoMongo = await usersDB.findOne({username})
                         if(!userInfoMongo) {
+                            redis.del(authorization)
                             throw Error("102: unknown user! username: "+username)
                         }
                         if(userInfoMongo.context) userInfo.context = userInfoMongo.context
@@ -343,6 +349,10 @@ export class pioneerPrivateController extends Controller {
                             userInfo.walletDescriptions.push(walletDescription)
                         }
                         userInfo.totalValueUsd = totalValueUsd
+
+                        //build cache
+                        await redis.setex(authorization+":user", 300, JSON.stringify(userInfo));
+
                         return userInfo
                     }
                 }
@@ -728,6 +738,7 @@ export class pioneerPrivateController extends Controller {
             //get user
             let user = await usersDB.findOne({publicAddress})
             log.debug(tag,"user: ",user)
+            //if no user create one
             if(!user) throw Error("User not found! publicAddress: "+publicAddress)
             if(!user.nonce) throw Error("Invalid user saved!")
             log.debug(tag,"user: ",user.nonce)

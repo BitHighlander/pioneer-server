@@ -72,7 +72,7 @@ export class XDevsController extends Controller {
     public async listDevelopers(limit:number,skip:number) {
         let tag = TAG + " | listDeveloper | "
         try{
-            let apps = devsDB.find({},{limit,skip})
+            let apps = usersDB.find({},{limit,skip})
             return(apps)
         }catch(e){
             let errorResp:Error = {

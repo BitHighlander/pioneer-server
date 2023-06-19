@@ -121,12 +121,23 @@ let do_work = async function(){
                         isPoap = true
                     }
                 }
-
                 for(let i = 0; i < allFactsUp.length; i++){
                     let address = allFactsUp[i]
                     let balanceFox = await network.getBalanceToken(address,"0xc770eefad204b5180df6a14ee197d99d808ee52d")
                     if(isPoap) balanceFox = balanceFox + 1000
                     allUpVotesInFox = allUpVotesInFox + parseFloat(balanceFox)
+                }
+
+                //if pioneer 1 mill fox
+                let allPioneers = await network.getAllPioneers()
+                let pioneers = allPioneers.owners
+                if(pioneers.indexOf(addressFromSig) >= 0){
+                    let voteTotal = 100000
+                    if(payload.vote === 'up'){
+                        allUpVotesInFox = allUpVotesInFox + voteTotal
+                    } else if(payload.vote === 'down'){
+                        allDownVotesInFox = allDownVotesInFox + voteTotal
+                    }
                 }
 
                 for(let i = 0; i < allFactsDown.length; i++){
