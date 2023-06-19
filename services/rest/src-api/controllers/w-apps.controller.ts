@@ -485,7 +485,7 @@ export class WAppsController extends Controller {
                 await page.waitForTimeout(2000); // Adjust the timeout as needed
 
                 // Get all images from the webpage
-                const imageUrls = await page.$$eval('img', images => images.map(img => img.src));
+                let imageUrls = await page.$$eval('img', images => images.map(img => img.src));
 
                 // Get the HTML content after JavaScript execution
                 const htmlContent = await page.content();
@@ -504,17 +504,23 @@ export class WAppsController extends Controller {
 
                 // Remove all white space from the text
                 textContent = textContent.replace(/\s+/g, ' ');
-
                 // Log the text and image content
+                // console.log("textContent: ", textContent);
+                // console.log("imageUrls: ", imageUrls);
+                imageUrls = imageUrls.join(" ")
+                if (imageUrls.length > 10000) {
+                    imageUrls = imageUrls.substring(0, 10000);
+                }
+                textContent = textContent + " " + imageUrls
+                // Trim the text to a maximum of 10,000 characters
+                if (textContent.length > 10000) {
+                    textContent = textContent.substring(0, 10000);
+                }
                 console.log("textContent: ", textContent);
-                console.log("imageUrls: ", imageUrls);
-                textContent = textContent + " " + imageUrls.join(" ")
             }catch(e){
                 textContent = "loading failed, just guess"
             }
 
-
-            //trim to length
 
             const schema = {
                 name: "name of the DApp",
@@ -525,7 +531,7 @@ export class WAppsController extends Controller {
                     walletConnectV2: "boolean indicating if the DApp supports WalletConnect V2 (default to false)",
                     rest:" boolean indicating if the DApp supports kk REST, default to false if you do now know ",
                 },
-                image: "logo of the DApp, a full URL os just the image prefure png",
+                image: "logo of the DApp, a full URL or just the image encoded in base64",
                 developer: {
                     email: "developer's email of the DApp"
                 },
@@ -549,11 +555,12 @@ export class WAppsController extends Controller {
                 sourceCodeLink: "link to the DApp's source code",
                 userCount: "number of users using the DApp",
             };
-            textContent = "the dapps URL is "+body.url+" if you know what this dapp does then please add a description from you mind! I dont care if your knowledge is our to date, dont warn me " + textContent
+            textContent = "the dapps URL is "+body.app+" if you know what this dapp does then please add a description from you mind! I dont care if your knowledge is our to date, dont warn me " + textContent
+            log.info(tag,"pre-summary textContent: ",textContent)
             let result = await ai.summarizeString(textContent,schema)
             console.log("result: ",result)
             console.log("result: ",typeof(result))
-
+            if(!result) result = schema
             //TODO save into knowledge db
 
             return(result);
@@ -567,7 +574,6 @@ export class WAppsController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
-
 
     @Post('/apps/revoke')
     //CreateAppBody
