@@ -56,7 +56,7 @@ let do_work = async function(){
         await sleep(300)
         let work = await redis.lpop("pioneer:facts:ingest",BATCH_SIZE)
         if(work){
-            log.debug(tag,"work: ",work)
+            log.info(tag,"work: ",work)
             work = JSON.parse(work[0])
             let body = work.payload
             //validate sig
@@ -111,6 +111,19 @@ let do_work = async function(){
                 let allUpVotesInFox = 0
                 let allDownVotesInFox = 0
 
+                //if pioneer 1 mill fox
+                let allPioneers = await network.getAllPioneers()
+                let pioneers = allPioneers.owners
+                if(pioneers.indexOf(addressFromSig) >= 0){
+                    log.info("PIONEER DETECTED!!!!!")
+                    let voteTotal = 100000
+                    if(payload.vote === 'up'){
+                        allUpVotesInFox = allUpVotesInFox + voteTotal
+                    } else if(payload.vote === 'down'){
+                        allDownVotesInFox = allDownVotesInFox + voteTotal
+                    }
+                }
+
                 //if poap add 1k fox
                 let isPoap = false
                 let paopInfo = await poap.getNFTs(addressFromSig)
@@ -126,18 +139,6 @@ let do_work = async function(){
                     let balanceFox = await network.getBalanceToken(address,"0xc770eefad204b5180df6a14ee197d99d808ee52d")
                     if(isPoap) balanceFox = balanceFox + 1000
                     allUpVotesInFox = allUpVotesInFox + parseFloat(balanceFox)
-                }
-
-                //if pioneer 1 mill fox
-                let allPioneers = await network.getAllPioneers()
-                let pioneers = allPioneers.owners
-                if(pioneers.indexOf(addressFromSig) >= 0){
-                    let voteTotal = 100000
-                    if(payload.vote === 'up'){
-                        allUpVotesInFox = allUpVotesInFox + voteTotal
-                    } else if(payload.vote === 'down'){
-                        allDownVotesInFox = allDownVotesInFox + voteTotal
-                    }
                 }
 
                 for(let i = 0; i < allFactsDown.length; i++){
