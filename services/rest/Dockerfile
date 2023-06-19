@@ -18,6 +18,10 @@ RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/app/.npmrc
 #copy all files except node_modules folder
 COPY . .
 RUN npm run build:all-stage
+RUN npm install puppeteer
+ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
+ENV CHROME_BIN /usr/bin/chromium
+RUN npm install
 
 ENV NODE_ENV docker
 ENV CHROME_BIN /usr/bin/chromium-browser
