@@ -581,34 +581,34 @@ export class WAppsController extends Controller {
                 sig: body.signature,
             });
             log.debug(tag,"addressFromSig: ",addressFromSig)
-
+            log.info(tag,"message: ",message)
+            log.info(tag,"message: ",typeof(message))
             message = JSON.parse(message)
-            if(!message.name) throw Error("Ivalid message missing name")
-            if(!message.url) throw Error("Ivalid message missing url")
-            let resultWhitelist:any = {}
+            if(!message.app) throw Error("Ivalid message missing app")
 
-            //get entry from mongo
-            let entry = await appsDB.find({name:message.name})
-            log.debug(tag,"entry: ",entry)
-            if(entry.length === 0) throw Error("Ivalid developer name not found!")
-            let developer = entry[0].developer
+            let allPioneers = await networkEth.getAllPioneers()
+            let pioneers = allPioneers.owners
+            log.info(tag,"pioneers: ",pioneers)
+            for(let i=0;i<pioneers.length;i++){
+                pioneers[i] = pioneers[i].toLowerCase()
+            }
+            let resultRevoke:any = {}
+            console.log("index: ",pioneers.indexOf(addressFromSig.toLowerCase()))
+            log.info(tag,"pioneers: ",pioneers[0])
+            log.info(tag,"pioneers: ",pioneers[1])
+            log.info(tag,"pioneers: ",addressFromSig.toLowerCase())
 
-
-            if(addressFromSig === developer || addressFromSig === ADMIN_PUBLIC_ADDRESS) {
-                resultWhitelist = await appsDB.deleteOne({name:message.name},{$set:{whitelist:true}})
-                log.debug(tag,"resultWhitelist: ",resultWhitelist)
+            if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
+                resultRevoke.result = await appsDB.remove({app:message.app})
+                resultRevoke.success = true
+                log.debug(tag,"resultWhitelist: ",resultRevoke)
             } else {
                 //get fox balance of address
-                let work:any = {}
-                let queueId = uuid.generate()
-                work.queueId = queueId
-                work.payload = body
-                resultWhitelist.success = true
-                resultWhitelist.message = 'Address '+addressFromSig+' voted to submit app '+message.name+' to the dapp store!'
-                resultWhitelist.result = await redis.createWork("pioneer:facts:ingest",work)
+                resultRevoke.error = "user is not a pioneer!"
+                resultRevoke.success = false
             }
 
-            return(resultWhitelist);
+            return(resultRevoke);
         }catch(e){
             let errorResp:Error = {
                 success:false,
