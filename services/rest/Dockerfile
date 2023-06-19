@@ -4,7 +4,6 @@ FROM --platform=linux/amd64 node:16.13.2
 
 RUN apt-get update && apt-get install -y chromium
 
-
 ARG NPM_TOKEN
 ARG NODE_ENV
 
@@ -17,14 +16,14 @@ RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/app/.npmrc
 
 #copy all files except node_modules folder
 COPY . .
-RUN npm run build:all-stage
-RUN npm install puppeteer
-ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium-browser
-ENV CHROME_BIN /usr/bin/chromium
 RUN npm install
+RUN npm run build:all-stage
+
+# Set environment variables
+ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium
+ENV CHROME_BIN /usr/bin/chromium
 
 ENV NODE_ENV docker
-ENV CHROME_BIN /usr/bin/chromium-browser
 ENV CHROME_PATH /usr/lib/chromium/
 
 #start
