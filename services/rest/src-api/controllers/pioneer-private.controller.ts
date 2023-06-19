@@ -35,8 +35,6 @@ pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
 
-
-
 let config = {
     algorithms: ['HS256' as const],
     secret: 'shhhh', // TODO Put in process.env

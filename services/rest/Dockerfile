@@ -20,6 +20,8 @@ COPY . .
 RUN npm run build:all-stage
 
 ENV NODE_ENV docker
+ENV CHROME_BIN /usr/bin/chromium-browser
+ENV CHROME_PATH /usr/lib/chromium/
 
 #start
 CMD [ "npm", "run", "start" ]
