@@ -1,5 +1,5 @@
 # build stage
-FROM --platform=linux/amd64 node:14 AS build
+FROM --platform=linux/amd64 node:14
 
 ARG NPM_TOKEN
 RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > ./.npmrc
@@ -24,18 +24,16 @@ COPY . .
 RUN npm run build
 
 # production stage
-FROM --platform=linux/amd64 node:14 AS production
+FROM --platform=linux/amd64 node:14
 
 # Create app directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
 # Install only production dependencies
+COPY package*.json ./
 RUN npm ci --only=production
 
-# Copy the built application from the build stage
-COPY --from=build /app/dist ./dist
+# Copy the built application from the previous stage
+COPY --from=0 /app/dist ./dist
 
 CMD [ "npm", "start" ]
