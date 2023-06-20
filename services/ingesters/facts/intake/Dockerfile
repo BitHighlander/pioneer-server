@@ -1,5 +1,5 @@
 # Multi-stage Dockerfile
-FROM node:alpine as build
+FROM node:20-alpine as build
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY tsconfig.json ./
 RUN npm run build
 
 # Runtime stage
-FROM node:alpine
+FROM node:20-alpine as runtime
 
 WORKDIR /app
 
@@ -28,5 +28,11 @@ COPY --from=build /app/dist/ ./dist/
 # Install only production dependencies
 RUN npm ci --only=production
 
+# Set environment variables for Node.js
+ENV NODE_ENV=production
+
+# Optimize Node.js for production
+RUN npm prune --production
+
 # Run the application
-CMD [ "npm", "start" ]
+CMD [ "node", "./dist/index.js" ]
