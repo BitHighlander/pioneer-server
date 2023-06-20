@@ -1,38 +1,30 @@
-# Multi-stage Dockerfile
-FROM node:20-alpine as build
+#uncomment ONLY on M1 mac (rolls eyes)
+FROM --platform=linux/amd64 node:14-buster
+#FROM --platform=linux/amd64 node:16-buster
 
-WORKDIR /app
+RUN apt-get update
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+ARG NPM_TOKEN
+ARG NODE_ENV
 
-# Install dependencies
-RUN npm ci --only=production
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+COPY package.json /usr/src/app/
 
-# Copy source code
-COPY src/ ./src/
-COPY tsconfig.json ./
+#NPM_TOKEN used for private packages
+RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/app/.npmrc
 
-# Build the application
-RUN npm run build
+#copy all files except node_modules folder
+COPY . .
+RUN npm install
+RUN npm run build:all-stage
 
-# Runtime stage
-FROM node:20-alpine as runtime
+# Set environment variables
+ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium
+ENV CHROME_BIN /usr/bin/chromium
 
-WORKDIR /app
+ENV NODE_ENV docker
+ENV CHROME_PATH /usr/lib/chromium/
 
-# Copy only necessary files from the build stage
-COPY --from=build /app/package*.json ./
-COPY --from=build /app/dist/ ./dist/
-
-# Install only production dependencies
-RUN npm ci --only=production
-
-# Set environment variables for Node.js
-ENV NODE_ENV=production
-
-# Optimize Node.js for production
-RUN npm prune --production
-
-# Run the application
-CMD [ "node", "./dist/index.js" ]
+#start
+CMD [ "npm", "run", "start" ]
