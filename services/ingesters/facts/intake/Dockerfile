@@ -1,5 +1,5 @@
 # build stage
-FROM --platform=linux/amd64 node:16
+FROM --platform=linux/amd64 node:20
 
 ARG NPM_TOKEN
 RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > ./.npmrc
@@ -24,7 +24,7 @@ COPY . .
 RUN npm run build
 
 # production stage
-FROM --platform=linux/amd64 node:16
+FROM --platform=linux/amd64 node:20
 
 # Create app directory
 WORKDIR /app
