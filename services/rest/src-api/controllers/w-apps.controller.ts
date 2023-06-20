@@ -305,6 +305,44 @@ export class WAppsController extends Controller {
         }
     }
 
+    @Get('/votes/{name}')
+    public async listAppVotesByName(name:any) {
+        let tag = TAG + " | listAppsByDeveloper | "
+        try{
+            let output = {
+                allFactsUp: [],
+                allFactsDown: []
+            }
+            let upvotes = await redis.smembers("facts:votes:"+name+":up");
+            let downvotes = await redis.smembers("facts:votes:"+name+":down");
+
+            for(let i = 0; i < upvotes.length; i++){
+                let address = upvotes[i]
+                address = address.toLowerCase()
+                let votingPower = await redis.get(address+":nft:voteing-power")
+                output.allFactsUp.push({ address: address, weight: parseFloat(votingPower)})
+            }
+
+            for(let i = 0; i < downvotes.length; i++){
+                let address = downvotes[i]
+                address = address.toLowerCase()
+                let votingPower = await redis.get(address+":nft:voteing-power")
+                output.allFactsDown.push({ address: address, weight: parseFloat(votingPower)})
+            }
+
+            return(output)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
     /*
     TODO
     vote

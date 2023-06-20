@@ -38,10 +38,42 @@ let sleep = wait.sleep;
 
 let connection  = require("@pioneer-platform/default-mongo")
 let txsDB = connection.get('transactions')
+let votesDB = connection.get('votes')
 txsDB.createIndex({txid: 1}, {unique: true})
 let appsDB = connection.get('apps')
 
 let BATCH_SIZE = process.env['BATCH_SIZE_SCORE'] || 1
+
+let calculate_nft_voteing_power = async function(address:string){
+    let tag = TAG + " | calculate_nft_voteing_power | "
+    try{
+        let voteTotal = 0
+        //if pioneer 1 mill fox
+        let allPioneers = await network.getAllPioneers()
+        let pioneers = allPioneers.owners
+        if(pioneers.indexOf(address) >= 0){
+            log.info("PIONEER DETECTED!!!!!")
+            voteTotal = 100000
+        }
+
+        //if poap add 1k fox
+        let isPoap = false
+        let paopInfo = await poap.getNFTs(address)
+        log.debug(tag,"paopInfo: ",paopInfo)
+        for(let i = 0; i < paopInfo.length; i++){
+            let event = paopInfo[i]
+            if(event.event.id === "100142"){
+                voteTotal = voteTotal + 1000
+            }
+        }
+        address = address.toLowerCase()
+        redis.set(address+":nft:voteing-power",voteTotal)
+        return voteTotal
+    }catch(e){
+        log.error(e)
+        throw e
+    }
+}
 
 let do_work = async function(){
     let tag = TAG+" | do_work | "
@@ -111,42 +143,29 @@ let do_work = async function(){
                 let allUpVotesInFox = 0
                 let allDownVotesInFox = 0
 
-                //if pioneer 1 mill fox
-                let allPioneers = await network.getAllPioneers()
-                let pioneers = allPioneers.owners
-                if(pioneers.indexOf(addressFromSig) >= 0){
-                    log.info("PIONEER DETECTED!!!!!")
-                    let voteTotal = 100000
-                    if(payload.vote === 'up'){
-                        allUpVotesInFox = allUpVotesInFox + voteTotal
-                    } else if(payload.vote === 'down'){
-                        allDownVotesInFox = allDownVotesInFox + voteTotal
-                    }
-                }
+                //profile dev
 
-                //if poap add 1k fox
-                let isPoap = false
-                let paopInfo = await poap.getNFTs(addressFromSig)
-                log.debug(tag,"paopInfo: ",paopInfo)
-                for(let i = 0; i < paopInfo.length; i++){
-                    let event = paopInfo[i]
-                    if(event.event.id === "100142"){
-                        isPoap = true
-                    }
-                }
+
                 for(let i = 0; i < allFactsUp.length; i++){
                     let address = allFactsUp[i]
                     let balanceFox = await network.getBalanceToken(address,"0xc770eefad204b5180df6a14ee197d99d808ee52d")
-                    if(isPoap) balanceFox = balanceFox + 1000
-                    allUpVotesInFox = allUpVotesInFox + parseFloat(balanceFox)
+
+                    let nftPower = await calculate_nft_voteing_power(address)
+                    let totalPowerAddress = parseFloat(balanceFox) + nftPower
+                    log.info("UP: "+address+" power:",totalPowerAddress)
+                    allUpVotesInFox = allUpVotesInFox + totalPowerAddress
                 }
 
                 for(let i = 0; i < allFactsDown.length; i++){
                     let address = allFactsDown[i]
                     let balanceFox = await network.getBalanceToken(address,"0xc770eefad204b5180df6a14ee197d99d808ee52d")
-                    if(isPoap) balanceFox = balanceFox + 1000
-                    allDownVotesInFox = allUpVotesInFox + parseFloat(balanceFox)
+                    let nftPower = await calculate_nft_voteing_power(address)
+                    let totalPowerAddress = parseFloat(balanceFox) + nftPower
+                    log.info("DOWN: "+address+" power:",totalPowerAddress)
+                    allDownVotesInFox = allDownVotesInFox + totalPowerAddress
                 }
+                //add all votes to
+
                 //update global balance
                 let score = allUpVotesInFox - allDownVotesInFox
                 console.log("score: ",score)
