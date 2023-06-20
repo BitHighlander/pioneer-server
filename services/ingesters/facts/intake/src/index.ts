@@ -19,10 +19,10 @@ const log = require('@pioneer-platform/loggerdog')()
 const {subscriber,publisher,redis} = require('@pioneer-platform/default-redis')
 import { recoverPersonalSignature } from 'eth-sig-util';
 import { bufferToHex } from 'ethereumjs-util';
-const metrics = require('datadog-metrics');
+// const metrics = require('datadog-metrics');
 const pjson = require('../package.json');
 const os = require("os")
-metrics.init({ host: os.hostname, prefix: pjson.name+'.'+process.env['NODE_ENV']+'.' });
+// metrics.init({ host: os.hostname, prefix: pjson.name+'.'+process.env['NODE_ENV']+'.' });
 
 const poap = require('@pioneer-platform/poap-client')
 let queue = require("@pioneer-platform/redis-queue")
@@ -78,7 +78,7 @@ let do_work = async function(){
         //all work
         let allWork = await queue.count("pioneer:facts:ingest")
         if(allWork > 0)log.debug(tag,"allWork: ",allWork)
-        metrics.gauge('score', allWork);
+        // metrics.gauge('score', allWork);
         await sleep(300)
         let work = await redis.lpop("pioneer:facts:ingest",BATCH_SIZE)
         if(work){
@@ -103,6 +103,14 @@ let do_work = async function(){
                 log.debug(tag,"addressFromSig: ",addressFromSig)
                 log.debug(tag,"body.signer: ",body.signer)
                 if(addressFromSig.toLowerCase() !== body.signer.toLowerCase()) throw Error("Invalid signature!")
+
+                //tally actions
+                let isNew = await redis.sadd("addresses:voted",addressFromSig)
+                if(isNew){
+                    log.info(tag,"isNew: ",addressFromSig)
+                    redis.sadd(addressFromSig+":actions","voted")
+                    redis.hincryby(addressFromSig+":score",10)
+                }
 
                 //get all facts for dapp
                 let allFactsUp = await redis.smembers("facts:votes:"+payload.name+":up")

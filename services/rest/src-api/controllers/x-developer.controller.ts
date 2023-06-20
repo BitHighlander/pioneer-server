@@ -72,8 +72,26 @@ export class XDevsController extends Controller {
     public async listDevelopers(limit:number,skip:number) {
         let tag = TAG + " | listDeveloper | "
         try{
-            let apps = usersDB.find({},{limit,skip})
-            return(apps)
+            let devs = usersDB.find({},{limit,skip})
+            log.info(tag,"devs: ",{devs})
+            let output = []
+            for(let i = 0; i < devs.length; i++){
+                let developer = devs[i]
+                log.info(tag,"developer: ",developer)
+                let score = await redis.hgetall(devs.address+":score")
+                let power = await redis.get(devs.address+":nft:voteing-power")
+                if(score > 0){
+                    let dev:any = {}
+                    //if pioneer/ or foxitar else default
+                    dev.avatar = 'https://ipfs.io/ipfs/bafybeiezdzjofkcpiwy5hlvxwzkgcztxc6xtodh3q7eddfjmqsguqs47aa/0-backgrounds/bithighlander_using_the_psychedelic_art_style_portray_a_pioneer_7b887cd1-b8d9-46bc-ba9f-9e9a74e7ab88_2.png'
+                    dev.address = developer.address
+                    dev.username = developer.username
+                    dev.score = score
+                    dev.power = power
+                }
+            }
+
+            return(output)
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -86,21 +104,24 @@ export class XDevsController extends Controller {
     }
 
 
-    @Get('/auth/dev')
-    public async getDevInfo(@Header('Authorization') authorization: string) {
+    @Get('/auth/dev/{address}')
+    public async getDevInfo(address:string) {
         let tag = TAG + " | getDevInfo | "
         try{
-            let authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
-            log.info(tag,"Object: ",Object.keys(authInfo))
-            if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
-            let publicAddress = authInfo.publicAddress
-            if(!publicAddress) throw Error("invalid auth key info!")
 
+            //get dev score
+            let completed = await redis.smembers(address+":actions")
+            let score = await redis.hgetall(address+":score")
+            //get dev actions
 
+            //voting power
+            let power = await redis.get(address+":nft:voteing-power")
+            let user = {
+                completed,
+                score,
+                power
+            }
 
-            let user = await devsDB.findOne({publicAddress})
-            log.info(tag,"user: ",user)
             return(user);
         }catch(e){
             let errorResp:Error = {

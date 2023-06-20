@@ -422,8 +422,21 @@ export class WAppsController extends Controller {
             if(!message.name) throw Error("Ivalid message missing name")
             if(!message.key) throw Error("Ivalid message missing key")
             if(!message.value) throw Error("Ivalid message missing value")
+
+            //get all noun owners
+            let allPioneers = await networkEth.getAllPioneers()
+            let pioneers = allPioneers.owners
+            log.info(tag,"pioneers: ",pioneers)
+            for(let i=0;i<pioneers.length;i++){
+                pioneers[i] = pioneers[i].toLowerCase()
+            }
+            log.info(tag,"pioneers: ",pioneers)
+            message = JSON.parse(message)
+            if(!message.name) throw Error("Ivalid message missing name")
+            if(!message.url) throw Error("Ivalid message missing url")
             let resultWhitelist:any = {}
-            if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
+            console.log("index: ",pioneers.indexOf(addressFromSig.toLowerCase()))
+            if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
                 delete message["_id"]
                 resultWhitelist = await appsDB.update({name:message.name},{$set:{[message.key]:message.value}})
                 log.debug(tag,"resultWhitelist: ",resultWhitelist)
@@ -711,6 +724,13 @@ export class WAppsController extends Controller {
                 resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
                 log.debug(tag,"resultWhitelist: ",resultWhitelist)
                 resultWhitelist.success = true
+
+                //credit the dev that submited
+                let appInfo = await appsDB.findOne({name:message.name})
+                log.info(tag,"appInfo: ",appInfo)
+                let devAddress = appInfo.developer
+                redis.hincryby(devAddress+":score",100)
+
             } else {
                 //get fox balance of address
                 resultWhitelist.error = true
