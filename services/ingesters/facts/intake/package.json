@@ -19,7 +19,7 @@
     "@pioneer-platform/blockbook": "^8.1.49",
     "@pioneer-platform/default-mongo": "^8.1.21",
     "@pioneer-platform/default-redis": "^8.1.21",
-    "@pioneer-platform/eth-network": "^8.1.5",
+    "@pioneer-platform/eth-network": "^8.1.61",
     "@pioneer-platform/poap-client": "^8.1.19",
     "@pioneer-platform/redis-queue": "^8.1.18",
     "chai": "^4.2.0",
