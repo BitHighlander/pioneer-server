@@ -1,42 +1,51 @@
 # build stage
-FROM --platform=linux/amd64 node:20
+#FROM node:stretch-slim
+#FROM --platform=linux/amd64 node:10
+FROM --platform=linux/amd64 node:18.2.0
 
 ARG NPM_TOKEN
 RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > ./.npmrc
+RUN npm --version
 
-# Update the package lists and install required packages
-RUN apt-get update \
-    && apt-get install -y wget libudev-dev libusb-1.0-0 --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+#RUN npm install npm@5.3.0 -G
+#RUN mv node_modules/npm /usr/local/lib/node_modules/npm
+#RUN rm -rf /usr/local/lib/node_modules/npm
+RUN apt update && apt install wget libudev-dev libusb-1.0-0 -y
 
-WORKDIR /app
+RUN npm --version
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+#requirements for npm install
+#RUN apk add --update \
+#    python \
+#    python-dev \
+#    py-pip \
+#    build-base \
+#  && pip install virtualenv \
+#  && rm -rf /var/cache/apk/*
+
+#WORKDIR /app
+#COPY package*.json ./
+#RUN npm install
+COPY . .
+#RUN npm run build
+
+# production stage
+#FROM node:8
+
+# Create app directory
+WORKDIR .
 
 # Install app dependencies
-RUN npm ci
+# A wildcard is used to ensure both package.json AND package-lock.json are copied
+# where available (npm@5+)
+#COPY package*.json ./
+
+RUN npm install
+RUN npm run build
+# If you are building your code for production
+# RUN npm ci --only=production
 
 # Bundle app source
 COPY . .
-
-# Build the application
-RUN npm run build
-
-# production stage
-FROM --platform=linux/amd64 node:20
-
-# Create app directory
-WORKDIR /app
-
-# Install only production dependencies
-COPY package*.json ./
-RUN npm ci --only=production
-
-# Copy the built application from the previous stage
-COPY --from=0 /app/dist ./dist
-
-# Install Axios as a production dependency
-RUN npm install axios
 
 CMD [ "npm", "start" ]
