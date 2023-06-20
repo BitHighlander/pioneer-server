@@ -16,17 +16,17 @@
     "docker:push:all": "npm run docker:build && npm run docker:tag && npm run docker:push"
   },
   "dependencies": {
+    "@pioneer-platform/blockbook": "^8.1.49",
     "@pioneer-platform/default-mongo": "^8.1.21",
     "@pioneer-platform/default-redis": "^8.1.21",
-    "@pioneer-platform/eth-audit": "^8.1.19",
     "@pioneer-platform/eth-network": "^8.1.5",
     "@pioneer-platform/poap-client": "^8.1.19",
     "@pioneer-platform/redis-queue": "^8.1.18",
-    "axios": "^1.3.4",
     "chai": "^4.2.0",
     "datadog-metrics": "^0.11.0",
     "dotenv": "^8.1.0",
     "eth-sig-util": "^3.0.1",
+    "ethereumjs-util": "^7.1.5",
     "request-promise": "^0.0.1",
     "wait-promise": "^0.4.1"
   },
