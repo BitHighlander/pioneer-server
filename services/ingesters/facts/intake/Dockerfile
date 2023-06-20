@@ -1,5 +1,5 @@
 # build stage
-FROM --platform=linux/amd64 node:14
+FROM --platform=linux/amd64 node:16
 
 ARG NPM_TOKEN
 RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > ./.npmrc

@@ -19,19 +19,13 @@ const log = require('@pioneer-platform/loggerdog')()
 const {subscriber,publisher,redis} = require('@pioneer-platform/default-redis')
 import { recoverPersonalSignature } from 'eth-sig-util';
 import { bufferToHex } from 'ethereumjs-util';
-const request = require("request-promise")
 const metrics = require('datadog-metrics');
 const pjson = require('../package.json');
 const os = require("os")
 metrics.init({ host: os.hostname, prefix: pjson.name+'.'+process.env['NODE_ENV']+'.' });
 
 const poap = require('@pioneer-platform/poap-client')
-
-//for dev
-const fs = require("fs-extra");
-
 let queue = require("@pioneer-platform/redis-queue")
-let audit = require("@pioneer-platform/eth-audit")
 let network = require("@pioneer-platform/eth-network")
 let wait = require('wait-promise');
 let sleep = wait.sleep;
