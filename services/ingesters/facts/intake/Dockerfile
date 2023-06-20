@@ -24,7 +24,7 @@ COPY . .
 RUN npm run build
 
 # production stage
-FROM --platform=linux/amd64 node:14
+FROM --platform=linux/amd64 node:16
 
 # Create app directory
 WORKDIR /app
@@ -35,5 +35,8 @@ RUN npm ci --only=production
 
 # Copy the built application from the previous stage
 COPY --from=0 /app/dist ./dist
+
+# Install Axios as a production dependency
+RUN npm install axios
 
 CMD [ "npm", "start" ]
