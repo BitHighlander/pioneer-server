@@ -5,7 +5,7 @@ ARG NPM_TOKEN
 RUN echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ./.npmrc
 
 # Install required dependencies
-RUN apk update && apk add --no-cache wget libudev-dev libusb-1.0
+RUN apk update
 
 # Set the working directory
 WORKDIR /app
