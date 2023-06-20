@@ -1,51 +1,41 @@
 # build stage
-#FROM node:stretch-slim
-FROM --platform=linux/amd64 node:10
-
+FROM --platform=linux/amd64 node:14 AS build
 
 ARG NPM_TOKEN
 RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > ./.npmrc
-RUN npm --version
 
-#RUN npm install npm@5.3.0 -G
-#RUN mv node_modules/npm /usr/local/lib/node_modules/npm
-#RUN rm -rf /usr/local/lib/node_modules/npm
-RUN apt update && apt install wget libudev-dev libusb-1.0-0 -y
+# Update the package lists and install required packages
+RUN apt-get update \
+    && apt-get install -y wget libudev-dev libusb-1.0-0 --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN npm --version
+WORKDIR /app
 
-#requirements for npm install
-#RUN apk add --update \
-#    python \
-#    python-dev \
-#    py-pip \
-#    build-base \
-#  && pip install virtualenv \
-#  && rm -rf /var/cache/apk/*
-
-#WORKDIR /app
-#COPY package*.json ./
-#RUN npm install
-COPY . .
-#RUN npm run build
-
-# production stage
-#FROM node:8
-
-# Create app directory
-WORKDIR .
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
 # Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
-#COPY package*.json ./
-
-RUN npm install
-RUN npm run build
-# If you are building your code for production
-# RUN npm ci --only=production
+RUN npm ci
 
 # Bundle app source
 COPY . .
+
+# Build the application
+RUN npm run build
+
+# production stage
+FROM --platform=linux/amd64 node:14 AS production
+
+# Create app directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install only production dependencies
+RUN npm ci --only=production
+
+# Copy the built application from the build stage
+COPY --from=build /app/dist ./dist
 
 CMD [ "npm", "start" ]
