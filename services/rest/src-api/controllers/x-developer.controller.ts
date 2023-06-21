@@ -72,22 +72,27 @@ export class XDevsController extends Controller {
     public async listDevelopers(limit:number,skip:number) {
         let tag = TAG + " | listDeveloper | "
         try{
-            let devs = usersDB.find({},{limit,skip})
-            log.info(tag,"devs: ",{devs})
+            //let devs = await usersDB.find({},{limit,skip})
+            let allVoted = await redis.smembers("addresses:voted")
+            log.info(tag,"allVoted: ",{allVoted})
             let output = []
-            for(let i = 0; i < devs.length; i++){
-                let developer = devs[i]
+            for(let i = 0; i < allVoted.length; i++){
+                let developer = allVoted[i]
                 log.info(tag,"developer: ",developer)
-                let score = await redis.hgetall(devs.address+":score")
-                let power = await redis.get(devs.address+":nft:voteing-power")
+                let score = await redis.hgetall(developer+":score")
+                log.info(tag,"score: ",score)
+                let power = await redis.get(developer+":nft:voteing-power")
+                score = parseInt(score.score)
+                log.info(tag,"score: (INT) ",score)
                 if(score > 0){
                     let dev:any = {}
                     //if pioneer/ or foxitar else default
                     dev.avatar = 'https://ipfs.io/ipfs/bafybeiezdzjofkcpiwy5hlvxwzkgcztxc6xtodh3q7eddfjmqsguqs47aa/0-backgrounds/bithighlander_using_the_psychedelic_art_style_portray_a_pioneer_7b887cd1-b8d9-46bc-ba9f-9e9a74e7ab88_2.png'
-                    dev.address = developer.address
+                    dev.address = developer.publicAddress
                     dev.username = developer.username
                     dev.score = score
                     dev.power = power
+                    output.push(dev)
                 }
             }
 

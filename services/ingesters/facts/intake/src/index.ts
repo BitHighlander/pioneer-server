@@ -21,6 +21,7 @@ import { recoverPersonalSignature } from 'eth-sig-util';
 import { bufferToHex } from 'ethereumjs-util';
 // const metrics = require('datadog-metrics');
 const pjson = require('../package.json');
+let client = require("@pioneer-platform/foxitar-client")
 const os = require("os")
 // metrics.init({ host: os.hostname, prefix: pjson.name+'.'+process.env['NODE_ENV']+'.' });
 
@@ -104,12 +105,13 @@ let do_work = async function(){
                 log.debug(tag,"body.signer: ",body.signer)
                 if(addressFromSig.toLowerCase() !== body.signer.toLowerCase()) throw Error("Invalid signature!")
 
-                //tally actions
-                let isNew = await redis.sadd("addresses:voted",addressFromSig)
-                if(isNew){
-                    log.info(tag,"isNew: ",addressFromSig)
-                    redis.sadd(addressFromSig+":actions","voted")
-                    redis.hincryby(addressFromSig+":score",10)
+                // Tally actions
+                redis.sadd("addresses:voted", addressFromSig);
+                let isNew = await redis.sadd("addresses:voted:"+payload.name, addressFromSig);
+                if (isNew === 1) {
+                    log.info(tag, "isNew: ", addressFromSig);
+                    await redis.sadd(addressFromSig + ":actions", "voted");
+                    await redis.hincrby(addressFromSig + ":score", "score", 10); // Add "score" as the field parameter
                 }
 
                 //get all facts for dapp
@@ -186,6 +188,79 @@ let do_work = async function(){
     }
     do_work()
 }
+
+let onStart = async function() {
+    let tag = TAG + " | onStart | ";
+    try {
+        // Get last time it's run
+        let lastRunTime = await redis.get("foxitar:worker:lastRunTime");
+        log.info("lastRunTime: ", lastRunTime);
+        let today = new Date();
+
+        // Get last cursor
+        let lastCursor = await redis.get("foxitar:cursor");
+        lastCursor = parseInt(lastCursor) || 1;
+        log.info("lastCursor: ", lastCursor);
+
+        // If already run today and a full cycle was completed
+        if (lastRunTime && new Date(lastRunTime).getDate() == today.getDate() && lastCursor == 0) {
+            console.log("Already run today and a full cycle is completed");
+            return;
+        }
+
+        // Get 100 addys at a time
+        let limit = 2;
+        let batch = await client.getOwners(lastCursor, limit);
+        batch = batch.owners;
+        //log.info(tag, "batch: ", batch);
+
+        // If the batch is smaller than the limit, we've completed a cycle
+        if (batch.length < limit) {
+            lastCursor = 0; // Reset the cursor for the next cycle
+        }
+
+        // Prepare data for the sorted set
+        let data = [];
+        for (let i = lastCursor; i < lastCursor + batch.length; i++) {
+            let entry = batch[i - lastCursor];
+            log.debug(tag, "entry: ", entry);
+            let tokenInfo = await client.getTokenInfo(i);
+            log.debug(tag, "tokenInfo: ", tokenInfo);
+            let xp = tokenInfo.properties?.XP?.value;
+            log.debug(tag, "xp: ", xp);
+            data.push({
+                id: i+1,
+                image: tokenInfo.image,
+                xp: parseInt(xp) || 0,
+                address: entry,
+            });
+            redis.hmset(entry,"foxitar",tokenInfo.image)
+        }
+        log.debug(tag, "data", data);
+
+        for(let i = 0; i < data.length; i++){
+            let entry = data[i]
+            await redis.zadd("foxitars",entry.xp,entry.address)
+        }
+
+        // Set the cursor for the next run
+        await redis.set("foxitar:cursor", lastCursor + batch.length);
+
+        // If a full cycle was completed in this run, set the last run time
+        if (batch.length < limit) {
+            await redis.set("foxitar:worker:lastRunTime", today.toISOString());
+        }
+
+        // Wait for 5 seconds before the next iteration
+        setTimeout(onStart, 5000);
+    } catch (e) {
+        console.error(e);
+        // If an error occurred, wait for 5 seconds before retrying
+        setTimeout(onStart, 5000);
+    }
+};
+onStart();
+
 
 //start working on install
 log.debug(TAG," worker started! ","")
