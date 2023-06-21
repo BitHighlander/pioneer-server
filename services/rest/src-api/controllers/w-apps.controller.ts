@@ -33,6 +33,8 @@ const uuid = require('short-uuid');
 const queue = require('@pioneer-platform/redis-queue');
 const assetsDB = connection.get('assets')
 const knowledgeDB = connection.get('knowledge');
+const reviewsDB = connection.get('reviews');
+reviewsDB.createIndex({id: 1}, {unique: true})
 knowledgeDB.createIndex({title: 1}, {unique: true})
 blockchainsDB.createIndex({blockchain: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
@@ -475,15 +477,28 @@ export class WAppsController extends Controller {
             check url is live
             load url and use AI to get description
             store description into knowledge
-
-
      */
 
-
+    @Get('/reviews/{app}/{limit}/{skip}')
+    public async listReviewsByApp(app:string,limit:number,skip:number) {
+        let tag = TAG + " | health | "
+        try{
+            let reviews = reviewsDB.find({app},{limit,skip})
+            return(reviews)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
 
     //admin
-        /*
+    /*
         read
     */
 
@@ -625,6 +640,123 @@ export class WAppsController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
+
+
+    //Submit review
+    @Post('/apps/review/submit')
+    //CreateAppBody
+    public async submitReview(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | submitReview | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let authInfo = await redis.hgetall(authorization)
+            log.info(tag,"authInfo: ",authInfo)
+
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+            message = JSON.parse(message)
+            log.info(tag,"message: ",message)
+            log.info(tag,"message: ",typeof(message))
+            //TODO verify app and rating is signed
+
+            //TODO verify user is a fox or pioneer
+
+            let entry = {
+                app:message.app,
+                user:authInfo.address,
+                rating:body.review.rating,
+                review:body.review.review,
+                timestamp:Date.now(),
+                fact:{
+                    signer:body.signer,
+                    payload:body.payload,
+                    signature:body.signature
+                }
+            }
+            let submitResult = await reviewsDB.insert(entry)
+            log.info(submitResult)
+            submitResult.success = true
+
+            return(submitResult);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    //delete review
+    @Post('/apps/review/delete')
+    //CreateAppBody
+    public async removeReview(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | removeReview | "
+        try{
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.debug(tag,"addressFromSig: ",addressFromSig)
+            log.info(tag,"message: ",message)
+            log.info(tag,"message: ",typeof(message))
+            message = JSON.parse(message)
+            if(!message.app) throw Error("Ivalid message missing app")
+
+            let allPioneers = await networkEth.getAllPioneers()
+            let pioneers = allPioneers.owners
+            log.info(tag,"pioneers: ",pioneers)
+            for(let i=0;i<pioneers.length;i++){
+                pioneers[i] = pioneers[i].toLowerCase()
+            }
+            let resultRevoke:any = {}
+            console.log("index: ",pioneers.indexOf(addressFromSig.toLowerCase()))
+            log.info(tag,"pioneers: ",pioneers[0])
+            log.info(tag,"pioneers: ",pioneers[1])
+            log.info(tag,"pioneers: ",addressFromSig.toLowerCase())
+
+            if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
+                resultRevoke.result = await reviewsDB.remove({app:message.app})
+                resultRevoke.success = true
+                log.debug(tag,"resultWhitelist: ",resultRevoke)
+            } else {
+                //get fox balance of address
+                resultRevoke.error = "user is not a pioneer!"
+                resultRevoke.success = false
+            }
+
+            return(resultRevoke);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
 
     @Post('/apps/revoke')
     //CreateAppBody
