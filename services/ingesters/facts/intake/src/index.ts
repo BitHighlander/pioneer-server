@@ -209,7 +209,7 @@ let onStart = async function() {
         }
 
         // Get 100 addys at a time
-        let limit = 2;
+        let limit = 10;
         let batch = await client.getOwners(lastCursor, limit);
         batch = batch.owners;
         //log.info(tag, "batch: ", batch);

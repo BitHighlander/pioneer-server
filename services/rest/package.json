@@ -59,7 +59,7 @@
     "@pioneer-platform/cosmos-network": "latest",
     "@pioneer-platform/default-mongo": "latest",
     "@pioneer-platform/default-redis": "latest",
-    "@pioneer-platform/eth-network": "^8.1.57",
+    "@pioneer-platform/eth-network": "^8.1.64",
     "@pioneer-platform/fio-network": "latest",
     "@pioneer-platform/harpie-client": "^8.1.18",
     "@pioneer-platform/kava-network": "latest",
