@@ -262,6 +262,8 @@ let register_zpub = async function (username:string, pubkey:any, context:string)
         log.info(tag,"Master(hdwallet): ",pubkey.master)
         if(address !== pubkey.master){
             log.error(tag,"Local Master NOT VALID!!")
+            log.error(tag,"Local Master: ",address)
+            log.error(tag,"hdwallet Master: ",pubkey.master)
             //revert to pubkey (assume hdwallet right)
             address = pubkey.master
         }
@@ -535,144 +537,151 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
     }
 }
 
-let register_pubkeys = async function (username: string, pubkeys: any, context: string) {
-    let tag = TAG + " | register_pubkeys | "
+const register_pubkeys = async function (username: string, pubkeys: any, context: string) {
+    let tag = TAG + " | register_pubkeys | ";
     try {
-        log.debug(tag, "input: ", {username, pubkeys, context})
-        let saveActions = []
+        log.debug(tag, "input: ", { username, pubkeys, context });
+        let saveActions = [];
         //generate addresses
-        let output: any = {}
-        output.work = []
+        let output: any = {};
+        output.work = [];
 
         for (let i = 0; i < pubkeys.length; i++) {
-            let pubkeyInfo = pubkeys[i]
-            log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
-            let nativeAsset = getNativeAssetForBlockchain(pubkeyInfo.blockchain)
-            if(!nativeAsset) throw Error("104: invalid pubkey! unsupported by coins module!")
-            if(!pubkeyInfo.pubkey) throw Error("104: invalid pubkey! missing pubkey!")
-            if(!pubkeyInfo.type) throw Error("104: invalid pubkey! missing type!")
+            let pubkeyInfo = pubkeys[i];
+            log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
+            let nativeAsset = getNativeAssetForBlockchain(pubkeyInfo.blockchain);
+            if (!nativeAsset) throw Error("104: invalid pubkey! unsupported by coins module!");
+            if (!pubkeyInfo.pubkey) throw Error("104: invalid pubkey! missing pubkey!");
+            if (!pubkeyInfo.type) throw Error("104: invalid pubkey! missing type!");
             //TODO verify type is in enums
             //hack
-            if (!pubkeyInfo.symbol) pubkeyInfo.symbol = nativeAsset
+            if (!pubkeyInfo.symbol) pubkeyInfo.symbol = nativeAsset;
 
-            log.debug(tag, "pubkeyInfo: ", pubkeyInfo)
-            if (!pubkeyInfo.blockchain) throw Error("Invalid pubkey required field: blockchain")
-            if (!pubkeyInfo.script_type) throw Error("Invalid pubkey required field: script_type coin:" + pubkeyInfo.blockchain)
-            if (!pubkeyInfo.network) throw Error("Invalid pubkey required field: network coin:" + pubkeyInfo.blockchain)
-            if (!pubkeyInfo.master) throw Error("Invalid pubkey required field: master coin:" + pubkeyInfo.blockchain)
-
+            log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
+            if (!pubkeyInfo.blockchain) throw Error("Invalid pubkey required field: blockchain");
+            if (!pubkeyInfo.script_type) throw Error("Invalid pubkey required field: script_type coin:" + pubkeyInfo.blockchain);
+            if (!pubkeyInfo.network) throw Error("Invalid pubkey required field: network coin:" + pubkeyInfo.blockchain);
+            if (!pubkeyInfo.master) throw Error("Invalid pubkey required field: master coin:" + pubkeyInfo.blockchain);
 
             //save to mongo
             let entryMongo: any = {
                 pubkey: pubkeyInfo.pubkey,
                 type: pubkeyInfo.type,
                 blockchain: pubkeyInfo.blockchain,
-                symbol:nativeAsset,
+                symbol: nativeAsset,
                 asset: pubkeyInfo.blockchain,
                 path: pubkeyInfo.path,
                 pathMaster: pubkeyInfo.pathMaster,
                 script_type: pubkeyInfo.script_type,
                 network: pubkeyInfo.blockchain,
                 created: new Date().getTime(),
-                tags: [username, pubkeyInfo.blockchain,pubkeyInfo.symbol, pubkeyInfo.network, context],
-            }
+                tags: [username, pubkeyInfo.blockchain, pubkeyInfo.symbol, pubkeyInfo.network, context],
+            };
 
             if (pubkeyInfo.type === "xpub") {
-                log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
-                let xpub = pubkeyInfo.pubkey
-                log.debug(tag,"xpub: ",xpub)
+                log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
+                let xpub = pubkeyInfo.pubkey;
+                log.debug(tag, "xpub: ", xpub);
 
-                entryMongo.pubkey = xpub
-                entryMongo.xpub = xpub
-                entryMongo.type = 'xpub'
-                entryMongo.master = pubkeyInfo.address
-                entryMongo.address = pubkeyInfo.address
-                let queueId = await register_xpub(username, pubkeyInfo, context)
+                entryMongo.pubkey = xpub;
+                entryMongo.xpub = xpub;
+                entryMongo.type = 'xpub';
+                entryMongo.master = pubkeyInfo.address;
+                entryMongo.address = pubkeyInfo.address;
+                let queueId = await register_xpub(username, pubkeyInfo, context);
 
                 //add to Mutex array for async xpub register option
-                output.work.push(queueId)
+                output.work.push(queueId);
 
             } else if (pubkeyInfo.type === "zpub") {
-                let zpub = pubkeyInfo.pubkey
+                let zpub = pubkeyInfo.pubkey;
 
-                entryMongo.pubkey = zpub
-                entryMongo.zpub = zpub
-                entryMongo.type = 'zpub'
-                entryMongo.master = pubkeyInfo.address
-                entryMongo.address = pubkeyInfo.address
+                entryMongo.pubkey = zpub;
+                entryMongo.zpub = zpub;
+                entryMongo.type = 'zpub';
+                entryMongo.master = pubkeyInfo.address;
+                entryMongo.address = pubkeyInfo.address;
 
-                let queueId = await register_xpub(username, pubkeyInfo, context)
+                let queueId = await register_xpub(username, pubkeyInfo, context);
 
                 //add to Mutex array for async xpub register option
-                output.work.push(queueId)
+                output.work.push(queueId);
 
             } else if (pubkeyInfo.type === "address") {
-                entryMongo.pubkey = pubkeyInfo.pubkey
-                entryMongo.master = pubkeyInfo.pubkey
-                entryMongo.type = pubkeyInfo.type
-                entryMongo.address = pubkeyInfo.address
-                let queueId = await register_address(username, pubkeyInfo, context)
+                entryMongo.pubkey = pubkeyInfo.pubkey;
+                entryMongo.master = pubkeyInfo.pubkey;
+                entryMongo.type = pubkeyInfo.type;
+                entryMongo.address = pubkeyInfo.address;
+                let queueId = await register_address(username, pubkeyInfo, context);
 
-                output.work.push(queueId)
+                output.work.push(queueId);
             } else {
-                log.error("Unhandled type: ", pubkeyInfo.type)
+                log.error("Unhandled type: ", pubkeyInfo.type);
             }
 
             //verify write
-            log.debug(tag,"entryMongo: ",entryMongo)
-            if(!entryMongo.pubkey) throw Error("103: Invalid pubkey! can not save!")
+            log.debug(tag, "entryMongo: ", entryMongo);
+            if (!entryMongo.pubkey) throw Error("103: Invalid pubkey! can not save!");
             //check exists
-            let keyExists = await pubkeysDB.findOne({pubkey:entryMongo.pubkey})
-            if(keyExists){
-                log.debug(tag,"Key already registered! key: ",entryMongo)
+            let keyExists = await pubkeysDB.findOne({ pubkey: entryMongo.pubkey });
+            if (keyExists) {
+                log.debug(tag, "Key already registered! key: ", entryMongo);
                 //push wallet to tags
                 //add to tags
-                let pushTagMongo = await pubkeysDB.update({pubkey:entryMongo.pubkey},
-                    { $addToSet: { tags: { $each:[context,username] } } })
+                let pushTagMongo = await pubkeysDB.update(
+                    { pubkey: entryMongo.pubkey },
+                    { $addToSet: { tags: { $each: [context, username] } } }
+                );
 
-                log.debug(tag,"pushTagMongo: ",pushTagMongo)
-            }else{
+                log.debug(tag, "pushTagMongo: ", pushTagMongo);
+            } else {
 
-                if(!entryMongo.pubkey || entryMongo.pubkey == true){
-                    log.error(" **** ERROR INVALID PUBKEY ENTRY! ***** pubkeyInfo: ",pubkeyInfo)
-                    log.error(" **** ERROR INVALID PUBKEY ENTRY! ***** entryMongo: ",entryMongo)
-                    throw Error("105: unable to save invalid pubkey!")
+                if (!entryMongo.pubkey || entryMongo.pubkey == true) {
+                    log.error(" **** ERROR INVALID PUBKEY ENTRY! ***** pubkeyInfo: ", pubkeyInfo);
+                    log.error(" **** ERROR INVALID PUBKEY ENTRY! ***** entryMongo: ", entryMongo);
+                    throw Error("105: unable to save invalid pubkey!");
                 } else {
-                    let saveMongo = await pubkeysDB.insert(entryMongo)
-                    log.debug(tag,"saveMongo: ",saveMongo)
-                    //TODO throw if error (better get error then not fail fast)
+                    let saveMongo = await pubkeysDB.insert(entryMongo);
+                    log.debug(tag, "saveMongo: ", saveMongo);
+                    //TODO throw if error (better get error than not fail fast)
                 }
 
             }
 
         }
-
 
         if (BALANCE_ON_REGISTER) {
-            output.results = []
+            output.results = [];
             //verifies balances returned are final
-            log.debug(tag, " BALANCE VERIFY ON")
-            //let isDone
-            let isDone = false
+            log.debug(tag, " BALANCE VERIFY ON");
+            let isDone = false;
+
             while (!isDone) {
                 //block on
-                log.debug(tag, "output.work: ", output.work)
-                let promised = []
+                log.debug(tag, "output.work: ", output.work);
+                let promised = [];
+
                 for (let i = 0; i < output.work.length; i++) {
-                    let promise = redisQueue.blpop(output.work[i], 30)
-                    promised.push(promise)
+                    let promise = redisQueue.blpop(output.work[i], 30);
+                    promised.push(promise);
                 }
 
-                output.results = await Promise.all(promised)
-                isDone = true
+                output.results = await Promise.all(promised);
+                isDone = true;
+
+                for (let i = 0; i < output.results.length; i++) {
+                    if (output.results[i] !== null) {
+                        isDone = false;
+                        break;
+                    }
+                }
             }
         }
 
-
-        log.debug(tag, " return object: ", output)
-        return output
+        log.debug(tag, " return object: ", output);
+        return output;
     } catch (e) {
-        console.error(tag, "e: ", e)
-        throw e
+        console.error(tag, "e: ", e);
+        throw e;
     }
-}
+};

@@ -29,13 +29,11 @@ networkEth.init()
 let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
 let txsRawDB = connection.get('transactions-raw')
-let devsDB = connection.get('developers')
 let dapsDB = connection.get('dapps')
 
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
 // devsDB.createIndex({username: 1}, {unique: true})
-devsDB.createIndex({publicAddress: 1}, {unique: true})
 // dapsDB.createIndex({id: 1}, {unique: true})
 //globals
 
@@ -176,47 +174,47 @@ export class XDevsController extends Controller {
 
      */
 
-    @Post('/devs/create')
-    //CreateAppBody
-    public async createDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-        let tag = TAG + " | createDeveloper | "
-        try{
-            log.info(tag,"body: ",body)
-            let authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
-            log.info(tag,"Object: ",Object.keys(authInfo))
-            if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
-            let publicAddress = authInfo.publicAddress
-            if(!publicAddress) throw Error("invalid auth key info!")
-
-            //get userInfo
-            let userInfo = await usersDB.findOne({publicAddress})
-            if(!userInfo) throw Error("First must register an account!")
-
-            //body
-            if(!body.email) throw Error("Developers must register an email!")
-            if(!body.github) throw Error("Developers must register a github!")
-            let devInfo = {
-                verified:false,
-                username:userInfo.username,
-                publicAddress,
-                email:body.email,
-                github:body.github
-            }
-            let dev = await devsDB.insert(devInfo)
-
-            return(dev);
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
-
+    // @Post('/devs/create')
+    // //CreateAppBody
+    // public async createDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+    //     let tag = TAG + " | createDeveloper | "
+    //     try{
+    //         log.info(tag,"body: ",body)
+    //         let authInfo = await redis.hgetall(authorization)
+    //         log.info(tag,"authInfo: ",authInfo)
+    //         log.info(tag,"Object: ",Object.keys(authInfo))
+    //         if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
+    //         let publicAddress = authInfo.publicAddress
+    //         if(!publicAddress) throw Error("invalid auth key info!")
+    //
+    //         //get userInfo
+    //         let userInfo = await usersDB.findOne({publicAddress})
+    //         if(!userInfo) throw Error("First must register an account!")
+    //
+    //         //body
+    //         if(!body.email) throw Error("Developers must register an email!")
+    //         if(!body.github) throw Error("Developers must register a github!")
+    //         let devInfo = {
+    //             verified:false,
+    //             username:userInfo.username,
+    //             publicAddress,
+    //             email:body.email,
+    //             github:body.github
+    //         }
+    //         let dev = await devsDB.insert(devInfo)
+    //
+    //         return(dev);
+    //     }catch(e){
+    //         let errorResp:Error = {
+    //             success:false,
+    //             tag,
+    //             e
+    //         }
+    //         log.error(tag,"e: ",{errorResp})
+    //         throw new ApiError("error",503,"error: "+e.toString());
+    //     }
+    // }
+    //
 
 
     /*
@@ -269,82 +267,82 @@ export class XDevsController extends Controller {
         Verify
 
      */
-    @Post('/devs/register')
-    //CreateAppBody
-    public async registerDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-        let tag = TAG + " | registerDeveloper | "
-        try{
-            log.info(tag,"body: ",body)
-            if(!authorization) throw Error("Missing authorization!")
-            if(!body.publicAddress) throw Error("Missing publicAddress!")
-            if(!body.github) throw Error("Missing github!")
-            if(!body.email) throw Error("Missing email!")
-            if(!body.image) throw Error("Missing image!")
-            log.info(tag,"authorization: ",authorization)
-            let authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
-            log.info(tag,"Object: ",Object.keys(authInfo))
-            if(!authInfo || Object.keys(authInfo).length === 0) {
-                //register
-                let userInfo:any = {
-                    registered: new Date().getTime(),
-                    id:"developer:"+pjson.version+":"+uuidv4(), //user ID versioning!
-                    username:body.username,
-                    verified:false,
-                    nonce:Math.floor(Math.random() * 10000),
-                    publicAddress:body.publicAddress
-                }
-                await redis.hmset(authorization,userInfo)
-            }
-            authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
-            let publicAddress = authInfo.publicAddress
-            if(!publicAddress) throw Error("invalid auth key info! missing publicAddress")
-
-            //verify action
-            let signature = body.signature
-            let message = body.message
-            if(!publicAddress) throw Error("Missing publicAddress!")
-            if(!signature) throw Error("Missing signature!")
-            if(!message) throw Error("Missing message!")
-
-            //validate sig
-            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
-            const addressFromSig = recoverPersonalSignature({
-                data: msgBufferHex,
-                sig: signature,
-            });
-            log.info(tag,"addressFromSig: ",addressFromSig)
-            if(addressFromSig.toLowerCase() == body.developer.toLowerCase()){
-
-                let devInfo = {
-                    verified:false,
-                    username:body.username,
-                    developer:body.developer,
-                    publicAddress,
-                    email:body.email,
-                    github:body.github,
-                    image:body.image
-                }
-                let dev = await devsDB.insert(devInfo)
-                log.info(tag,"updateResult: ",dev)
-                return(dev);
-            } else {
-                return({
-                    success:false,
-                    error:"Invalid signature! must be signed by developer address!"
-                })
-            }
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
+    // @Post('/devs/register')
+    // //CreateAppBody
+    // public async registerDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+    //     let tag = TAG + " | registerDeveloper | "
+    //     try{
+    //         log.info(tag,"body: ",body)
+    //         if(!authorization) throw Error("Missing authorization!")
+    //         if(!body.publicAddress) throw Error("Missing publicAddress!")
+    //         if(!body.github) throw Error("Missing github!")
+    //         if(!body.email) throw Error("Missing email!")
+    //         if(!body.image) throw Error("Missing image!")
+    //         log.info(tag,"authorization: ",authorization)
+    //         let authInfo = await redis.hgetall(authorization)
+    //         log.info(tag,"authInfo: ",authInfo)
+    //         log.info(tag,"Object: ",Object.keys(authInfo))
+    //         if(!authInfo || Object.keys(authInfo).length === 0) {
+    //             //register
+    //             let userInfo:any = {
+    //                 registered: new Date().getTime(),
+    //                 id:"developer:"+pjson.version+":"+uuidv4(), //user ID versioning!
+    //                 username:body.username,
+    //                 verified:false,
+    //                 nonce:Math.floor(Math.random() * 10000),
+    //                 publicAddress:body.publicAddress
+    //             }
+    //             await redis.hmset(authorization,userInfo)
+    //         }
+    //         authInfo = await redis.hgetall(authorization)
+    //         log.info(tag,"authInfo: ",authInfo)
+    //         let publicAddress = authInfo.publicAddress
+    //         if(!publicAddress) throw Error("invalid auth key info! missing publicAddress")
+    //
+    //         //verify action
+    //         let signature = body.signature
+    //         let message = body.message
+    //         if(!publicAddress) throw Error("Missing publicAddress!")
+    //         if(!signature) throw Error("Missing signature!")
+    //         if(!message) throw Error("Missing message!")
+    //
+    //         //validate sig
+    //         const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+    //         const addressFromSig = recoverPersonalSignature({
+    //             data: msgBufferHex,
+    //             sig: signature,
+    //         });
+    //         log.info(tag,"addressFromSig: ",addressFromSig)
+    //         if(addressFromSig.toLowerCase() == body.developer.toLowerCase()){
+    //
+    //             let devInfo = {
+    //                 verified:false,
+    //                 username:body.username,
+    //                 developer:body.developer,
+    //                 publicAddress,
+    //                 email:body.email,
+    //                 github:body.github,
+    //                 image:body.image
+    //             }
+    //             let dev = await devsDB.insert(devInfo)
+    //             log.info(tag,"updateResult: ",dev)
+    //             return(dev);
+    //         } else {
+    //             return({
+    //                 success:false,
+    //                 error:"Invalid signature! must be signed by developer address!"
+    //             })
+    //         }
+    //     }catch(e){
+    //         let errorResp:Error = {
+    //             success:false,
+    //             tag,
+    //             e
+    //         }
+    //         log.error(tag,"e: ",{errorResp})
+    //         throw new ApiError("error",503,"error: "+e.toString());
+    //     }
+    // }
 
 
 }

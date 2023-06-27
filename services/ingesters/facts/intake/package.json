@@ -21,6 +21,8 @@
     "@pioneer-platform/default-redis": "^8.1.21",
     "@pioneer-platform/eth-network": "^8.1.63",
     "@pioneer-platform/foxitar-client": "^8.1.25",
+    "@pioneer-platform/markets": "^8.1.36",
+    "@pioneer-platform/pioneer-coins": "^8.1.70",
     "@pioneer-platform/poap-client": "^8.1.19",
     "@pioneer-platform/redis-queue": "^8.1.18",
     "chai": "^4.2.0",

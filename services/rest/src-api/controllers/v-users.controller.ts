@@ -30,7 +30,7 @@ let dapsDB = connection.get('dapps')
 txsDB.createIndex({txid: 1}, {unique: true})
 txsRawDB.createIndex({txhash: 1}, {unique: true})
 // devsDB.createIndex({username: 1}, {unique: true})
-usersDB.createIndex({publicAddress: 1}, {unique: true})
+// usersDB.createIndex({publicAddress: 1}, {unique: true})
 // dapsDB.createIndex({id: 1}, {unique: true})
 //globals
 

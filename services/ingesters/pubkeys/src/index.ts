@@ -17,7 +17,7 @@ const log = require('@pioneer-platform/loggerdog')()
 const {subscriber,publisher,redis,redisQueue} = require('@pioneer-platform/default-redis')
 const blockbook = require('@pioneer-platform/blockbook')
 const {baseAmountToNative,nativeToBaseAmount} = require('@pioneer-platform/pioneer-coins')
-
+const foxitar = require("@pioneer-platform/foxitar-client")
 let zapper = require("@pioneer-platform/zapper-client")
 
 let servers:any = {}
@@ -195,29 +195,78 @@ let do_work = async function(){
                     let zapperInfo = await zapper.getPortfolio(work.pubkey)
                     log.info(tag,"zapperInfo: ",zapperInfo)
 
-                    //forEach tokens
-                    if(zapperInfo && zapperInfo.tokens && zapperInfo.tokens.length > 0){
-                        for(let i = 0; i < zapperInfo.tokens.length; i++){
-                            let token = zapperInfo.tokens[i]
+                    // forEach tokens
+                    if (zapperInfo && zapperInfo.tokens && zapperInfo.tokens.length > 0) {
+                        for (let i = 0; i < zapperInfo.tokens.length; i++) {
+                            let token = zapperInfo.tokens[i];
 
-                            //zapper map
-                            let balanceInfo:any = token.token
-                            balanceInfo.network = token.network
-                            balanceInfo.asset = token.token.symbol
-                            balanceInfo.symbol = token.token.symbol
-                            balanceInfo.contract = token.token.address
-                            if(token.token.address !== '0x0000000000000000000000000000000000000000'){
-                                balanceInfo.isToken = true
-                                balanceInfo.protocal = 'erc20'
+                            // zapper map
+                            let balanceInfo = token.token;
+                            balanceInfo.network = token.network;
+                            balanceInfo.asset = token.token.symbol;
+                            balanceInfo.symbol = token.token.symbol;
+                            balanceInfo.contract = token.token.address;
+                            if (token.token.address !== '0x0000000000000000000000000000000000000000') {
+                                balanceInfo.isToken = true;
+                                balanceInfo.protocal = 'erc20';
                             }
-                            balanceInfo.lastUpdated = new Date().getTime()
-                            balanceInfo.balance = token.token.balance.toString()
-                            balances.push(balanceInfo)
+                            balanceInfo.lastUpdated = new Date().getTime();
+                            balanceInfo.balance = token.token.balance.toString();
+                            balances.push(balanceInfo);
                         }
                     }
-                    if(zapperInfo && zapperInfo.nfts.length > 0){
-                        nfts = zapperInfo.nfts
+                    if (zapperInfo && zapperInfo.nfts.length > 0) {
+                        nfts = zapperInfo.nfts;
                     }
+
+                    //isPioneer
+                    let allPioneers = await networks['ETH'].getAllPioneers()
+                    log.info(tag,"allPioneers: ",allPioneers)
+
+                    let isPioneer = false
+                    if(allPioneers.owners.indexOf(work.pubkey.toLowerCase()) > -1){
+                        log.info("Pioneer detected!")
+                        //mark user as pioneer
+
+                        // Mark user as pioneer
+                        isPioneer = true;
+                        //work.username
+                        let updatedUsername = await usersDB.update({username:work.username}, { $set: { isPioneer: true } }, { multi: true });
+                        log.info("Updated username PIONEER: ", updatedUsername);
+
+                        // Get art for nft
+                        const pioneerImage = allPioneers.images.find((image: { address: string }) => image.address.toLowerCase() === work.pubkey.toLowerCase());
+                        if (pioneerImage) {
+                            let updatedUsername2 = await usersDB.update({username:work.username}, { $set: { pioneerImage: pioneerImage.image } }, { multi: true });
+                            log.info("updatedUsername2 PIONEER: ", updatedUsername2);
+                            nfts.push({
+                                name: "Pioneer",
+                                description: "Pioneer",
+                                number:allPioneers.owners.indexOf(work.pubkey.toLowerCase()),
+                                image: pioneerImage.image
+                            });
+                        }
+                    }
+
+                    //isFox
+                    let isFox = await foxitar.isFoxOwner(work.pubkey)
+                    if(isFox > 0){
+                        //get foxitar
+                        let foxInfo:any = {}
+                        let addressInfo = await redis.hgetall(work.pubkey.toLowerCase())
+                        if(addressInfo.id) foxInfo.foxId = addressInfo.id
+                        if(addressInfo.image) foxInfo.foxImage = addressInfo.image
+                        if(addressInfo.xp) foxInfo.foxXp = addressInfo.xp
+
+                        //updatedUsername
+                        let updatedUsername = await usersDB.update(
+                            { username: work.username },
+                            { $set: { isFox: true, ...foxInfo } },
+                            { multi: true }
+                        );
+                        log.info("updatedUsername FOX: ", updatedUsername);
+                    }
+
                     //blockbookInfo
                     let blockbookInfo = await blockbook.getAddressInfo('ETH',work.pubkey)
                     log.debug(tag,'blockbookInfo: ',blockbookInfo)

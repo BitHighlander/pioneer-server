@@ -24,6 +24,7 @@ const pjson = require('../package.json');
 let client = require("@pioneer-platform/foxitar-client")
 const os = require("os")
 // metrics.init({ host: os.hostname, prefix: pjson.name+'.'+process.env['NODE_ENV']+'.' });
+const markets = require('@pioneer-platform/markets')
 
 const poap = require('@pioneer-platform/poap-client')
 let queue = require("@pioneer-platform/redis-queue")
@@ -33,6 +34,8 @@ let sleep = wait.sleep;
 
 let connection  = require("@pioneer-platform/default-mongo")
 let txsDB = connection.get('transactions')
+let assetsDB = connection.get('assets')
+let blockchainsDB = connection.get('blockchains')
 let votesDB = connection.get('votes')
 txsDB.createIndex({txid: 1}, {unique: true})
 let appsDB = connection.get('apps')
@@ -189,8 +192,8 @@ let do_work = async function(){
     do_work()
 }
 
-let onStart = async function() {
-    let tag = TAG + " | onStart | ";
+let onCrawalFoxitars = async function() {
+    let tag = TAG + " | onCrawalFoxitars | ";
     try {
         // Get last time it's run
         let lastRunTime = await redis.get("foxitar:worker:lastRunTime");
@@ -209,7 +212,7 @@ let onStart = async function() {
         }
 
         // Get 100 addys at a time
-        let limit = 10;
+        let limit = 2;
         let batch = await client.getOwners(lastCursor, limit);
         batch = batch.owners;
         //log.info(tag, "batch: ", batch);
@@ -252,16 +255,99 @@ let onStart = async function() {
         }
 
         // Wait for 5 seconds before the next iteration
-        setTimeout(onStart, 5000);
+        setTimeout(onCrawalFoxitars, 5000);
     } catch (e) {
         console.error(e);
         // If an error occurred, wait for 5 seconds before retrying
-        setTimeout(onStart, 5000);
+        setTimeout(onCrawalFoxitars, 5000);
     }
 };
-onStart();
+
+//saveMarketData()
+let getMarketData = async function(){
+    let tag = TAG + " | getMarketData | ";
+    try{
+        //get market data from markets
+        let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
+        let marketCacheCoincap = await redis.get('markets:Coincap')
+        log.info(tag,"markets: ",markets)
+        if(!marketCacheCoinGecko){
+            let marketInfoCoinGecko = await markets.getAssetsCoingecko()
+            if(marketInfoCoinGecko){
+                //market info found for
+                marketInfoCoinGecko.updated = new Date().getTime()
+                redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko),60 * 15)
+                marketCacheCoinGecko = marketInfoCoinGecko
+            }
+        }
+
+        // if(!marketCacheCoincap){
+        //     let marketInfoCoincap = await markets.getAssetsCoinCap()
+        //     if(marketInfoCoincap){
+        //         //market info found for
+        //         marketInfoCoincap.updated = new Date().getTime()
+        //         redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoincap),60 * 15)
+        //         marketCacheCoincap = marketInfoCoincap
+        //     }
+        // }
+        // log.info(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko)
+        // log.info(tag,"marketCacheCoincap: ",marketCacheCoincap)
+
+        //save ranking to assets
+        // Now, process the assets in batches
+        marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
+        let symbols = Object.keys(marketCacheCoinGecko);
+        log.info(symbols.length, " symbols found in marketCacheCoincap")
+        // log.info(tag,"symbols: ",symbols)
+        let batchSize = 300;
+        for (let i = 0; i < symbols.length; i += batchSize) {
+            let batchSymbols = symbols.slice(i, i + batchSize);
+            log.info(tag,"batchSymbols: ",batchSymbols.length)
+            log.info(tag,"batchSymbols: ",batchSymbols)
+            // Query the DB for the symbols in the current batch
+            let assetsInDB = await assetsDB.find({ symbol: { $in: batchSymbols } });
+            log.info(tag,"assetsInDB: ",assetsInDB.length)
+
+            let bulkOps = [];
+            for (let assetInDB of assetsInDB) {
+                // log.info(tag,"assetInDB: ",assetInDB)
+
+                let asset = marketCacheCoinGecko[assetInDB.symbol];
+                if(asset && asset.market_cap_rank){
+                    // log.info(tag,"asset: ",asset)
+                    log.info(tag,"symbol: ",asset.symbol)
+                    log.info(tag,"asset: ",asset.market_cap_rank)
+                    // if (!asset || asset.symbol === assetInDB.symbol) {
+                    //     log.info("Collision or not found in marketCacheCoincap: ", assetInDB.symbol, " | ", asset.symbol);
+                    //     continue;  // Symbol collision or not found in marketCacheCoincap, skip this symbol
+                    // }
+
+                    bulkOps.push({
+                        updateOne: {
+                            filter: { symbol: asset.symbol.toUpperCase() },
+                            update: { $set: { rank: asset.market_cap_rank } }
+                        }
+                    });
+                }
+            }
+
+            // Perform the bulk write operation
+            if (bulkOps.length > 0) {
+                log.info("bulkOps: ", JSON.stringify(bulkOps));
+                let resultBatch = await assetsDB.bulkWrite(bulkOps, { ordered: false });
+                log.info("resultBatch: ", resultBatch);
+            }
+        }
 
 
+    }catch(e){
+        console.error(e)
+    }
+}
+
+//Do all the things
+// onCrawalFoxitars();
+getMarketData()
 //start working on install
 log.debug(TAG," worker started! ","")
 do_work()

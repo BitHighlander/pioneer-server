@@ -115,7 +115,20 @@ import {
     CreatePairingCodeBody
 } from "@pioneer-platform/pioneer-types";
 
-
+interface Pubkey {
+    context: string;
+    pubkey: string;
+    blockchain: string;
+    symbol: string;
+    asset: string;
+    path: string;
+    pathMaster: string;
+    script_type: string;
+    network: string;
+    master: string;
+    type: string;
+    address: string;
+}
 
 //route
 @Tags('Private Endpoints')
@@ -177,13 +190,7 @@ export class pioneerPrivateController extends Controller {
     public async user(@Header('Authorization') authorization: string): Promise<any> {
         let tag = TAG + " | user | "
         try{
-            log.debug(tag,"queryKey: ",authorization)
-            // Check if cache exists for the function
-            const cachedData = await redis.get(authorization + ":user");
-            if (cachedData) {
-                return JSON.parse(cachedData);
-            }
-
+            log.info(tag,"queryKey: ",authorization)
             let accountInfo = await redis.hgetall(authorization)
             if(Object.keys(accountInfo).length === 0) {
                 return {
@@ -199,160 +206,11 @@ export class pioneerPrivateController extends Controller {
                         error:"QueryKey has no username registered!"
                     }
                 } else {
-                    let userInfo = await redis.hgetall(username)
-                    log.debug(tag,"userInfo: ",userInfo)
-
-                    if(Object.keys(userInfo).length === 0){
-                        return {
-                            success:false,
-                            error:"QueryKey not paired!"
-                        }
-                    }else{
-                        //wallets
-                        let userInfoMongo = await usersDB.findOne({username})
-                        if(!userInfoMongo) {
-                            redis.del(authorization)
-                            throw Error("102: unknown user! username: "+username)
-                        }
-                        if(userInfoMongo.context) userInfo.context = userInfoMongo.context
-                        if(userInfoMongo.assetContext) userInfo.assetContext = userInfoMongo.assetContext
-                        if(!userInfoMongo.wallets) userInfoMongo.wallets = []
-                        userInfo.wallets = userInfoMongo.wallets
-
-                        log.debug(tag,"userInfoMongo: ",userInfoMongo)
-                        log.debug(tag,"userInfo: ",userInfo)
-
-                        //asset context
-                        if(!userInfo.assetContext) userInfo.assetContext = 'ETH'
-
-                        //context
-                        if(!userInfo.context && userInfoMongo.wallets.length > 0){
-                            if(userInfoMongo.wallets && userInfoMongo.wallets.length > 0){
-                                userInfo.context = userInfoMongo.wallets[0]
-                            } else {
-                                log.debug(tag,"Invalid Mongo userInfoMongo: ",userInfoMongo.wallets)
-                                log.debug(tag,"Invalid Mongo userInfoMongo: ",typeof(userInfoMongo.wallets))
-                                log.error(tag,"Invalid Mongo entry: ",userInfoMongo)
-                                throw Error("102: invalid mongo user! ")
-                            }
-                        }
-
-                        //get market data from markets
-                        let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-                        marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
-                        let marketCacheCoinCap = await redis.get('markets:CoinCap')
-                        marketCacheCoinCap = JSON.parse(marketCacheCoinCap)
-
-                        if(!marketCacheCoinGecko){
-                            let marketInfoCoinGecko = await markets.getAssetsCoingecko()
-                            if(marketInfoCoinGecko){
-                                log.debug(tag,"get info coinCap: ")
-                                //market info found for
-                                marketInfoCoinGecko.updated = new Date().getTime()
-                                // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
-                                redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko))
-                                marketCacheCoinGecko = marketInfoCoinGecko
-                            }
-                        }
-
-                        if(!marketCacheCoinCap){
-                            let marketInfoCoinCap = await markets.getAssetsCoinCap()
-                            if(marketInfoCoinCap){
-                                log.debug(tag,"get info coinCap: ")
-                                //market info found for
-                                marketInfoCoinCap.updated = new Date().getTime()
-                                // redis.set('markets:CoinCap',60 * 15,JSON.stringify(marketInfoCoinCap))
-                                redis.set('markets:CoinCap',JSON.stringify(marketInfoCoinCap))
-                                marketCacheCoinCap = marketInfoCoinCap
-                            }
-                        }
-
-                        //get value map
-                        userInfo.walletDescriptions = []
-                        userInfo.nfts = userInfoMongo.nfts || []
-                        userInfo.code = userInfoMongo.code || ""
-                        userInfo.discordId = userInfoMongo.discordId || ""
-                        userInfo.pubkeys = []
-                        userInfo.balances = []
-                        let totalValueUsd = 0
-                        for(let i = 0; i < userInfoMongo.walletDescriptions.length; i++){
-                            //let context = userInfoMongo.walletDescriptions[i]
-                            let walletInfo:any = userInfoMongo.walletDescriptions[i]
-                            let context = walletInfo.context
-                            log.info(tag,"walletDescription: ",walletInfo)
-                            //log.debug(tag,"building walletDescription for context: ",context)
-                            let { pubkeys } = await pioneer.getPubkeys(username,context)
-                            log.debug(tag,"pubkeys: ",JSON.stringify(pubkeys))
-                            userInfo.pubkeys = userInfo.pubkeys.concat(pubkeys)
-                            //build wallet info
-                            walletInfo.pubkeys = pubkeys
-                            if(!walletInfo.pubkeys) throw Error("102: pioneer failed to collect pubkeys!")
-                            //hydrate market data for all pubkeys
-                            log.debug(tag,"pre: buildBalance: pubkeys: ",pubkeys.length)
-                            log.debug(tag,"pre: buildBalance: pubkeys: ",JSON.stringify(pubkeys))
-                            log.debug(tag,"pre: buildBalance: marketCacheCoinCap: ",JSON.stringify(marketCacheCoinCap))
-                            log.debug(tag,"pre: buildBalance: marketCacheCoinGecko: ",JSON.stringify(marketCacheCoinGecko))
-                            // log.debug(tag,"pre: buildBalance: context: ",context)
-
-                            let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, context)
-                            log.debug(tag,"responseMarkets: ",responseMarkets.balances[0])
-                            log.debug(tag,"responseMarkets: ",responseMarkets.balances[23])
-                            log.debug(tag,"responseMarkets: ",responseMarkets.balances.length)
-
-                            for(let i = 0; i < responseMarkets.balances.length; i++){
-                                let balance = responseMarkets.balances[i]
-                                userInfo.balances.push(balance)
-                            }
-
-                            // let statusNetwork = await redis.get('cache:status')
-                            // if(statusNetwork){
-                            //     statusNetwork = JSON.parse(statusNetwork)
-                            //     log.debug(tag,"statusNetwork:",statusNetwork)
-                            //
-                            //     log.debug(tag,"thorchain:",statusNetwork.exchanges.thorchain.assets)
-                            //     //mark swapping protocols for assets
-                            //     for(let i = 0; i < responseMarkets.balances.length; i++){
-                            //         let balance = responseMarkets.balances[i]
-                            //         // responseMarkets.balances[i].protocols = []
-                            //         // log.debug(tag,"balance: ",balance.symbol)
-                            //         // //thorchain
-                            //         // if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
-                            //         //     responseMarkets.balances[i].protocols.push('thorchain')
-                            //         // }
-                            //         // //osmosis
-                            //         // if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
-                            //         //     responseMarkets.balances[i].protocols.push('osmosis')
-                            //         // }
-                            //         // //0x
-                            //         // if(balance.network === 'ETH'){
-                            //         //     responseMarkets.balances[i].protocols.push('0x')
-                            //         // }
-                            //         // log.debug(tag,"balance: ",responseMarkets.balances[i])
-                            //         //push to balances
-                            //         userInfo.balances.push(responseMarkets.balances[i])
-                            //     }
-                            // } else {
-                            //     log.error(tag,'Missing cache for network status!')
-                            // }
-
-                            let walletDescription = {
-                                context:walletInfo.context,
-                                type:walletInfo.type,
-                                // pubkeys,
-                                // balances:responseMarkets.balances,
-                                valueUsdContext:responseMarkets.total
-                            }
-                            totalValueUsd = totalValueUsd + responseMarkets.total
-                            //walletDescription
-                            userInfo.walletDescriptions.push(walletDescription)
-                        }
-                        userInfo.totalValueUsd = totalValueUsd
-
-                        //build cache
-                        await redis.setex(authorization+":user", 300, JSON.stringify(userInfo));
-
-                        return userInfo
-                    }
+                    //TODO maybe refresh mongo balances here?
+                    //wallets
+                    let userInfoMongo = await usersDB.findOne({username})
+                    if(userInfoMongo.balances) userInfoMongo.balances = []
+                    return userInfoMongo
                 }
             }
         }catch(e){
@@ -1558,368 +1416,152 @@ export class pioneerPrivateController extends Controller {
      *
      * @param request This is a user creation
      */
-    //TODO is this ever used? removeme?
-    @Post('/registerUser')
-    public async registerUser(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
-        let tag = TAG + " | register | "
-        try{
-            let output:any = {}
-            let newKey
-            log.debug(tag,"body: ",body)
-
-            //if auth found in redis
-            const authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
-            let isTestnet = authInfo.isTestnet || false
-            if(body.isTestnet && Object.keys(authInfo).length != 0 && !isTestnet) throw Error(" Username already registerd on mainnet! please create a new")
-            log.debug(tag,"authInfo: ",authInfo)
-
-            let username
-            if(Object.keys(authInfo).length > 0){
-                log.info(tag,"checkpoint 1 auth key known")
-
-                username = authInfo.username
-
-                //does username match register request
-                if(username !== body.username){
-                    //is username taken?
-                    let userInfo = await redis.hgetall(body.username)
-                    if(Object.keys(userInfo).length > 0){
-                        throw Error("103: unable create new user, username taken!")
-                    } else {
-                        log.error(tag,"authInfo.username: ",authInfo.username)
-                        log.error(tag,"username: ",body.username)
-                        output.success = false
-                        output.error = "104: username transfers on tokens not supported! owned username:"+username
-                        output.code = 104
-                        return output
-                    }
-                } else {
-                    log.debug("username available! checkpoint 1a")
-                }
-            } else {
-                log.debug(tag,"checkpoint 1a auth key NOT known")
-                newKey = true
-            }
-            if(!username) username = body.username
-
-            let userInfoMongo:any = await usersDB.findOne({username})
-            log.debug(tag,"userInfoMongo: ",userInfoMongo)
-
-            if(newKey){
-                log.info(tag,"checkpoint 2 new key")
-                //create user
-                let userInfo:any = {
-                    registered: new Date().getTime(),
-                    id:"pioneer:"+pjson.version+":"+uuidv4(), //user ID versioning!
-                    username:body.username,
-                    verified:true,
-                    nonce:Math.floor(Math.random() * 10000),
-                    publicAddress:body.publicAddress
-                }
-                if(!userInfoMongo){
-                    output.resultSaveUserDB = await usersDB.insert(userInfo)
-                }
-                //delete descriptions
-                delete userInfo.walletDescriptions
-                let redisSuccess = await redis.hmset(body.username,userInfo)
-                log.debug(tag,"redisSuccess: ",redisSuccess)
-
-                let redisSuccessKey = await redis.hmset(authorization,userInfo)
-                log.debug(tag,"redisSuccessKey: ",redisSuccessKey)
-
-                //Continue and register wallet
-                userInfoMongo = userInfo
-
-                //set user context to only wallet
-                await redis.hset(body.username,'context',body.context)
-
-                //add to wallet set
-                await redis.sadd(username+':wallets',body.context)
-            }
-
-            log.debug("checkpoint 3")
-            let userInfoRedis = await redis.hgetall(username)
-            log.debug(tag,"userInfoRedis: ",userInfoRedis)
-            log.debug("checkpoint 4 final ")
-            //get
-            // info on context
-            output.username = username
-            output.success = true
-            output.userInfo = userInfoRedis
-
-            return output
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
-        }
-    }
-
-
-    //TODO rename registerPubkeys
     @Post('/register')
     public async register(@Header('Authorization') authorization: string, @Body() body: RegisterBody): Promise<any> {
-        let tag = TAG + " | register | "
-        try{
-            let output:any = {}
-            let newKey
-            log.debug(tag,"body: ",body)
-            if(!body.context) throw Error("102: context required on body!")
-            if(!body.blockchains) throw Error("103: blockchains required on body!")
-            if(typeof(body.walletDescription) === 'string') throw Error("104: Invalid Wallet Description!")
-            if(!body.data.pubkeys) throw Error("105: pubkeys required on body!")
-            //if auth found in redis
-            const authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
-            let isTestnet = authInfo.isTestnet || false
-            if(body.isTestnet && Object.keys(authInfo).length != 0 && !isTestnet) throw Error(" Username already registerd on mainnet! please create a new")
-            log.debug(tag,"authInfo: ",authInfo)
+        let tag = TAG + " | register | ";
+        try {
+            log.info("register body: ", body);
+            log.info("register body: ", JSON.stringify(body));
+            if (!body.context || !body.blockchains || typeof (body.walletDescription) === 'string' || !body.data.pubkeys) {
+                throw new Error("Missing or Invalid body parameters!");
+            }
 
-            let username
-            if(Object.keys(authInfo).length > 0){
-                log.info(tag,"checkpoint 1 auth key known")
-                username = authInfo.username
-                //does username match register request
-                if(username !== body.username){
-                    //is username taken?
-                    let userInfo = await redis.hgetall(body.username)
-                    if(Object.keys(userInfo).length > 0){
-                        throw Error("103: unable create new user, username taken!")
+            let username;
+            const authInfo = await redis.hgetall(authorization);
+            if (Object.keys(authInfo).length === 0) {
+                log.info("New user!");
+                // Generate a unique identifier for each registration if the user hasn't chosen a username
+                username = body.username || "user:" + uuidv4();
+                let userInfo = {
+                    username,
+                    queryKey: authorization,
+                    publicAddress: body.publicAddress,
+                    verified: false,
+                    wallets: [body.context],
+                    pubkeys: ([] as any[]).concat(...body.data.pubkeys.map((pubkey: any) => ({ ...pubkey, context: body.context })))
+                };
+                await redis.hmset(authorization, userInfo);
+            } else {
+                log.info("Existing user!");
+                username = authInfo.username;
+            }
+
+            let redisSuccessKey = await redis.hmset(authorization, { username });
+            let redisSuccessUser = await redis.hmset(username, { username });
+            log.debug("redisSuccessKey: ", redisSuccessKey);
+            log.debug("redisSuccessUser: ", redisSuccessUser);
+
+            let userInfoMongo = await usersDB.findOne({ username });
+            if (!userInfoMongo) {
+                // New user in MongoDB
+                let code = randomstring.generate(6).toUpperCase();
+                let userInfo = {
+                    username,
+                    publicAddress: body.publicAddress,
+                    verified: false,
+                    code,
+                    auth: authorization,
+                    id: "pioneer:" + pjson.version + ":" + uuidv4(),
+                    registered: new Date().getTime(),
+                    nonce: Math.floor(Math.random() * 10000),
+                    wallets: [body.context],
+                    pubkeys: ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context })))
+                };
+                try {
+                    await usersDB.insert(userInfo);
+                } catch (error) {
+                    if (error.code === 11000) {
+                        // Duplicate key error, handle it gracefully
+                        throw new Error("103: Unable to create a new user, the username is already taken!");
                     } else {
-                        log.error(tag,"authInfo.username: ",authInfo.username)
-                        log.error(tag,"username: ",body.username)
-                        output.success = false
-                        output.error = "104: username transfers on tokens not supported! owned username:"+username
-                        output.code = 104
-                        return output
+                        throw error;
                     }
-                } else {
-                    log.debug("username available! checkpoint 1a")
-                }
-            } else {
-                log.debug(tag,"checkpoint 1a auth key NOT known")
-                newKey = true
-            }
-            if(!username) username = body.username
-
-            let userInfoMongo:any = await usersDB.findOne({username})
-            log.info(tag,"userInfoMongo: ",userInfoMongo)
-
-
-
-            //create user
-            let userInfo:any = {
-                username:body.username,
-                publicAddress:body.publicAddress,
-                verified:false,
-                blockchains:body.blockchains
-            }
-
-            let isNewWallet = true // @TODO hacked to debug
-            if(userInfoMongo){
-                //verify info
-                if(userInfoMongo.username !== body.username) throw Error("username mismatch!")
-                if(userInfoMongo.publicAddress !== body.publicAddress) {
-                    log.info(tag,"userInfoMongo.publicAddress: ",userInfoMongo.publicAddress)
-                    log.info(tag,"body.publicAddress: ",body.publicAddress)
-                    //throw Error("publicAddress mismatch!")
-                }
-                //TODO add?
-                //if(userInfoMongo.blockchains !== body.blockchains) throw Error("blockchains mismatch!")
-
-                //is wallet in wallets
-                if(userInfoMongo.wallets && userInfoMongo.wallets.indexOf(body.context) >= 0){
-                    log.info(tag,"wallet already registered!")
-                    userInfo.wallets = userInfoMongo.wallets
-                } else {
-                    isNewWallet = true
-                    userInfo.wallets = [body.context] // just one wallet for now
                 }
             }
 
-            if(!userInfoMongo){
-                //create random code
-                let code = randomstring.generate(6)
-                code = code.toUpperCase()
-                log.debug(tag,"code: ",code)
-                userInfo.code = code
-                userInfo.auth = authorization
-                userInfo.id = "pioneer:"+pjson.version+":"+uuidv4()
-                userInfo.registered = new Date().getTime()
-                userInfo.nonce = Math.floor(Math.random() * 10000)
-                output.resultSaveUserDB = await usersDB.insert(userInfo)
-                log.debug(tag,"output.resultSaveUserDB: ",output.resultSaveUserDB)
+            let isNewWallet = userInfoMongo && userInfoMongo.wallets ? !userInfoMongo.wallets.some(wallet => wallet === body.context) : true;
+            let isNewWalletDescription = userInfoMongo && userInfoMongo.walletDescriptions ? !userInfoMongo.walletDescriptions.some(walletDesc => walletDesc.context === body.context) : true;
+
+            if (isNewWallet) {
+                // Update the existing user's information with the new pubkeys/wallet
+                await usersDB.update({ username }, { $addToSet: { "wallets": body.context, "pubkeys": { $each: ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))) } } });
             }
 
-            if(newKey){
-                //delete descriptions
-                delete userInfo.walletDescriptions
-                let redisSuccess = await redis.hmset(body.username,userInfo)
-                log.debug(tag,"redisSuccess: ",redisSuccess)
-
-                let redisSuccessKey = await redis.hmset(authorization,userInfo)
-                log.debug(tag,"redisSuccessKey: ",redisSuccessKey)
-
-                //Continue and register wallet
-                userInfoMongo = userInfo
-
-                //set user context to only wallet
-                await redis.hset(body.username,'context',body.context)
-
-                //add to wallet set
-                await redis.sadd(username+':wallets',body.context)
+            if (isNewWalletDescription) {
+                // Add a new wallet description if it doesn't already exist
+                let walletDescription = {
+                    context: body.context,
+                    type: body.walletDescription.type,
+                    valueUsdContext: 0 // Placeholder value for responseMarkets.total
+                };
+                await usersDB.update({ username }, { $addToSet: { "walletDescriptions": walletDescription } });
             }
 
-            //get wallets
-            let userWallets = userInfoMongo?.wallets
-            if(!userWallets) userWallets = []
-            log.debug(tag,"userWallets: ",userWallets)
-
-            //add to wallet set
-            await redis.sadd(username+':wallets',body.context)
-
-            //if current ! found
-            if(isNewWallet){
-                log.info(tag,"Registering new wallet! context:",body.context)
-                //Register wallet! (this ONLY hits when already registered
-                output.newWallet = true
-                let pubkeys = body.data.pubkeys
-                output.result = await pioneer.register(body.username, pubkeys, body.context)
-                log.info(tag,"resultPioneer: ",output.result)
-
-                //set current context to newly registred wallet
-                //TODO flag to leave context? (silent register new wallet?)
-                //await redis.hset(body.username,'context',body.context)
-
-                //push new wallet to wallets
-                output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "wallets": body.context } })
-                //output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "walletDescriptions": body.walletDescription } })
-            } else {
-                //wallet already known!
-                log.info(tag,"Wallet already known! context: ",body.context)
-                //get pubkey array
-                output.result = await pioneer.update(body.username, body.data.pubkeys,body.context)
+            if (isNewWallet) {
+                await redis.sadd(username + ':wallets', body.context);
             }
 
-            log.info(tag,"checkpoint 3")
-            let userInfoRedis = await redis.hgetall(username)
-            log.debug(tag,"userInfoRedis: ",userInfoRedis)
-            log.debug("checkpoint 4 final ")
+            // Register with pioneer and get balances
+            if (!body.data.pubkeys) throw new Error("Cannot register an empty wallet!");
+            // pioneer.register(username, ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))), body.context);
 
-            //if no context, set
-            if(!userInfoRedis.context){
-                userInfoRedis.context = body.context
-                redis.hset(username,'context',body.context)
-            }
-            output.context = userInfoRedis.context
+            // Add any pubkeys missing from the user
+            log.info(tag, "userInfoMongo: ", userInfoMongo);
+            let pubkeysMongo = userInfoMongo.pubkeys || [];
+            let pubkeysRegistering = ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))); // Flatten the pubkeys array and add the context
+            log.info(tag, "pubkeysMongo: ", pubkeysMongo);
+            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering);
+            log.info(tag, "pubkeysMongo: ", pubkeysMongo.length);
+            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
 
-            //if no asset context
-            //set bitcoin
-            if(!userInfoRedis.assetContext){
-                userInfoRedis.assetContext = 'ETH'
-                redis.hset(username,'assetContext',userInfoRedis.assetContext)
-            }
-            output.assetContext = userInfoRedis.assetContext
+            for (let i = 0; i < pubkeysRegistering.length; i++) {
+                let pubkey = pubkeysRegistering[i];
 
-            //verify user
-            //get market data from markets
-            let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-            let marketCacheCoinCap = await redis.get('markets:CoinCap')
+                // Check if the pubkey already exists in pubkeysMongo
+                let isFound = pubkeysMongo.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey);
+                log.info("isFound: ", isFound);
 
-            if(!marketCacheCoinGecko){
-                let marketInfoCoinGecko = await markets.getAssetsCoingecko()
-                if(marketInfoCoinGecko){
-                    //market info found for
-                    marketInfoCoinGecko.updated = new Date().getTime()
-                    // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinGecko))
-                    redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko))
-                    marketCacheCoinGecko = marketInfoCoinGecko
+                // If not found, add it to pubkeysMongo
+                if (!isFound) {
+                    log.info("Adding pubkey to the user: ", pubkey);
+                    pubkey.context = body.context;
+                    await usersDB.update(
+                        { username: userInfoMongo.username },
+                        {
+                            $addToSet: { pubkeys: pubkey },
+                            $set: { isSynced: false }
+                        }
+                    );
                 }
             }
 
-            if(!marketCacheCoinCap){
-                let marketInfoCoinCap = await markets.getAssetsCoinCap()
-                if(marketInfoCoinCap){
-                    //market info found for
-                    marketInfoCoinCap.updated = new Date().getTime()
-                    // redis.setex('markets:CoinGecko',60 * 15,JSON.stringify(marketInfoCoinCap))
-                    redis.set('markets:CoinCap',JSON.stringify(marketInfoCoinCap))
-                    marketCacheCoinCap = marketInfoCoinCap
-                }
+            let userInfoFinal = await usersDB.findOne({ username });
+            log.info("userInfoFinal: ", userInfoFinal);
+
+            // Validate the context is in wallets
+            if (!userInfoFinal.wallets.includes(body.context)) {
+                throw new Error("Invalid wallet context!");
             }
 
-            let { pubkeys, masters } = await pioneer.getPubkeys(username)
-            // log.info(tag,"pubkeys: ",JSON.stringify(body.data.pubkeys))
-            // log.info(tag,"pubkeys: ",body.data.pubkeys.length)
-            let responseMarkets = await markets.buildBalances(marketCacheCoinCap, marketCacheCoinGecko, pubkeys, output.context)
-            log.info(tag,"responseMarkets: ",responseMarkets)
-
-            let walletDescription = {
-                context:output.context,
-                type:body.walletDescription.type,
-                // pubkeys,
-                // balances:responseMarkets.balances,
-                valueUsdContext:responseMarkets.total
-            }
-            if(isNewWallet){
-                output.updateDBUser = await usersDB.update({username:body.username},{ $addToSet: { "walletDescriptions": walletDescription } })
+            // Validate the wallet is in walletDescriptions
+            let walletExistsInDescriptions = userInfoFinal.walletDescriptions.some(walletDesc => walletDesc.context === body.context);
+            if (!walletExistsInDescriptions) {
+                throw new Error("Wallet description not found!");
             }
 
-            let statusNetwork = await redis.get('cache:status')
-            if(statusNetwork){
-                statusNetwork = JSON.parse(statusNetwork)
-                log.debug(tag,"statusNetwork: ",statusNetwork)
-                //mark swapping protocols for assets
-                for(let i = 0; i < responseMarkets.balances.length; i++){
-                    let balance = responseMarkets.balances[i]
-                    responseMarkets.balances[i].protocols = []
-
-                    //thorchain
-                    if(statusNetwork.exchanges.thorchain.assets.indexOf(balance.symbol) >= 0){
-                        responseMarkets.balances[i].protocols.push('thorchain')
-                    }
-                    //osmosis
-                    if(statusNetwork.exchanges.osmosis.assets.indexOf(balance.symbol) >= 0){
-                        responseMarkets.balances[i].protocols.push('osmosis')
-                    }
-                    //0x
-                    if(balance.network === 'ETH'){
-                        responseMarkets.balances[i].protocols.push('0x')
-                    }
-                    log.debug(tag,"balance: ",balance)
-                }
-            } else {
-                log.error(tag,'Missing cache for network status!')
+            // Validate pubkeys are in pubkeys
+            let pubkeysMatch = body.data.pubkeys.flat().every(pubkey => userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey));
+            if (!pubkeysMatch) {
+                throw new Error("Invalid pubkeys!");
             }
 
-            output.masters = masters
-            output.pubkeys = pubkeys
-            output.balances = responseMarkets.balances
-            output.totalValueUsd = responseMarkets.total
+            if(userInfoFinal.balances) userInfoFinal.balances = []
 
-            //get
-            // info on context
-            output.username = username
-            output.success = true
-            output.userInfo = userInfoRedis
-
-            return output
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
+            return userInfoFinal;
+        } catch (e) {
+            throw new ApiError("error", 503, "error: " + e.toString());
         }
     }
-
     /**
      *  Import Pubkeys
      *

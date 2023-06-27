@@ -29,6 +29,7 @@ let txsDB = connection.get('transactions')
 let txsRawDB = connection.get('transactions-raw')
 let devsDB = connection.get('developers')
 let dapsDB = connection.get('dapps')
+let insightDB = connection.get('insight')
 //modules
 let harpie = require("@pioneer-platform/harpie-client")
 let blocknative = require("@pioneer-platform/blocknative-client")
@@ -71,9 +72,16 @@ export class pioneerController extends Controller {
             if(!body.from) throw Error("from is required!")
             if(!body.data) throw Error("data is required!")
 
+            //save into insightDb
 
-            let result = await harpie.validateTransaction(body.to,body.from,body.data)
+            //push to discord
+
+            //push event to metric
+
+            let result = await harpie.validateTransactionv2(body.to,body.from,body.data)
             console.log("result: ",result)
+
+            insightDB.insert(result)
 
             return result
         } catch(e){
@@ -151,6 +159,21 @@ export class pioneerController extends Controller {
             log.info("userData: ",userData)
             timingResults['userData'] = Date.now() - userDataTimeStart;
 
+            //@TODO streaming search pushs
+            //assign queryId
+            //push events to stream to user
+
+            //get summary of query
+
+            //get all related assets
+
+            //get all related blockchains
+
+            //get all related nodes
+
+            //get all related dapps
+
+            //use db to build response
             let memory = ["data.txt"]
             let loadKnowledgeTimeStart = Date.now();
             await explore.loadKnowledge(memory)

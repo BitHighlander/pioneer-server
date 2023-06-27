@@ -15,6 +15,8 @@ const { subscriber, publisher, redis, redisQueue } = require('@pioneer-platform/
 const midgard = require("@pioneer-platform/midgard-client")
 const uuid = require('short-uuid');
 const queue = require('@pioneer-platform/redis-queue');
+const { Web3 } = require('web3');
+
 import {
     Error,
     ApiError,
@@ -54,6 +56,9 @@ txsDB.createIndex({invocationId: 1})
 //rest-ts
 import {Body, Controller, Get, Header, Post, Route, Tags} from 'tsoa';
 import {recoverPersonalSignature} from "eth-sig-util";
+// @ts-ignore
+let networkEth = require("@pioneer-platform/eth-network")
+networkEth.init()
 
 interface Network {
     network: string;
@@ -64,6 +69,13 @@ interface Network {
     pubkey: string;
 }
 
+interface SearchBlockchainsRequest {
+    limit: number;
+    skip: number;
+    sortField: string;
+    sortOrder: number;
+    isCharted?: boolean;
+}
 
 //route
 @Tags('Atlas Endpoints')
@@ -141,65 +153,40 @@ export class pioneerPublicController extends Controller {
      *    Get all live blockchains
      *
      * */
-    @Get('/atlas/search/blockchains/list/{limit}/{skip}')
-    public async searchBlockchainsPageniate(limit:number,skip:number) {
-        let tag = TAG + " | searchBlockchainsPageniate | "
-        try{
-
-            let output = []
-            //blockchains Supported by keepkey
-            let blockchains = await blockchainsDB.find({tags:{$all:['KeepKeySupport']}})
-            log.debug(tag,"blockchains: ",blockchains.length)
-            log.debug(tag,"blockchains: ",blockchains[0])
-
-            //seed market data
-            let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-            marketCacheCoinGecko = JSON.parse(marketCacheCoinGecko)
-            log.debug(tag,"marketCacheCoinGecko: ",marketCacheCoinGecko['BTC'])
-            let usedSymbold = []
-            for(let i = 0; i < blockchains.length; i++){
-                //NOTE this sucks because it assumes symbol matchs
-                let asset = blockchains[i]
-                log.debug(tag,"asset: ",asset)
-                let symbol = asset.symbol.toUpperCase()
-                log.debug(tag,"symbol: ",symbol)
-                if(symbol === "ETH" && asset.blockchain !== 'ethereum') symbol= "UNK"
-                if(marketCacheCoinGecko[symbol]){
-                    asset.price = marketCacheCoinGecko[symbol]?.current_price
-                } else {
-                    asset.price = 0
-                }
-                if(marketCacheCoinGecko[symbol]){
-                    asset.rank = marketCacheCoinGecko[symbol]?.market_cap_rank
-                } else {
-                    asset.rank = 99999999
-                }
-                //only 1 per symbol
-                if(usedSymbold.indexOf(asset.symbol) === -1){
-                    output.push(asset)
-                    usedSymbold.push(asset.symbol)
-                }
+    @Post('/atlas/search/blockchains/list')
+    public async searchBlockchainsPageniate(
+        @Body() requestBody: SearchBlockchainsRequest
+    ) {
+        let tag = TAG + " | searchBlockchainsPageniate | ";
+        try {
+            const { limit, skip, sortField, sortOrder, isCharted = true } = requestBody;
+            let sortQuery = {};
+            sortQuery[sortField] = sortOrder;
+            // Blockchains Supported by keepkey
+            let query = {};
+            if (isCharted) {
+                query['isCharted'] = true;
+            } else {
+                query['isCharted'] = false;
             }
 
-            //rank
-            output = output.sort((a, b) => {
-                if (a.rank < b.rank) {
-                    return -1;
-                }
-            });
+            // Blockchains Supported by keepkey
+            let blockchains = await blockchainsDB.find(query, { limit, skip, sort: sortQuery });
 
-            return output
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
+            //
+            let total = await blockchainsDB.count(query);
+
+            return { blockchains, total };
+        } catch (e) {
+            let errorResp: Error = {
+                success: false,
                 tag,
-                e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
+                e,
+            };
+            log.error(tag, "e: ", { errorResp });
+            throw new ApiError("error", 503, "error: " + e.toString());
         }
     }
-
     /*
      * ATLAS
      *
@@ -584,25 +571,114 @@ export class pioneerPublicController extends Controller {
      *    Get all live atlas
      *
      * */
-    @Get('/atlas/list/asset/{limit}/{skip}')
-    public async searchAssetsList(limit:number,skip:number) {
-        let tag = TAG + " | searchAssetsList | "
-        try{
-            //TODO sanitize
-            //Get tracked networks
-            let assets = await assetsDB.find({},{limit,skip})
+    @Post('/atlas/list/asset')
+    public async getAssets(
+        @Body() payload: {
+            sortBy: string;
+            limit: number;
+            skip: number;
+            sortOrder?: string;
+            filterTags?: string[];
+        }
+    ) {
+        let tag = TAG + " | getAssets | ";
+        try {
+            // TODO: Sanitize input
 
-            return assets
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
-                tag,
-                e
+            const { sortBy, limit, skip, sortOrder = 'asc', filterTags = [] } = payload;
+
+            // Create sort object
+            const sort: any = {};
+            if (sortBy) {
+                sort[sortBy] = sortOrder === 'desc' ? -1 : 1; // -1 for descending, 1 for ascending (default)
             }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
+            // Build query object to filter out assets without rank
+            let query: any = {};
+            if(sortBy === 'rank'){
+                query = { rank: { $exists: true } };
+            }
+
+            // Add filters based on the filter tags
+            if (filterTags && filterTags.length > 0 && filterTags[0] !== '') {
+                query['tags'] = { $in: filterTags };
+            }
+
+            // Get tracked networks with sort, limit, and skip parameters
+            log.info(tag,"filterTags: ",filterTags)
+            let assets = await assetsDB.find(query, { sort, limit, skip });
+            let total = await assetsDB.count(query);
+
+            return { assets, total };
+        } catch (e) {
+            let errorResp: Error = {
+                success: false,
+                tag,
+                e,
+            };
+            log.error(tag, "e: ", { errorResp });
+            throw new ApiError("error", 503, "error: " + e.toString());
         }
     }
+
+    /*
+     * ATLAS
+     *
+     *    Get blockchains to limit
+     *    Filter by EIP155
+     *    Order by rank of fee assets
+     *    For each blockchain, get 3 nodes
+     *
+     */
+
+    @Post('/nodes/list/blockchain')
+    public async getNodesByByBlockchain(
+        @Body() payload: {
+            sortBy: string;
+            limit: number;
+            skip: number;
+            sortOrder?: string;
+            filterTags?: string[];
+        }
+    ) {
+        let tag = TAG + " | getNodesByByBlockchain | ";
+        try {
+            // TODO: Sanitize input
+
+            const { sortBy, limit, skip, sortOrder = 'asc', filterTags = [] } = payload;
+
+            // Create sort object
+            const sort: any = {};
+            if (sortBy) {
+                sort[sortBy] = sortOrder === 'desc' ? -1 : 1; // -1 for descending, 1 for ascending (default)
+            }
+            // Build query object to filter out assets without rank
+            let query: any = {};
+            if (sortBy === 'rank') {
+                query = { rank: { $exists: true } };
+            }
+
+            // Add filters based on the filter tags
+            if (filterTags && filterTags.length > 0 && filterTags[0] !== '') {
+                query['tags'] = { $in: filterTags };
+            }
+
+            // Get tracked networks with sort, limit, and skip parameters
+            log.info(tag, "filterTags: ", filterTags)
+            let assets = await nodesDB.find(query, { sort, limit, skip });
+            let total = await assetsDB.count(query);
+
+            return { assets, total };
+        } catch (e) {
+            let errorResp: Error = {
+                success: false,
+                tag,
+                e,
+            };
+            log.error(tag, "e: ", { errorResp });
+            throw new ApiError("error", 503, "error: " + e.toString());
+        }
+    }
+
 
     /*
      * ATLAS
@@ -658,7 +734,6 @@ export class pioneerPublicController extends Controller {
                 { name: 'celo', chain_id: 42220, symbol: 'CELO' },
                 { name: 'avalanche-c-chain', chain_id: 43114, symbol: 'AVAX' },
                 { name: 'görli', chain_id: 5, symbol: 'GOR' },
-                { name: 'eos', chain_id: 59, symbol: 'EOS' },
                 { name: 'ethereum-classic', chain_id: 61, symbol: 'ETC' },
                 { name: 'evmos', chain_id: 9001, symbol: 'EVMOS' },
                 { name: 'poa-core', chain_id: 99, symbol: 'POA' },
@@ -701,6 +776,76 @@ export class pioneerPublicController extends Controller {
             }
             log.error(tag,"e: ",{errorResp})
             throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+        * ATLAS
+        *
+        *    Get a tested live node
+        *
+        * */
+    @Get('/atlas/node/{chainId}')
+    public async getEvmNode(chainId: number) {
+        const tag = TAG + " | getEvmNode | ";
+        try {
+            const limit = 10;
+            const entry = await nodesDB.find({ chainId }, { limit });
+            log.info(tag,"entry: ",entry.length)
+            const output = entry.slice(0, limit);
+
+            const pingNode = async (node) => {
+                const startTime = new Date().getTime();
+                try {
+                    const providerUrl = node.service;
+                    const web3 = new Web3(providerUrl);
+
+                    let result = await web3.eth.getBlockNumber();
+                    result = result.toString(); // Convert BigInt to string
+                    log.info("result: ",result)
+                    const endTime = new Date().getTime();
+                    const ping = endTime - startTime;
+                    console.log(`Node: ${node.service}, Ping: ${ping}`);
+
+                    await nodesDB.update({ _id: node._id }, { $set: { ping } }); // Update ping in MongoDB
+
+                    return ping;
+                } catch (error) {
+                    log.error(tag, `Timeout for ${node.service}`);
+                    await nodesDB.update({ _id: node._id }, { $set: { isOffline: true } });
+                    return null;
+                }
+            };
+
+            const pingPromises = output.map(server => pingNode(server));
+            // @ts-ignore
+            const pings = await Promise.allSettled(pingPromises);
+
+            pings.forEach((result, index) => {
+                if (result.status === 'fulfilled') {
+                    const ping = result.value;
+                    if (ping !== null) {
+                        output[index].ping = ping;
+                    }
+                }
+            });
+
+            const bestPingNode = output.reduce((best, current) => {
+                if (!best || current.ping < best.ping) {
+                    return current;
+                }
+                return best;
+            }, null);
+
+            return bestPingNode;
+        } catch (e) {
+            const errorResp: Error = {
+                success: false,
+                tag,
+                e,
+            };
+            log.error(tag, "e: ", { errorResp });
+            throw new ApiError("error", 503, "error: " + e.toString());
         }
     }
 
@@ -965,6 +1110,26 @@ export class pioneerPublicController extends Controller {
             throw new ApiError("error",503,"error: "+e.toString());
         }
     }
+
+    @Get('/atlas/search/assets/bySymbol/{symbol}')
+    public async searchAssetsBySymbol(symbol:string) {
+        let tag = TAG + " | searchAssetsBySymbol | "
+        try{
+            //Get tracked networks
+            let assets = await assetsDB.find({ symbol },{limit:100})
+
+            return assets
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
 
     /*
      * ATLAS
@@ -1253,17 +1418,25 @@ export class pioneerPublicController extends Controller {
             if(!body.signer) throw Error("signer address is required!")
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("signature is required!")
+            if(!body.feeAssetCaip) throw Error("feeAssetCaip is required!")
+            if(!body.feeAssetName) throw Error("feeAssetName is required!")
+            if(!body.feeAssetSymbol) throw Error("feeAssetSymbol is required!")
             let blockchain:any = {
                 name:body.name.toLowerCase(),
                 type:body.type,
                 image:body.image,
                 tags:body.tags,
                 caip:body.caip,
+                isCharted: false,
                 blockchain:body.blockchain,
                 symbol:body.symbol,
                 service:body.service,
                 chainId:body.chainId,
                 network:body.network || body.symbol,
+                feeAssetCaip:body.feeAssetCaip,
+                feeAssetName:body.feeAssetName,
+                feeAssetSymbol:body.feeAssetSymbol,
+                feeAssetRank:body.feeAssetRank || 999999,
                 facts:[
                     {
                         signer:body.signer,
@@ -1599,6 +1772,68 @@ export class pioneerPublicController extends Controller {
 
 
             return(resultWhitelist);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    /*
+update
+*/
+    @Post('/asset/delete')
+    //CreateAppBody
+    public async deleteAsset(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | deleteAsset | "
+        try{
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.debug(tag,"addressFromSig: ",addressFromSig)
+            log.info(tag,"message: ",message)
+            log.info(tag,"message: ",typeof(message))
+            message = JSON.parse(message)
+            if(!message.app) throw Error("Ivalid message missing app")
+
+            let allPioneers = await networkEth.getAllPioneers()
+            let pioneers = allPioneers.owners
+            log.info(tag,"pioneers: ",pioneers)
+            for(let i=0;i<pioneers.length;i++){
+                pioneers[i] = pioneers[i].toLowerCase()
+            }
+            let resultRevoke:any = {}
+            console.log("index: ",pioneers.indexOf(addressFromSig.toLowerCase()))
+            log.info(tag,"pioneers: ",pioneers[0])
+            log.info(tag,"pioneers: ",pioneers[1])
+            log.info(tag,"pioneers: ",addressFromSig.toLowerCase())
+
+            if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
+                resultRevoke.result = await assetsDB.remove({name:message.app})
+                resultRevoke.success = true
+                log.debug(tag,"resultWhitelist: ",resultRevoke)
+            } else {
+                //get fox balance of address
+                resultRevoke.error = "user is not a pioneer!"
+                resultRevoke.success = false
+            }
+
+            return(resultRevoke);
         }catch(e){
             let errorResp:Error = {
                 success:false,

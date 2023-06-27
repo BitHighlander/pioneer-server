@@ -61,7 +61,7 @@
     "@pioneer-platform/default-redis": "latest",
     "@pioneer-platform/eth-network": "^8.1.64",
     "@pioneer-platform/fio-network": "latest",
-    "@pioneer-platform/harpie-client": "^8.1.18",
+    "@pioneer-platform/harpie-client": "^8.1.23",
     "@pioneer-platform/kava-network": "latest",
     "@pioneer-platform/loggerdog": "latest",
     "@pioneer-platform/markets": "^8.1.36",
@@ -152,7 +152,8 @@
     "tls": "^0.0.1",
     "tsoa": "^3.14.1",
     "url-parse": "^1.5.1",
-    "wait-promise": "^0.4.1"
+    "wait-promise": "^0.4.1",
+    "web3": "^4.0.1"
   },
   "resolutions": {
     "react-error-overlay": "6.0.11"
