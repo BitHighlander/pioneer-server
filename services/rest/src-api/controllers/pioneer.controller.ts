@@ -93,7 +93,7 @@ export class pioneerController extends Controller {
             if (!body.data) throw Error('data is required!');
 
             // chainId
-            const chainId = body.chainId || 1;
+            const chainId = parseInt(body.chainId, 10) || 1;
             const sort = { ping: -1 };
             const entry = await nodesDB.findOne({ chainId }, { sort });
             // get node for chainId
@@ -148,7 +148,7 @@ export class pioneerController extends Controller {
             let maxFeePerGas = gasPrice;
 
             //add gas
-            recommended["gasLimit"] = gasLimit.toString()
+            recommended["gasLimit"] = '0x' + gasLimit.toHexString();
             if(isEIP1559){
                 recommended["maxPriorityFeePerGas"] = priorityFeePerGas.toHexString();
                 recommended["maxFeePerGas"] = maxFeePerGas.toHexString();
