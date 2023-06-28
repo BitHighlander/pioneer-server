@@ -161,11 +161,37 @@ export class pioneerController extends Controller {
                 success: true,
                 analysis:result,
                 isEIP1559,
-                orginal: body,
+                original: body,
                 isError: false,
                 recommended
             }
             insightDB.insert(output)
+
+            let insight = {
+                "invokeId":output.invokeId,
+                "analysis":result.summary,
+                "isEIP1559":isEIP1559.toString(),
+                "chainId":chainId.toString(),
+                "from":body.from,
+                "to":body.to,
+            }
+
+            let view  = {
+                type:"insight",
+                data:insight,
+                message:"insight"
+            }
+
+            let payload = {
+                channel:"1123742848039272488",
+                responses:{
+                    sentences:[],
+                    views:[
+                        view
+                    ]
+                }
+            }
+            publisher.publish('discord-bridge',JSON.stringify(payload))
 
             return output
         } catch (e) {
