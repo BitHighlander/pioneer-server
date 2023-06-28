@@ -38,7 +38,6 @@
 
 */
 
-
 const TAG = " | Pioneer | "
 const queue = require('@pioneer-platform/redis-queue');
 const uuid = require('short-uuid');
@@ -51,7 +50,7 @@ let {
     getPaths,
     get_address_from_xpub,
     getNativeAssetForBlockchain
-} = require('@pioneer-platform/pioneer-coins')
+} = require('@pioneer-platform/cointools')
 
 //const bcrypt = require('bcryptjs');
 var numbro = require("numbro");
@@ -194,48 +193,48 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
         //get pubkeys from mongo with context tagged
         if(!context) context = username
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [context]}})
-        log.debug(tag,"pubkeysMongo: ",pubkeysMongo)
+        log.info(tag,"pubkeysMongo: ",pubkeysMongo)
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
         if(!userInfo) throw Error("get_and_verify_pubkeys User not found!")
-        log.debug(tag,"userInfo: ",userInfo)
+        log.info(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
         if(!blockchains) blockchains = []
         //if(!userInfo.blockchains) throw Error("Invalid user!")
 
         //reformat
         let pubkeys:any = []
-        let masters:any = {}
+        // let masters:any = {}
         for(let i = 0; i < pubkeysMongo.length; i++){
             let pubkeyInfo = pubkeysMongo[i]
             delete pubkeyInfo._id
             //TODO validate pubkeys?
 
-            if(!masters[pubkeyInfo.symbol] && pubkeyInfo.master)masters[pubkeyInfo.symbol] = pubkeyInfo.master
+            // if(!masters[pubkeyInfo.symbol] && pubkeyInfo.master)masters[pubkeyInfo.symbol] = pubkeyInfo.master
             pubkeyInfo.context = context
             pubkeys.push(pubkeyInfo)
         }
 
-        //verify pubkey list match's blockchains enabled
-        for(let i = 0; i < blockchains.length; i++){
-            let blockchain = blockchains[i]
-            let nativeAsset = getNativeAssetForBlockchain(blockchain)
-            if(!masters[nativeAsset]) {
-                log.error(tag,"blockchain: ",blockchain)
-                log.error(tag,"nativeAsset: ",nativeAsset)
-                log.error(tag,"masters: ",masters)
-                log.error(tag,"blockchains: ",blockchains)
+        // //verify pubkey list match's blockchains enabled
+        // for(let i = 0; i < blockchains.length; i++){
+        //     let blockchain = blockchains[i]
+        //     let nativeAsset = getNativeAssetForBlockchain(blockchain)
+        //     if(!masters[nativeAsset]) {
+        //         log.error(tag,"blockchain: ",blockchain)
+        //         log.error(tag,"nativeAsset: ",nativeAsset)
+        //         log.error(tag,"masters: ",masters)
+        //         log.error(tag,"blockchains: ",blockchains)
+        //
+        //         //remove blockchain from supported
+        //         let pullResult = await usersDB.update({username},{$pull:{blockchains:blockchain}})
+        //         log.debug(tag,"pullResult: ",pullResult)
+        //
+        //         // throw Error(" Missing Master for supported blockchain! "+blockchain)
+        //     }
+        // }
 
-                //remove blockchain from supported
-                let pullResult = await usersDB.update({username},{$pull:{blockchains:blockchain}})
-                log.debug(tag,"pullResult: ",pullResult)
-
-                // throw Error(" Missing Master for supported blockchain! "+blockchain)
-            }
-        }
-
-        return {pubkeys,masters}
+        return {pubkeys}
     } catch (e) {
         console.error(tag, "e: ", e)
         throw e

@@ -138,6 +138,235 @@ interface Pubkey {
 @Route('')
 export class pioneerPrivateController extends Controller {
 
+
+
+    /**
+     *  Create a user account on Pioneer
+     *
+     *  Auth providers
+     *
+     *     * Shapeshift
+     *
+     *     * Keypair
+     *
+     *
+     *
+     *
+     *  NOTE:
+     *
+     *  Any already REGISTERED user may use this name to register additional coins/pubkeys or update context or state
+     *
+     *
+     *  Output:
+     *      QueryToken: (SUBSCRIBE permissions)
+     *          Blockchain and payment info
+     *
+     *  Auth providers may issue/revoke Query tokens
+     *
+     * @param request This is a user creation
+     */
+    @Post('/register')
+    public async register(@Header('Authorization') authorization: string, @Body() body: RegisterBody): Promise<any> {
+        let tag = TAG + " | register | ";
+        try {
+            log.info("register body: ", body);
+            log.info("register body: ", JSON.stringify(body));
+            if (!body.context) throw new Error("Missing context parameter!");
+            if (!body.blockchains) throw new Error("Missing blockchains parameter!");
+            if (!body.walletDescription || typeof body.walletDescription === 'string') throw new Error("Invalid walletDescription parameter! Expected a non-string value.");
+            if (!body.data || !body.data.pubkeys) throw new Error("Missing or Invalid pubkeys parameter in the data object!");
+
+            let username;
+            const authInfo = await redis.hgetall(authorization);
+            if (Object.keys(authInfo).length === 0) {
+                log.info("New user!");
+                // Generate a unique identifier for each registration if the user hasn't chosen a username
+                username = body.username || "user:" + uuidv4();
+                let userInfo = {
+                    username,
+                    queryKey: authorization,
+                    publicAddress: body.publicAddress,
+                    verified: false,
+                    wallets: [body.context],
+                    pubkeys: ([] as any[]).concat(...body.data.pubkeys.map((pubkey: any) => ({ ...pubkey, context: body.context })))
+                };
+                await redis.hmset(authorization, userInfo);
+            } else {
+                log.info(tag,"Existing user!");
+                if(body.username !== authInfo.username){
+                    //update username
+                    log.info(tag,"Updating username!");
+                    redis.hset(authorization,"username",body.username)
+                    username = body.username
+                } else {
+                    username = authInfo.username;
+                }
+            }
+
+            let redisSuccessKey = await redis.hmset(authorization, { username });
+            let redisSuccessUser = await redis.hmset(username, { username, queryKey: authorization });
+            log.debug("redisSuccessKey: ", redisSuccessKey);
+            log.debug("redisSuccessUser: ", redisSuccessUser);
+
+            let userInfoMongo = await usersDB.findOne({ username });
+            if (!userInfoMongo) {
+                // New user in MongoDB
+                let code = randomstring.generate(6).toUpperCase();
+                let pubkeys = []
+                for(let i = 0; i < body.data.pubkeys.length; i++){
+                    let pubkey = body.data.pubkeys[i]
+                    pubkey.context = body.context
+                    pubkeys.push(pubkey)
+                }
+                let userInfo = {
+                    username,
+                    publicAddress: body.publicAddress,
+                    verified: false,
+                    code,
+                    auth: authorization,
+                    id: "pioneer:" + pjson.version + ":" + uuidv4(),
+                    registered: new Date().getTime(),
+                    nonce: Math.floor(Math.random() * 10000),
+                    wallets: [body.context],
+                    isSynced: false,
+                    pubkeys
+                };
+                userInfoMongo = userInfo
+                try {
+                    await usersDB.insert(userInfo);
+                } catch (error) {
+                    if (error.code === 11000) {
+                        // Duplicate key error, handle it gracefully
+                        throw new Error("103: Unable to create a new user, the username is already taken!");
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+
+            let isNewWallet = userInfoMongo && userInfoMongo.wallets ? !userInfoMongo.wallets.some(wallet => wallet === body.context) : true;
+            let isNewWalletDescription = userInfoMongo && userInfoMongo.walletDescriptions ? !userInfoMongo.walletDescriptions.some(walletDesc => walletDesc.context === body.context) : true;
+
+            if (isNewWallet) {
+                // Update the existing user's information with the new pubkeys/wallet
+                await usersDB.update({ username }, { $addToSet: { "wallets": body.context, "pubkeys": { $each: ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))) } } });
+            }
+
+            if (isNewWalletDescription) {
+                // Add a new wallet description if it doesn't already exist
+                let walletDescription = {
+                    context: body.context,
+                    type: body.walletDescription.type,
+                    valueUsdContext: 0 // Placeholder value for responseMarkets.total
+                };
+                await usersDB.update({ username }, { $addToSet: { "walletDescriptions": walletDescription } });
+            }
+
+            if (isNewWallet) {
+                await redis.sadd(username + ':wallets', body.context);
+            }
+
+            // Register with pioneer and get balances
+            if (!body.data.pubkeys) throw new Error("Cannot register an empty wallet!");
+            // pioneer.register(username, ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))), body.context);
+
+            // Add any pubkeys missing from the user
+            log.info(tag, "userInfoMongo: ", userInfoMongo);
+            let pubkeysMongo = userInfoMongo.pubkeys || [];
+            let pubkeysRegistering = ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))); // Flatten the pubkeys array and add the context
+            log.info(tag, "pubkeysMongo: ", pubkeysMongo);
+            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering);
+            log.info(tag, "pubkeysMongo: ", pubkeysMongo.length);
+            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
+            //register new pubkeys
+
+            //add raw pubkeys to mongo
+            if(pubkeysRegistering.length > 0){
+                log.info("register newPubkeys: ", pubkeysRegistering.length);
+                //pioneer.register(username, pubkeysRegistering, body.context)
+                // let resultRegister = await pioneer.register(username, pubkeysRegistering, body.context)
+                // log.info("resultRegister: ", resultRegister);
+
+                log.debug("Adding pubkey to the user: ", pubkeysRegistering);
+                await usersDB.update(
+                    { username: userInfoMongo.username },
+                    {
+                        $addToSet: { pubkeys: pubkeysRegistering },
+                        $set: { isSynced: false }
+                    }
+                );
+            } else {
+                log.info("No new pubkeys to register!");
+            }
+
+            let userInfoFinal = await usersDB.findOne({ username });
+            log.info("userInfoFinal: ", userInfoFinal);
+
+            // Validate the context is in wallets
+            if (!userInfoFinal.wallets.includes(body.context)) {
+                throw new Error("Invalid wallet context!");
+            }
+
+            // Validate the wallet is in walletDescriptions
+            let walletExistsInDescriptions = userInfoFinal.walletDescriptions.some(walletDesc => walletDesc.context === body.context);
+            if (!walletExistsInDescriptions) {
+                throw new Error("Wallet description not found!");
+            }
+
+            // Validate pubkeys are in pubkeys
+            let pubkeysMatch = body.data.pubkeys.flat().every(pubkey => userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey));
+            if (!pubkeysMatch) {
+                throw new Error("Invalid pubkeys!");
+            }
+
+            //get balances
+            let allBalances = [];
+            let allNfts = [];
+            let { pubkeys } = await pioneer.getPubkeys(username);
+            if(!pubkeys) throw new Error("No pubkeys found!")
+            log.info("pubkeys returned from pioneer: ", pubkeys.length);
+
+
+            for (let i = 0; i < pubkeys.length; i++) {
+                let pubkey = pubkeys[i];
+                let balances = await pubkey.balances || []
+                for (let j = 0; j < balances.length; j++) {
+                    let balance = balances[j];
+                    allBalances.push(balance);
+                }
+
+                let nfts = await pubkey.nfts || [];
+                for (let j = 0; j < nfts.length; j++) {
+                    let nft = nfts[j];
+                    allNfts.push(nft);
+                }
+            }
+
+            userInfoFinal.balances = allBalances;
+            userInfoFinal.nfts = allNfts;
+
+            for (let i = 0; i < allNfts.length; i++) {
+                let nft = allNfts[i];
+                if (nft.name === "Pioneer") {
+                    userInfoFinal.isPioneer = true;
+                    userInfoFinal.pioneerImage = nft.image;
+                }
+                if (nft.name === "Foxitar") {
+                    userInfoFinal.isFox = true;
+                }
+                // Add other conditions for different nft names if needed
+            }
+
+            if (!userInfoFinal.balances) userInfoFinal.balances = [];
+
+            return userInfoFinal;
+        } catch (e) {
+            throw new ApiError("error", 503, "error: " + e.toString());
+        }
+    }
+
+
+
     /**
             Forget Account
                 Clear transactions
@@ -209,8 +438,53 @@ export class pioneerPrivateController extends Controller {
                     //TODO maybe refresh mongo balances here?
                     //wallets
                     let userInfoMongo = await usersDB.findOne({username})
-                    if(userInfoMongo.balances) userInfoMongo.balances = []
-                    return userInfoMongo
+                    if(!userInfoMongo){
+                        return {
+                            success:false,
+                            error:"username registered!"
+                        }
+                    } else {
+                        //get balances
+                        let allBalances = [];
+                        let allNfts = [];
+                        let { pubkeys, master } = await pioneer.getPubkeys(username);
+                        log.info("pubkeys: ", pubkeys);
+
+                        for (let i = 0; i < pubkeys.length; i++) {
+                            let pubkey = pubkeys[i];
+                            let balances = await pubkey.balances || [];
+                            for (let j = 0; j < balances.length; j++) {
+                                let balance = balances[j];
+                                allBalances.push(balance);
+                            }
+
+                            let nfts = await pubkey.nfts || []
+                            for (let j = 0; j < nfts.length; j++) {
+                                let nft = nfts[j];
+                                allNfts.push(nft);
+                            }
+                        }
+
+                        userInfoMongo.balances = allBalances;
+                        userInfoMongo.nfts = allNfts;
+
+                        for (let i = 0; i < allNfts.length; i++) {
+                            let nft = allNfts[i];
+                            if (nft.name === "Pioneer") {
+                                userInfoMongo.isPioneer = true;
+                                userInfoMongo.pioneerImage = nft.image;
+                            }
+                            if (nft.name === "Foxitar") {
+                                userInfoMongo.isFox = true;
+                            }
+                            // Add other conditions for different nft names if needed
+                        }
+
+                        if (!userInfoMongo.balances) userInfoMongo.balances = [];
+
+
+                        return userInfoMongo
+                    }
                 }
             }
         }catch(e){
@@ -242,9 +516,9 @@ export class pioneerPrivateController extends Controller {
     public async info(context:string,@Header('Authorization') authorization: string): Promise<any> {
         let tag = TAG + " | info | "
         try{
-            log.debug(tag,"queryKey: ",authorization)
+            log.info(tag,"queryKey: ",authorization)
             if(!context) throw Error("103: context required!")
-            log.debug(tag,"context: ",context)
+            log.info(tag,"context: ",context)
 
             let accountInfo = await redis.hgetall(authorization)
             log.debug(tag,"accountInfo: ",accountInfo)
@@ -1391,177 +1665,6 @@ export class pioneerPrivateController extends Controller {
         }
     }
 
-    /**
-     *  Create a user account on Pioneer
-     *
-     *  Auth providers
-     *
-     *     * Shapeshift
-     *
-     *     * Keypair
-     *
-     *
-     *
-     *
-     *  NOTE:
-     *
-     *  Any already REGISTERED user may use this name to register additional coins/pubkeys or update context or state
-     *
-     *
-     *  Output:
-     *      QueryToken: (SUBSCRIBE permissions)
-     *          Blockchain and payment info
-     *
-     *  Auth providers may issue/revoke Query tokens
-     *
-     * @param request This is a user creation
-     */
-    @Post('/register')
-    public async register(@Header('Authorization') authorization: string, @Body() body: RegisterBody): Promise<any> {
-        let tag = TAG + " | register | ";
-        try {
-            log.info("register body: ", body);
-            log.info("register body: ", JSON.stringify(body));
-            if (!body.context || !body.blockchains || typeof (body.walletDescription) === 'string' || !body.data.pubkeys) {
-                throw new Error("Missing or Invalid body parameters!");
-            }
-
-            let username;
-            const authInfo = await redis.hgetall(authorization);
-            if (Object.keys(authInfo).length === 0) {
-                log.info("New user!");
-                // Generate a unique identifier for each registration if the user hasn't chosen a username
-                username = body.username || "user:" + uuidv4();
-                let userInfo = {
-                    username,
-                    queryKey: authorization,
-                    publicAddress: body.publicAddress,
-                    verified: false,
-                    wallets: [body.context],
-                    pubkeys: ([] as any[]).concat(...body.data.pubkeys.map((pubkey: any) => ({ ...pubkey, context: body.context })))
-                };
-                await redis.hmset(authorization, userInfo);
-            } else {
-                log.info("Existing user!");
-                username = authInfo.username;
-            }
-
-            let redisSuccessKey = await redis.hmset(authorization, { username });
-            let redisSuccessUser = await redis.hmset(username, { username });
-            log.debug("redisSuccessKey: ", redisSuccessKey);
-            log.debug("redisSuccessUser: ", redisSuccessUser);
-
-            let userInfoMongo = await usersDB.findOne({ username });
-            if (!userInfoMongo) {
-                // New user in MongoDB
-                let code = randomstring.generate(6).toUpperCase();
-                let userInfo = {
-                    username,
-                    publicAddress: body.publicAddress,
-                    verified: false,
-                    code,
-                    auth: authorization,
-                    id: "pioneer:" + pjson.version + ":" + uuidv4(),
-                    registered: new Date().getTime(),
-                    nonce: Math.floor(Math.random() * 10000),
-                    wallets: [body.context],
-                    pubkeys: ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context })))
-                };
-                try {
-                    await usersDB.insert(userInfo);
-                } catch (error) {
-                    if (error.code === 11000) {
-                        // Duplicate key error, handle it gracefully
-                        throw new Error("103: Unable to create a new user, the username is already taken!");
-                    } else {
-                        throw error;
-                    }
-                }
-            }
-
-            let isNewWallet = userInfoMongo && userInfoMongo.wallets ? !userInfoMongo.wallets.some(wallet => wallet === body.context) : true;
-            let isNewWalletDescription = userInfoMongo && userInfoMongo.walletDescriptions ? !userInfoMongo.walletDescriptions.some(walletDesc => walletDesc.context === body.context) : true;
-
-            if (isNewWallet) {
-                // Update the existing user's information with the new pubkeys/wallet
-                await usersDB.update({ username }, { $addToSet: { "wallets": body.context, "pubkeys": { $each: ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))) } } });
-            }
-
-            if (isNewWalletDescription) {
-                // Add a new wallet description if it doesn't already exist
-                let walletDescription = {
-                    context: body.context,
-                    type: body.walletDescription.type,
-                    valueUsdContext: 0 // Placeholder value for responseMarkets.total
-                };
-                await usersDB.update({ username }, { $addToSet: { "walletDescriptions": walletDescription } });
-            }
-
-            if (isNewWallet) {
-                await redis.sadd(username + ':wallets', body.context);
-            }
-
-            // Register with pioneer and get balances
-            if (!body.data.pubkeys) throw new Error("Cannot register an empty wallet!");
-            // pioneer.register(username, ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))), body.context);
-
-            // Add any pubkeys missing from the user
-            log.info(tag, "userInfoMongo: ", userInfoMongo);
-            let pubkeysMongo = userInfoMongo.pubkeys || [];
-            let pubkeysRegistering = ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))); // Flatten the pubkeys array and add the context
-            log.info(tag, "pubkeysMongo: ", pubkeysMongo);
-            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering);
-            log.info(tag, "pubkeysMongo: ", pubkeysMongo.length);
-            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
-
-            for (let i = 0; i < pubkeysRegistering.length; i++) {
-                let pubkey = pubkeysRegistering[i];
-
-                // Check if the pubkey already exists in pubkeysMongo
-                let isFound = pubkeysMongo.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey);
-                log.info("isFound: ", isFound);
-
-                // If not found, add it to pubkeysMongo
-                if (!isFound) {
-                    log.info("Adding pubkey to the user: ", pubkey);
-                    pubkey.context = body.context;
-                    await usersDB.update(
-                        { username: userInfoMongo.username },
-                        {
-                            $addToSet: { pubkeys: pubkey },
-                            $set: { isSynced: false }
-                        }
-                    );
-                }
-            }
-
-            let userInfoFinal = await usersDB.findOne({ username });
-            log.info("userInfoFinal: ", userInfoFinal);
-
-            // Validate the context is in wallets
-            if (!userInfoFinal.wallets.includes(body.context)) {
-                throw new Error("Invalid wallet context!");
-            }
-
-            // Validate the wallet is in walletDescriptions
-            let walletExistsInDescriptions = userInfoFinal.walletDescriptions.some(walletDesc => walletDesc.context === body.context);
-            if (!walletExistsInDescriptions) {
-                throw new Error("Wallet description not found!");
-            }
-
-            // Validate pubkeys are in pubkeys
-            let pubkeysMatch = body.data.pubkeys.flat().every(pubkey => userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey));
-            if (!pubkeysMatch) {
-                throw new Error("Invalid pubkeys!");
-            }
-
-            if(userInfoFinal.balances) userInfoFinal.balances = []
-
-            return userInfoFinal;
-        } catch (e) {
-            throw new ApiError("error", 503, "error: " + e.toString());
-        }
-    }
     /**
      *  Import Pubkeys
      *
