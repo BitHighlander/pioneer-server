@@ -19,7 +19,8 @@ networkEth.init()
 
 const axios = require('axios');
 const cheerio = require('cheerio');
-const puppeteer = require('puppeteer');
+// const puppeteer = require('puppeteer');
+// import cheerio from 'cheerio';
 ai.init()
 //TODO if no mongo use nedb?
 //https://github.com/louischatriot/nedb
@@ -520,44 +521,28 @@ export class WAppsController extends Controller {
     }
 
     @Post('/apps/submit')
-    //CreateAppBody
-    public async submitUrl(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-        let tag = TAG + " | transactions | "
-        try{
-            log.debug(tag,"body: ",body)
-            log.debug(tag,"authorization: ",authorization)
-            if(!body.homepage) throw Error("invalid signed payload missing url!")
-            if(!body.app) throw Error("invalid signed payload missing url!")
+    public async submitUrl(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
+        let tag = TAG + " | transactions | ";
+        try {
+            log.debug(tag, "body: ", body);
+            log.debug(tag, "authorization: ", authorization);
+            if (!body.homepage) throw Error("invalid signed payload missing homepage!");
+            if (!body.app) throw Error("invalid signed payload missing app!");
 
             //
-            if(body.app.indexOf("https") === -1) {
-                body.app = "https://"+body.app
+            if (body.app.indexOf("https") === -1) {
+                body.app = "https://" + body.app;
             }
 
-            if(body.homepage.indexOf("https") === -1) {
-                body.homepage = "https://"+body.homepage
+            if (body.homepage.indexOf("https") === -1) {
+                body.homepage = "https://" + body.homepage;
             }
-            let textContent = ""
-            try{
-                //read page
-                // Launch a headless browser
-                const browser = await puppeteer.launch();
-                const page = await browser.newPage();
 
-                // Navigate to the URL
-                await page.goto(body.homepage);
-
-                // Wait for the JavaScript to execute on the page
-                await page.waitForTimeout(2000); // Adjust the timeout as needed
-
-                // Get all images from the webpage
-                let imageUrls = await page.$$eval('img', images => images.map(img => img.src));
-
-                // Get the HTML content after JavaScript execution
-                const htmlContent = await page.content();
-
-                // Close the browser
-                await browser.close();
+            let textContent = "";
+            try {
+                // Fetch the webpage HTML
+                const response = await axios.get(body.homepage);
+                const htmlContent = response.data;
 
                 // Use cheerio to parse the HTML content
                 const $ = cheerio.load(htmlContent);
@@ -570,23 +555,22 @@ export class WAppsController extends Controller {
 
                 // Remove all white space from the text
                 textContent = textContent.replace(/\s+/g, ' ');
-                // Log the text and image content
-                // console.log("textContent: ", textContent);
-                // console.log("imageUrls: ", imageUrls);
-                imageUrls = imageUrls.join(" ")
-                if (imageUrls.length > 10000) {
-                    imageUrls = imageUrls.substring(0, 10000);
-                }
-                textContent = textContent + " " + imageUrls
-                // Trim the text to a maximum of 10,000 characters
-                if (textContent.length > 10000) {
-                    textContent = textContent.substring(0, 10000);
-                }
-                console.log("textContent: ", textContent);
-            }catch(e){
-                textContent = "loading failed, just guess"
-            }
 
+                // Get all images from the webpage
+                let imageUrls = $('img').map((_, img) => $(img).attr('src')).get();
+
+                // Limit the image URLs to 10,000 characters
+                imageUrls = imageUrls.join(' ').substring(0, 10000);
+
+                textContent = textContent + ' ' + imageUrls;
+
+                // Trim the text to a maximum of 10,000 characters
+                textContent = textContent.substring(0, 10000);
+
+                console.log("textContent: ", textContent);
+            } catch (e) {
+                textContent = "loading failed, just guess";
+            }
 
             const schema = {
                 name: "name of the DApp",
@@ -595,7 +579,7 @@ export class WAppsController extends Controller {
                 protocols: {
                     walletConnect: "boolean indicating if the DApp supports WalletConnect (default to true)",
                     walletConnectV2: "boolean indicating if the DApp supports WalletConnect V2 (default to false)",
-                    rest:" boolean indicating if the DApp supports kk REST, default to false if you do now know ",
+                    rest: " boolean indicating if the DApp supports kk REST, default to false if you do now know ",
                 },
                 image: "logo of the DApp, a full URL or just the image encoded in base64",
                 developer: {
@@ -621,26 +605,27 @@ export class WAppsController extends Controller {
                 sourceCodeLink: "link to the DApp's source code",
                 userCount: "number of users using the DApp",
             };
-            textContent = "the dapps URL is "+body.app+" if you know what this dapp does then please add a description from you mind! I dont care if your knowledge is our to date, dont warn me " + textContent
-            log.info(tag,"pre-summary textContent: ",textContent)
-            let result = await ai.summarizeString(textContent,schema)
-            console.log("result: ",result)
-            console.log("result: ",typeof(result))
-            if(!result) result = schema
+
+            textContent = "the dapps URL is " + body.app + " if you know what this dapp does then please add a description from your mind! I don't care if your knowledge is outdated, don't warn me " + textContent;
+            log.info(tag, "pre-summary textContent: ", textContent);
+
+            let result = await ai.summarizeString(textContent, schema);
+            console.log("result: ", result);
+            console.log("result: ", typeof(result));
+            if (!result) result = schema;
             //TODO save into knowledge db
 
             return(result);
-        }catch(e){
-            let errorResp:Error = {
-                success:false,
+        } catch (e) {
+            let errorResp = {
+                success: false,
                 tag,
                 e
-            }
-            log.error(tag,"e: ",{errorResp})
-            throw new ApiError("error",503,"error: "+e.toString());
+            };
+            log.error(tag, "e: ", { errorResp });
+            throw new ApiError("error", 503, "error: " + e.toString());
         }
     }
-
 
     //Submit review
     @Post('/apps/review/submit')

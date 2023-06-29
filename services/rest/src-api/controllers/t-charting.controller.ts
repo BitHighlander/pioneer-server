@@ -5,6 +5,8 @@
 
 
  */
+import {bufferToHex} from "ethereumjs-util";
+
 let TAG = ' | API | '
 // import jwt from 'express-jwt';
 const pjson = require('../../package.json');
@@ -61,6 +63,7 @@ import {
     Error,
     CreateAppBody
 } from "@pioneer-platform/pioneer-types";
+import {recoverPersonalSignature} from "eth-sig-util";
 
 
 export class ApiError extends Error {
@@ -137,7 +140,7 @@ export class ChartingController extends Controller {
                 missing: "array of missing fields",
                 analysis: " verbal summary of the data",
                 topics: "array of topics related to the data",
-                actions: "set of actionalables for a human to take to verify data",
+                actions: "set of actionables for a human to take to verify data",
             }
             //return charting to user for approval
             let analysis = await ai.analyzeData(randomWork,objectives, schema)
@@ -160,7 +163,62 @@ export class ChartingController extends Controller {
     }
 
     //submit charting
+    //Submit review
+    @Post('/apps/chart/submit')
+    //CreateAppBody
+    public async submitCharting(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | submitReview | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            if(!body.signer) throw Error("invalid signed payload missing signer!")
+            if(!body.payload) throw Error("invalid signed payload missing payload!")
+            if(!body.signature) throw Error("invalid signed payload missing !")
+            let authInfo = await redis.hgetall(authorization)
+            log.info(tag,"authInfo: ",authInfo)
 
+            let message = body.payload
+
+            const msgBufferHex = bufferToHex(Buffer.from(message, 'utf8'));
+            const addressFromSig = recoverPersonalSignature({
+                data: msgBufferHex,
+                sig: body.signature,
+            });
+            log.info(tag,"addressFromSig: ",addressFromSig)
+            message = JSON.parse(message)
+            log.info(tag,"message: ",message)
+            log.info(tag,"message: ",typeof(message))
+            //TODO verify app and rating is signed
+
+            //TODO verify user is a fox or pioneer
+
+            let entry = {
+                app:message.app,
+                user:authInfo.address,
+                rating:body.review.rating,
+                review:body.review.review,
+                timestamp:Date.now(),
+                fact:{
+                    signer:body.signer,
+                    payload:body.payload,
+                    signature:body.signature
+                }
+            }
+            let submitResult = await blockchainsDB.insert(entry)
+            log.info(submitResult)
+            submitResult.success = true
+
+            return(submitResult);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
 
 }
