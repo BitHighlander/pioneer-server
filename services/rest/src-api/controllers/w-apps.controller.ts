@@ -552,12 +552,12 @@ export class WAppsController extends Controller {
             //     query.tags = { $in: filterTags };
             // }
             console.log("query: ",query)
-            const results = await assetsDB.find(query, {
+            const results = await appsDB.find(query, {
                 sort,
                 limit,
                 skip
             });
-            const total = await assetsDB.count(query);
+            const total = await appsDB.count(query);
 
             return { results, total };
         } catch (e) {
