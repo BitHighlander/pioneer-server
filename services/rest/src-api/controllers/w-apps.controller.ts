@@ -520,6 +520,57 @@ export class WAppsController extends Controller {
         }
     }
 
+    @Post('/apps/search')
+    public async listAppsSearch(@Body() payload: {
+        limit: number;
+        skip: number;
+        sortBy?: string;
+        sortOrder?: string;
+        filterTags?: string[];
+        customFilters?: Record<string, any>;
+    }) {
+        let tag = TAG + ' | listAppsSearch | ';
+        try {
+            const {
+                limit,
+                skip,
+                sortBy,
+                sortOrder = 'asc',
+                filterTags = [],
+                customFilters = {}
+            } = payload;
+
+            const sort: any = {};
+            if (sortBy) {
+                sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+            }
+
+            const query: any = {
+                ...customFilters
+            };
+            // if(filterTags){
+            //     query.tags = { $in: filterTags };
+            // }
+            console.log("query: ",query)
+            const results = await assetsDB.find(query, {
+                sort,
+                limit,
+                skip
+            });
+            const total = await assetsDB.count(query);
+
+            return { results, total };
+        } catch (e) {
+            let errorResp: Error = {
+                success: false,
+                tag,
+                e,
+            };
+            log.error(tag, 'e: ', { errorResp });
+            throw new ApiError('error', 503, 'error: ' + e.toString());
+        }
+    }
+
     @Post('/apps/submit')
     public async submitUrl(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
         let tag = TAG + " | transactions | ";
