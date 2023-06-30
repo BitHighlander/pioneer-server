@@ -148,12 +148,50 @@ export class pioneerController extends Controller {
             let maxFeePerGas = gasPrice;
 
             //add gas
-            recommended["gasLimit"] = '0x' + gasLimit.toHexString();
+            let gasLimitCalulated = '0x' + gasLimit.toHexString();
+            let gasLimitCalulatedDecimal = parseInt(gasLimitCalulated, 16);
+            let bodyGasLimitDecimal = parseInt(body.gasLimit, 16);
+
+            if(gasLimitCalulatedDecimal > bodyGasLimitDecimal){
+                recommended["gasLimit"] = gasLimitCalulated
+            } else {
+                recommended["gasLimit"] = body.gasLimit
+            }
+
             if(isEIP1559){
-                recommended["maxPriorityFeePerGas"] = priorityFeePerGas.toHexString();
-                recommended["maxFeePerGas"] = maxFeePerGas.toHexString();
-            }else{
-                recommended["gas"] = gasPrice.toHexString();
+                let priorityFeeCalculated = '0x' + priorityFeePerGas.toHexString();
+                let maxFeeCalculated = '0x' + maxFeePerGas.toHexString();
+
+                // Convert hexadecimal strings to decimal numbers for comparison
+                let priorityFeeCalculatedDecimal = parseInt(priorityFeeCalculated, 16);
+                let maxFeeCalculatedDecimal = parseInt(maxFeeCalculated, 16);
+                let bodyMaxPriorityFeeDecimal = parseInt(body.maxPriorityFeePerGas, 16);
+                let bodyMaxFeeDecimal = parseInt(body.maxFeePerGas, 16);
+
+                if(priorityFeeCalculatedDecimal > bodyMaxPriorityFeeDecimal){
+                    recommended["maxPriorityFeePerGas"] = priorityFeeCalculated;
+                } else {
+                    recommended["maxPriorityFeePerGas"] = body.maxPriorityFeePerGas;
+                }
+
+                if(maxFeeCalculatedDecimal > bodyMaxFeeDecimal){
+                    recommended["maxFeePerGas"] = maxFeeCalculated;
+                } else {
+                    recommended["maxFeePerGas"] = body.maxFeePerGas;
+                }
+
+            } else {
+                let gasPriceCalculated = '0x' + gasPrice.toHexString();
+
+                // Convert hexadecimal strings to decimal numbers for comparison
+                let gasPriceCalculatedDecimal = parseInt(gasPriceCalculated, 16);
+                let bodyGasDecimal = parseInt(body.gas, 16);
+
+                if(gasPriceCalculatedDecimal > bodyGasDecimal){
+                    recommended["gas"] = gasPriceCalculated;
+                } else {
+                    recommended["gas"] = body.gas;
+                }
             }
 
             let output = {
