@@ -129,8 +129,8 @@ export class pioneerController extends Controller {
             // push to discord
 
             // push event to metric
-            let result = await harpie.validateTransactionv2(body.to,body.from,body.data)
-            console.log("result: ",result)
+            // let result = await harpie.validateTransactionv2(body.to,body.from,body.data)
+            // console.log("result: ",result.data)
 
 
             let recommended = {
@@ -155,6 +155,9 @@ export class pioneerController extends Controller {
             if(gasLimitCalulatedDecimal > bodyGasLimitDecimal){
                 recommended["gasLimit"] = gasLimitCalulated
             } else {
+                //
+                log.info("original gas limit is larger!")
+                log.info("Original: ",)
                 recommended["gasLimit"] = body.gasLimit
             }
 
@@ -197,7 +200,7 @@ export class pioneerController extends Controller {
             let output = {
                 invokeId:"invoke:"+short.generate(),
                 success: true,
-                analysis:result,
+                // analysis:result,
                 isEIP1559,
                 original: body,
                 isError: false,
@@ -207,7 +210,7 @@ export class pioneerController extends Controller {
 
             let insight = {
                 "invokeId":output.invokeId,
-                "analysis":result.summary,
+                // "analysis":result.summary,
                 "isEIP1559":isEIP1559.toString(),
                 "chainId":chainId.toString(),
                 "from":body.from,

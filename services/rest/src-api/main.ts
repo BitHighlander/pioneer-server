@@ -511,46 +511,6 @@ app.use(errorHandler)
         subscribe to live price data on all assets with users online
         push price updates to user over socket
  */
-//build markets cache
-let start_markets_cache = async function () {
-    let tag = " | start_markets_cache | "
-    try {
-        //get pubkeys from mongo with context tagged
-        let marketsMongo = await marketsDB.find({},{limit:1000})
-        log.debug(tag,"marketsMongo: ",marketsMongo)
-
-        //get market data from markets
-        let marketCacheCoinGecko = await redis.get('markets:CoinGecko')
-        let marketCacheCoincap = await redis.get('markets:Coincap')
-
-        if(!marketCacheCoinGecko){
-            let marketInfoCoinGecko = await markets.getAssetsCoingecko()
-            if(marketInfoCoinGecko){
-                //market info found for
-                marketInfoCoinGecko.updated = new Date().getTime()
-                redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoinGecko),60 * 15)
-                marketCacheCoinGecko = marketInfoCoinGecko
-            }
-        }
-
-        if(!marketCacheCoincap){
-            let marketInfoCoincap = await markets.getAssetsCoincap()
-            if(marketInfoCoincap){
-                //market info found for
-                marketInfoCoincap.updated = new Date().getTime()
-                redis.set('markets:CoinGecko',JSON.stringify(marketInfoCoincap),60 * 15)
-                marketCacheCoincap = marketInfoCoincap
-            }
-        }
-
-
-        return true
-    } catch (e) {
-        console.error(tag, "e: ", e)
-        throw e
-    }
-}
-//start_markets_cache()
 
 let start_server = async function () {
     let tag = TAG + " | start_server | "
