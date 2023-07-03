@@ -147,10 +147,17 @@ export class VUsersController extends Controller {
     //     }
     // }
 
-    /** GET /users/:publicAddress */
+    /*
+     * GET /users/:publicAddress
+     *
+     *  Get pub-key user information for a given publicAddress
+     *
+     *  You can use any publicAddress to get public user information
+     *  If the user has not yet registered, this will error
+     * */
     @Get('/users/{publicAddress}')
-    public async getUser(publicAddress:any) {
-        let tag = TAG + " | getUser | "
+    public async lookupPublicUserByAddress(publicAddress:any) {
+        let tag = TAG + " | lookupPublicUserByAddress | "
         try{
             log.info(tag,"publicAddress: ",publicAddress)
 

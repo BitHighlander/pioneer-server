@@ -50,9 +50,11 @@ export class IndexController extends Controller {
     //remove api key
 
 
-    /*
-        Health endpoint
-    */
+    /**
+     *  Health Endpoint
+     *  Gives me the health of the system
+     *
+     */
 
     @Get('/health')
     public async health() {

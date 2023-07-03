@@ -1317,8 +1317,8 @@ export class atlasPublicController extends Controller {
         }
     }
 
-    /**
-     *  Retrieve account info
+    /*
+     *  Retrieve information on a specific address given the address
      */
     @Get('/getAccountInfo/{network}/{address}')
     public async getAccountInfo(network:string,address:string) {

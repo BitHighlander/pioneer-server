@@ -217,10 +217,9 @@ export class XDevsController extends Controller {
     //
 
 
-    /*
+    /**
         Update MOTD
      */
-    /** POST /users */
     @Post('/motd')
     //CreateAppBody
     public async updateMOTD(@Body() body: any): Promise<any> {

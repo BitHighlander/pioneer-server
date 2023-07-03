@@ -344,6 +344,11 @@ export class pioneerPublicController extends Controller {
         }
     }
 
+    /**
+     * searchByTagNative
+     *
+     */
+
     @Get('/atlas/list/asset/native/{tagString}')
     public async searchByTagNative(tagString:string) {
         let tag = TAG + " | searchByTagNative | "
@@ -539,7 +544,7 @@ export class pioneerPublicController extends Controller {
         }
     }
 
-    /*
+    /**
      * ATLAS
      *
      *    Get all live atlas
@@ -566,7 +571,7 @@ export class pioneerPublicController extends Controller {
     }
 
 
-    /*
+    /**
      * ATLAS
      *
      *    Get all live atlas
@@ -592,7 +597,7 @@ export class pioneerPublicController extends Controller {
         }
     }
 
-    /*
+    /**
      * ATLAS
      *
      *    Get all live atlas

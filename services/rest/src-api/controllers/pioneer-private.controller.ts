@@ -412,7 +412,19 @@ export class pioneerPrivateController extends Controller {
     }
 
     /*
-        Get user info for queryKey
+        Get user info
+        get the users bitcoin address
+
+        This is the primary way to get your bitcoin address
+        This is the primary way to get a users info
+
+        @route GET /user/info
+        @param {string} authorization - queryKey
+        @returns {object} userInfo
+
+
+        example return:
+
      */
 
     @Get('/user')
