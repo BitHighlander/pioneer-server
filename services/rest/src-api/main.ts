@@ -152,6 +152,7 @@ subscriber.subscribe('payments');
 subscriber.subscribe('pairings');
 subscriber.subscribe('invocations');
 subscriber.subscribe('pioneer');
+subscriber.subscribe('bankless');
 
 subscriber.on('message', async function (channel, payloadS) {
     let tag = TAG + ' | publishToFront | ';
@@ -349,6 +350,30 @@ subscriber.on('message', async function (channel, payloadS) {
             } else {
                 log.error("User is offline!")
             }
+        } else if(channel === 'bankless'){
+            //push message to user
+            let context = JSON.parse(payloadS)
+            log.debug(tag,"context: ",context)
+            log.debug(tag,"context: ",context.terminalId)
+            log.debug(tag,"usersByUsername: ",usersByUsername)
+
+            //send to user
+            if(usersByUsername[context.terminalId]){
+                let sockets = usersByUsername[context.terminalId]
+                log.debug(tag,"sockets: ",sockets)
+                for(let i =0; i < sockets.length; i++){
+                    let socketid = sockets[i]
+                    if(globalSockets[socketid]){
+                        context.event = 'context'
+                        globalSockets[socketid].emit('message', context);
+                        log.debug(tag,socketid+ " sending message to terminalId! msg: ",context)
+                    }
+                }
+            } else {
+                log.error("terminal is offline!")
+            }
+        } else {
+            log.error("unhandled channel! channel: ",channel)
         }
 
         let globals = [
@@ -421,13 +446,29 @@ io.on('connection', async function(socket){
                     username:msg.username
                 }
                 globalSockets[socket.id].emit('subscribedToUsername', subscribePayload);
-            } else if(queryKeyInfo.username) {
+            } else if(queryKeyInfo.username && queryKeyInfo.username !== msg.username) {
                 log.error(tag,"Failed to join! pubkeyInfo.username: "+queryKeyInfo.username+" msg.username: "+msg.username)
                 let error = {
                     code:6,
                     msg:"(error) Failed to join! pubkeyInfo.username: "+queryKeyInfo.username+" msg.username: "+msg.username
                 }
                 globalSockets[socket.id].emit('errorMessage', error);
+            } else if(!queryKeyInfo.username){
+                //new queryKey
+                //register Username
+                log.info(tag,"New queryKey! msg.username: ",msg.username)
+                await redis.hset(queryKey,"username",msg.username)
+                await redis.hset(msg.username,"queryKey",queryKey)
+                usersBySocketId[socket.id] = msg.username
+                if(!usersByUsername[msg.username]) usersByUsername[msg.username] = []
+                usersByUsername[msg.username].push(socket.id)
+                redis.sadd('online',msg.username)
+                let subscribePayload = {
+                    socketId:socket.id,
+                    success:true,
+                    username:msg.username
+                }
+                globalSockets[socket.id].emit('subscribedToUsername', subscribePayload);
             } else {
                 log.error(tag,"Failed to join! pubkeyInfo.username: "+queryKeyInfo.username+" msg.username: "+msg.username)
                 let error = {

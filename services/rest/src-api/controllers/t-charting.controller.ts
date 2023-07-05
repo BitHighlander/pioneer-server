@@ -35,7 +35,9 @@ let utxosDB = connection.get('utxo')
 let blockchainsDB = connection.get('blockchains')
 let dappsDB = connection.get('apps')
 let nodesDB = connection.get('nodes')
+let discoveriesDB = connection.get('discoveries')
 
+discoveriesDB.createIndex({discoveryId: 1}, {unique: true})
 blockchainsDB.createIndex({blockchain: 1}, {unique: true})
 // blockchainsDB.createIndex({chainId: 1}, {unique: true})
 nodesDB.createIndex({service: 1}, {unique: true})
@@ -190,25 +192,43 @@ export class ChartingController extends Controller {
             log.info(tag,"message: ",typeof(message))
             //TODO verify app and rating is signed
 
+            let output = {}
+
             //TODO verify user is a fox or pioneer
-
-            let entry = {
-                app:message.app,
-                user:authInfo.address,
-                rating:body.review.rating,
-                review:body.review.review,
-                timestamp:Date.now(),
-                fact:{
-                    signer:body.signer,
-                    payload:body.payload,
-                    signature:body.signature
+            //if pioneer
+            if(authInfo.isFox || authInfo.isPioneer){
+                //save in corresponding db
+                switch(body.type){
+                    case "blockchain":
+                        return true
+                    case "asset":
+                        return true
+                    case "node":
+                        return true
+                    case "dapp":
+                        return true
+                    default:
+                        throw Error("invalid type")
                 }
+            }else{
+                let entry = {
+                    app:message.app,
+                    user:authInfo.address,
+                    rating:body.review.rating,
+                    review:body.review.review,
+                    timestamp:Date.now(),
+                    fact:{
+                        signer:body.signer,
+                        payload:body.payload,
+                        signature:body.signature
+                    }
+                }
+                let submitResult = await discoveriesDB.insert(entry)
+                log.info(submitResult)
+                submitResult.success = true
             }
-            let submitResult = await blockchainsDB.insert(entry)
-            log.info(submitResult)
-            submitResult.success = true
 
-            return(submitResult);
+            return(output);
         }catch(e){
             let errorResp:Error = {
                 success:false,

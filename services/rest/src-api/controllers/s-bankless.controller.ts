@@ -35,7 +35,8 @@ let utxosDB = connection.get('utxo')
 let blockchainsDB = connection.get('blockchains')
 let dappsDB = connection.get('apps')
 let nodesDB = connection.get('nodes')
-
+let terminalsDB = connection.get('terminals')
+terminalsDB.createIndex({terminalId: 1}, {unique: true})
 blockchainsDB.createIndex({blockchain: 1}, {unique: true})
 // blockchainsDB.createIndex({chainId: 1}, {unique: true})
 nodesDB.createIndex({service: 1}, {unique: true})
@@ -80,10 +81,31 @@ export class ApiError extends Error {
 @Route('')
 export class BanklessController extends Controller {
 
-    //Info
+    //global Info
     @Get('/bankless/info')
     public async banklessInfo() {
         let tag = TAG + " | banklessInfo | "
+        try{
+
+            //get all terminals
+            let allTerminals = await terminalsDB.find({})
+
+            return allTerminals
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    //global Info
+    @Get('/bankless/terminal/public')
+    public async terminalListing(@Header('Authorization') authorization: string) {
+        let tag = TAG + " | terminalListing | "
         try{
 
             return true
@@ -98,7 +120,35 @@ export class BanklessController extends Controller {
         }
     }
 
-    //submit charting
+    //global Info
+    @Get('/bankless/terminal/private')
+    public async terminalPrivate(@Header('Authorization') authorization: string) {
+        let tag = TAG + " | terminalPrivate | "
+        try{
+            log.info(tag,"queryKey: ",authorization)
+            let output:any = {}
+            let accountInfo = await redis.hgetall(authorization)
+            let username = accountInfo.username
+            if(!username) throw Error("unknown token! token: "+authorization)
+            log.info(tag,"accountInfo: ",accountInfo)
+
+            //if valid give terminal history
+
+            //
+
+
+            return true
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
     //Submit review
     @Post('/bankless/terminal/submit')
     //CreateAppBody
@@ -119,7 +169,54 @@ export class BanklessController extends Controller {
             if(Object.keys(banklessAuth).length === 0) {
                 //new terminal
             }
+            let entry = {
+                terminalId:body.terminalId,
+                terminalName:body.terminalName,
+                tradePair: body.tradePair,
+                rate: body.rate,
+                pubkey:body.pubkey,
+                fact:"",
+                location:body.location
+            }
+            let saveDb = await terminalsDB.insert(entry)
+            log.info(tag,"saveDb: ",saveDb)
 
+            //register location
+
+            //current rate
+
+            return(true);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
+    //Submit review
+    @Post('/bankless/terminal/startSession')
+    //CreateAppBody
+    public async startSession(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | startSession | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            // if(!body.signer) throw Error("invalid signed payload missing signer!")
+            // if(!body.payload) throw Error("invalid signed payload missing payload!")
+            // if(!body.signature) throw Error("invalid signed payload missing !")
+            // if(!body.nonce) throw Error("invalid signed payload missing !")
+
+            //must be lp add or remove
+            if(!body.type) throw Error("invalid type!")
+
+
+            let trade
+            publisher.publish('bankless', JSON.stringify({type:"terminal",payload:body}))
             //register location
 
             //current rate

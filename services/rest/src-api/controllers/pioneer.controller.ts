@@ -88,9 +88,9 @@ export class pioneerController extends Controller {
         const tag = TAG + ' | smartInsight | ';
         try {
             log.info(tag, 'tx: ', body);
-            if (!body.to) throw Error('to is required!');
-            if (!body.from) throw Error('from is required!');
-            if (!body.data) throw Error('data is required!');
+            if (!body.to) throw new Error('to is required!');
+            if (!body.from) throw new Error('from is required!');
+            if (!body.data) throw new Error('data is required!');
 
             // chainId
             const chainId = parseInt(body.chainId, 10) || 1;
@@ -103,13 +103,13 @@ export class pioneerController extends Controller {
 
             const provider = new ethers.providers.JsonRpcProvider(service);
 
-            let isEIP1559 = false
-            if(!body.gas && body.maxPriorityFeePerGas) isEIP1559 = true;
-            // let gasLimit = await provider.estimateGas({});
+            let isEIP1559 = false;
+            if (!body.gas && body.maxPriorityFeePerGas) isEIP1559 = true;
 
+            const FALLBACK_GAS_LIMIT = ethers.BigNumber.from('1000000'); // Set the fallback gas limit to a large value
 
-            let gasLimit
-            try{
+            let gasLimit;
+            try {
                 gasLimit = await provider.estimateGas({
                     from: body.from,
                     to: body.to,
@@ -117,21 +117,12 @@ export class pioneerController extends Controller {
                     data: body.data,
                 });
                 log.info(tag, 'gasLimit: ', gasLimit);
-            }catch(e){
-                gasLimit = await provider.estimateGas({});
+            } catch (e) {
+                gasLimit = FALLBACK_GAS_LIMIT; // Fallback to the large gas limit
             }
 
-            log.info("gasLimit: ",gasLimit)
-            log.info("gasLimit: ",gasLimit.toString())
-
-            // save into insightDb
-
-            // push to discord
-
-            // push event to metric
-            // let result = await harpie.validateTransactionv2(body.to,body.from,body.data)
-            // console.log("result: ",result.data)
-
+            log.info("gasLimit: ", gasLimit);
+            log.info("gasLimit: ", gasLimit.toString());
 
             let recommended = {
                 "addressNList": body.addressNList,
@@ -140,101 +131,113 @@ export class pioneerController extends Controller {
                 "data": body.data,
                 "to": body.to,
                 "value": body.value,
-            }
-            let gasPrice = await provider.getGasPrice();  // Legacy gas price
-            let block = await provider.getBlock("latest");
-            let baseFeePerGas = block.baseFeePerGas;  // EIP-1559 base fee
-            let priorityFeePerGas = ethers.BigNumber.from("2").mul(gasPrice).div("10");  // Tip, usually ~10-20% of maxFeePerGas
-            let maxFeePerGas = gasPrice;
+            };
 
-            //add gas
-            let gasLimitCalulated = '0x' + gasLimit.toHexString();
-            let gasLimitCalulatedDecimal = parseInt(gasLimitCalulated, 16);
-            let bodyGasLimitDecimal = parseInt(body.gasLimit, 16);
+            const gasLimitCalculated = gasLimit.toHexString();
+            const bodyGasLimitDecimal = parseInt(body.gasLimit, 16);
 
-            if(gasLimitCalulatedDecimal > bodyGasLimitDecimal){
-                recommended["gasLimit"] = gasLimitCalulated
+            if (parseInt(gasLimitCalculated, 16) > bodyGasLimitDecimal) {
+                recommended["gasLimit"] = gasLimitCalculated;
             } else {
-                //
-                log.info("original gas limit is larger!")
-                log.info("Original: ",)
-                recommended["gasLimit"] = body.gasLimit
+                log.info("original gas limit is larger!");
+                log.info("Original: ", body.gasLimit);
+                recommended["gasLimit"] = body.gasLimit;
             }
 
-            if(isEIP1559){
-                let priorityFeeCalculated = '0x' + priorityFeePerGas.toHexString();
-                let maxFeeCalculated = '0x' + maxFeePerGas.toHexString();
+            if (isEIP1559) {
+                const gasPrice = await provider.getGasPrice(); // Legacy gas price
+                const block = await provider.getBlock("latest");
+                const baseFeePerGas = block.baseFeePerGas; // EIP-1559 base fee
 
-                // Convert hexadecimal strings to decimal numbers for comparison
-                let priorityFeeCalculatedDecimal = parseInt(priorityFeeCalculated, 16);
-                let maxFeeCalculatedDecimal = parseInt(maxFeeCalculated, 16);
-                let bodyMaxPriorityFeeDecimal = parseInt(body.maxPriorityFeePerGas, 16);
-                let bodyMaxFeeDecimal = parseInt(body.maxFeePerGas, 16);
+                const priorityFeePerGas = ethers.BigNumber.from("2").mul(gasPrice).div("10"); // Tip, usually ~10-20% of maxFeePerGas
+                const maxFeePerGas = gasPrice;
 
-                if(priorityFeeCalculatedDecimal > bodyMaxPriorityFeeDecimal){
+                const priorityFeeCalculated = priorityFeePerGas.toHexString();
+                const maxFeeCalculated = maxFeePerGas.toHexString();
+
+                const priorityFeeCalculatedDecimal = parseInt(priorityFeeCalculated, 16);
+                const maxFeeCalculatedDecimal = parseInt(maxFeeCalculated, 16);
+                const bodyMaxPriorityFeeDecimal = parseInt(body.maxPriorityFeePerGas, 16);
+                const bodyMaxFeeDecimal = parseInt(body.maxFeePerGas, 16);
+
+                if (priorityFeeCalculatedDecimal > bodyMaxPriorityFeeDecimal) {
+                    log.info(tag, "maxPriorityFeePerGas Calculated a higher fee than original!");
+                    log.info(tag, "priorityFeeCalculatedDecimal: ", priorityFeeCalculatedDecimal);
+                    log.info(tag, "bodyMaxPriorityFeeDecimal: ", bodyMaxPriorityFeeDecimal);
                     recommended["maxPriorityFeePerGas"] = priorityFeeCalculated;
                 } else {
+                    log.info(tag, "maxPriorityFeePerGas sticking with original! It's higher");
+                    log.info(tag, "bodyMaxPriorityFeeDecimal: ", bodyMaxPriorityFeeDecimal);
                     recommended["maxPriorityFeePerGas"] = body.maxPriorityFeePerGas;
                 }
 
-                if(maxFeeCalculatedDecimal > bodyMaxFeeDecimal){
+                if (maxFeeCalculatedDecimal > bodyMaxFeeDecimal) {
+                    log.info(tag, "maxFeePerGas Calculated a higher fee than original!");
+                    log.info(tag, "maxFeeCalculatedDecimal: ", maxFeeCalculatedDecimal);
+                    log.info(tag, "bodyMaxFeeDecimal: ", bodyMaxFeeDecimal);
+
                     recommended["maxFeePerGas"] = maxFeeCalculated;
                 } else {
+                    log.info(tag, "maxFeePerGas sticking with original! It's higher");
                     recommended["maxFeePerGas"] = body.maxFeePerGas;
                 }
 
             } else {
-                let gasPriceCalculated = '0x' + gasPrice.toHexString();
+                log.info("non-EIP1559 transaction");
+                const gasPrice = await provider.getGasPrice();
+                const gasPriceCalculated = gasPrice.toHexString();
+                log.info("gasPriceCalculated: ", gasPriceCalculated);
 
-                // Convert hexadecimal strings to decimal numbers for comparison
-                let gasPriceCalculatedDecimal = parseInt(gasPriceCalculated, 16);
-                let bodyGasDecimal = parseInt(body.gas, 16);
+                const gasPriceCalculatedDecimal = parseInt(gasPriceCalculated, 16);
+                const bodyGasDecimal = parseInt(body.gas, 16);
 
-                if(gasPriceCalculatedDecimal > bodyGasDecimal){
+                if (gasPriceCalculatedDecimal > bodyGasDecimal) {
+                    log.info(tag, "gas Calculated a higher fee than original!");
                     recommended["gas"] = gasPriceCalculated;
                 } else {
+                    log.info(tag, "gas sticking with original! It's higher");
                     recommended["gas"] = body.gas;
                 }
             }
 
             let output = {
-                invokeId:"invoke:"+short.generate(),
+                invokeId: "invoke:" + short.generate(),
                 success: true,
-                // analysis:result,
                 isEIP1559,
                 original: body,
                 isError: false,
                 recommended
-            }
-            insightDB.insert(output)
+            };
+
+            insightDB.insert(output);
 
             let insight = {
-                "invokeId":output.invokeId,
-                // "analysis":result.summary,
-                "isEIP1559":isEIP1559.toString(),
-                "chainId":chainId.toString(),
-                "from":body.from,
-                "to":body.to,
-            }
+                "invokeId": output.invokeId,
+                "isEIP1559": isEIP1559.toString(),
+                "chainId": chainId.toString(),
+                "from": body.from,
+                "to": body.to,
+            };
 
-            let view  = {
-                type:"insight",
-                data:insight,
-                message:"insight"
-            }
+            let view = {
+                type: "insight",
+                data: insight,
+                message: "insight"
+            };
 
             let payload = {
-                channel:"1123742848039272488",
-                responses:{
-                    sentences:[],
-                    views:[
+                channel: "1123742848039272488",
+                responses: {
+                    sentences: [],
+                    views: [
                         view
                     ]
                 }
-            }
-            publisher.publish('discord-bridge',JSON.stringify(payload))
+            };
 
-            return output
+            publisher.publish('discord-bridge', JSON.stringify(payload));
+
+            return output;
         } catch (e) {
             const errorResp: Error = {
                 success: false,
@@ -311,9 +314,11 @@ export class pioneerController extends Controller {
             log.info("userData: ",userData)
             timingResults['userData'] = Date.now() - userDataTimeStart;
 
+            //username
+
             //@TODO streaming search pushs
             //assign queryId
-            //push events to stream to user
+            //push events to stream to username
 
             //get summary of query
 
