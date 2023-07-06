@@ -169,36 +169,14 @@ export class pioneerController extends Controller {
 
             if (isEIP1559) {
                 let getFeeData = await provider.getFeeData();
-                log.info(tag, 'getFeeData: ', getFeeData);
-                log.info(tag, 'maxFeePerGas: ', getFeeData.maxFeePerGas.toString());
-                log.info(tag, 'maxPriorityFeePerGas: ', getFeeData.maxPriorityFeePerGas.toString());
-                log.info(tag, 'gasPrice: ', getFeeData.gasPrice.toString());
 
-                const gasPrice = await provider.getGasPrice(); // Legacy gas price
-                const block = await provider.getBlock("latest");
-                const baseFeePerGas = block.baseFeePerGas; // EIP-1559 base fee
+                recommended["maxPriorityFeePerGas"] = getFeeData.maxPriorityFeePerGas.toHexString();
+                recommended["maxFeePerGas"] = getFeeData.maxFeePerGas.toHexString();
 
-                const priorityFeePerGas = getFeeData.maxPriorityFeePerGas;
-                const maxFeePerGas = gasPrice;
+                if(recommended["maxFeePerGas"] > recommended["maxPriorityFeePerGas"]) throw Error("maxFeePerGas is greater than maxPriorityFeePerGas")
+                if(recommended["maxFeePerGas"] === '0x0' || parseInt(recommended["maxFeePerGas"]) === 0) throw Error("Invalid! maxFeePerGas is 0x0");
+                if(recommended["maxPriorityFeePerGas"] === '0x0' || parseInt(recommended["maxPriorityFeePerGas"]) === 0) throw Error("Invalid! maxFeePerGas is 0x0");
 
-                const priorityFeeCalculated = priorityFeePerGas.toString();
-                const maxFeeCalculated = maxFeePerGas.toHexString();
-
-                const priorityFeeCalculatedDecimal = parseInt(priorityFeeCalculated, 16);
-                const maxFeeCalculatedDecimal = parseInt(maxFeeCalculated, 16);
-
-                const bodyMaxPriorityFeeDecimal = body.maxPriorityFeePerGas ? parseInt(body.maxPriorityFeePerGas, 16) : 0;
-                const bodyMaxFeeDecimal = body.maxFeePerGas ? parseInt(body.maxFeePerGas, 16) : 0;
-
-                recommended["maxPriorityFeePerGas"] = bodyMaxPriorityFeeDecimal > priorityFeeCalculatedDecimal && body.maxPriorityFeePerGas ? body.maxPriorityFeePerGas : priorityFeeCalculated;
-                recommended["maxFeePerGas"] = bodyMaxFeeDecimal > maxFeeCalculatedDecimal && body.maxFeePerGas ? body.maxFeePerGas : maxFeeCalculated;
-
-                if(recommended["maxPriorityFeePerGas"].includes("0x") !== true){
-                    recommended["maxPriorityFeePerGas"] = "0x"+parseInt(recommended["maxPriorityFeePerGas"], 16);
-                }
-                if(recommended["maxFeePerGas"].includes("0x") !== true){
-                    recommended["maxFeePerGas"] = "0x"+parseInt(recommended["maxFeePerGas"], 16);
-                }
             } else {
                 log.info("non-EIP1559 transaction");
                 const gasPrice = await provider.getGasPrice();
@@ -270,7 +248,7 @@ export class pioneerController extends Controller {
             };
 
             publisher.publish('discord-bridge', JSON.stringify(payload));
-
+            log.info("Output: ", output);
             return output;
         } catch (e) {
             const errorResp: Error = {
