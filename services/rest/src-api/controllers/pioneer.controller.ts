@@ -109,12 +109,6 @@ export class pioneerController extends Controller {
             if(body.chainId === '0x1' || body.chainId === 1) isEIP1559 = true;
             const FALLBACK_GAS_LIMIT = ethers.BigNumber.from('1000000'); // Set the fallback gas limit to a large value
 
-            let getFeeData = await provider.getFeeData()
-            log.info(tag, 'getFeeData: ', getFeeData);
-            log.info(tag, 'maxFeePerGas: ', getFeeData.maxFeePerGas.toString());
-            log.info(tag, 'maxPriorityFeePerGas: ', getFeeData.maxPriorityFeePerGas.toString());
-            log.info(tag, 'gasPrice: ', getFeeData.gasPrice.toString());
-
             let gasLimit;
             try {
                 gasLimit = await provider.estimateGas({
@@ -174,42 +168,30 @@ export class pioneerController extends Controller {
             }
 
             if (isEIP1559) {
+                let getFeeData = await provider.getFeeData()
+                log.info(tag, 'getFeeData: ', getFeeData);
+                log.info(tag, 'maxFeePerGas: ', getFeeData.maxFeePerGas.toString());
+                log.info(tag, 'maxPriorityFeePerGas: ', getFeeData.maxPriorityFeePerGas.toString());
+                log.info(tag, 'gasPrice: ', getFeeData.gasPrice.toString());
+
                 const gasPrice = await provider.getGasPrice(); // Legacy gas price
                 const block = await provider.getBlock("latest");
                 const baseFeePerGas = block.baseFeePerGas; // EIP-1559 base fee
 
-                const priorityFeePerGas = ethers.BigNumber.from("2").mul(gasPrice).div("10"); // Tip, usually ~10-20% of maxFeePerGas
+                const priorityFeePerGas = getFeeData.maxPriorityFeePerGas;
                 const maxFeePerGas = gasPrice;
 
-                const priorityFeeCalculated = priorityFeePerGas.toHexString();
+                const priorityFeeCalculated = priorityFeePerGas.toString();
                 const maxFeeCalculated = maxFeePerGas.toHexString();
 
                 const priorityFeeCalculatedDecimal = parseInt(priorityFeeCalculated, 16);
                 const maxFeeCalculatedDecimal = parseInt(maxFeeCalculated, 16);
-                const bodyMaxPriorityFeeDecimal = parseInt(body.maxPriorityFeePerGas, 16);
-                const bodyMaxFeeDecimal = parseInt(body.maxFeePerGas, 16);
 
-                if (priorityFeeCalculatedDecimal > bodyMaxPriorityFeeDecimal) {
-                    log.info(tag, "maxPriorityFeePerGas Calculated a higher fee than original!");
-                    log.info(tag, "priorityFeeCalculatedDecimal: ", priorityFeeCalculatedDecimal);
-                    log.info(tag, "bodyMaxPriorityFeeDecimal: ", bodyMaxPriorityFeeDecimal);
-                    recommended["maxPriorityFeePerGas"] = priorityFeeCalculated;
-                } else {
-                    log.info(tag, "maxPriorityFeePerGas sticking with original! It's higher");
-                    log.info(tag, "bodyMaxPriorityFeeDecimal: ", bodyMaxPriorityFeeDecimal);
-                    recommended["maxPriorityFeePerGas"] = body.maxPriorityFeePerGas;
-                }
+                const bodyMaxPriorityFeeDecimal = body.maxPriorityFeePerGas ? parseInt(body.maxPriorityFeePerGas, 16) : 0;
+                const bodyMaxFeeDecimal = body.maxFeePerGas ? parseInt(body.maxFeePerGas, 16) : 0;
 
-                if (maxFeeCalculatedDecimal > bodyMaxFeeDecimal) {
-                    log.info(tag, "maxFeePerGas Calculated a higher fee than original!");
-                    log.info(tag, "maxFeeCalculatedDecimal: ", maxFeeCalculatedDecimal);
-                    log.info(tag, "bodyMaxFeeDecimal: ", bodyMaxFeeDecimal);
-
-                    recommended["maxFeePerGas"] = maxFeeCalculated;
-                } else {
-                    log.info(tag, "maxFeePerGas sticking with original! It's higher");
-                    recommended["maxFeePerGas"] = body.maxFeePerGas;
-                }
+                recommended["maxPriorityFeePerGas"] = bodyMaxPriorityFeeDecimal > priorityFeeCalculatedDecimal && body.maxPriorityFeePerGas ? body.maxPriorityFeePerGas : priorityFeeCalculated;
+                recommended["maxFeePerGas"] = bodyMaxFeeDecimal > maxFeeCalculatedDecimal && body.maxFeePerGas ? body.maxFeePerGas : maxFeeCalculated;
 
             } else {
                 log.info("non-EIP1559 transaction");
