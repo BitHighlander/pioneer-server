@@ -133,15 +133,32 @@ export class pioneerController extends Controller {
                 "value": body.value,
             };
 
-            const gasLimitCalculated = gasLimit.toHexString();
+            const gasLimitCalculated = parseInt(gasLimit.toString())
             const bodyGasLimitDecimal = parseInt(body.gasLimit, 16);
+            log.info(tag,"gasLimitCalculated: ", gasLimitCalculated);
+            log.info(tag,"bodyGasLimitDecimal: ", bodyGasLimitDecimal);
 
-            if (parseInt(gasLimitCalculated, 16) > bodyGasLimitDecimal) {
-                recommended["gasLimit"] = gasLimitCalculated;
-            } else {
-                log.info("original gas limit is larger!");
-                log.info("Original: ", body.gasLimit);
+            log.info(tag, "gasLimitCalculated: ", gasLimitCalculated);
+            log.info(tag, "bodyGasLimitDecimal: ", bodyGasLimitDecimal);
+
+            if (!isNaN(gasLimitCalculated) && !isNaN(bodyGasLimitDecimal)) {
+                if (gasLimitCalculated > bodyGasLimitDecimal) {
+                    log.info("calculated gas limit is larger!");
+                    recommended["gasLimit"] = "0x"+gasLimitCalculated.toString(16);;
+                } else {
+                    log.info("original gas limit is larger!");
+                    log.info("Original: ", body.gasLimit);
+                    recommended["gasLimit"] = body.gasLimit;
+                }
+            } else if (!isNaN(gasLimitCalculated)) {
+                log.info("original gas limit is not a number! Using calculated gas limit.");
+                recommended["gasLimit"] = "0x"+gasLimitCalculated.toString(16);;
+            } else if (!isNaN(bodyGasLimitDecimal)) {
+                log.info("calculated gas limit is not a number! Using original gas limit.");
                 recommended["gasLimit"] = body.gasLimit;
+            } else {
+                log.info("Both calculated and original gas limits are not numbers!");
+                // Handle the case when both values are NaN, such as setting a default value or throwing an error
             }
 
             if (isEIP1559) {
@@ -190,14 +207,31 @@ export class pioneerController extends Controller {
 
                 const gasPriceCalculatedDecimal = parseInt(gasPriceCalculated, 16);
                 const bodyGasDecimal = parseInt(body.gas, 16);
+                log.info("gasPriceCalculatedDecimal: ", gasPriceCalculatedDecimal);
+                log.info("bodyGasDecimal: ", bodyGasDecimal);
 
-                if (gasPriceCalculatedDecimal > bodyGasDecimal) {
-                    log.info(tag, "gas Calculated a higher fee than original!");
+                if (!isNaN(gasPriceCalculatedDecimal) && !isNaN(bodyGasDecimal)) {
+                    if (gasPriceCalculatedDecimal > bodyGasDecimal) {
+                        log.info(tag, "gas Calculated a higher fee than original!");
+                        recommended["gas"] = gasPriceCalculated;
+                    } else {
+                        log.info(tag, "gas sticking with original! It's higher");
+                        recommended["gas"] = body.gas;
+                    }
+                } else if (!isNaN(gasPriceCalculatedDecimal)) {
+                    log.info("Original gas value is not a number! Using calculated gas value.");
                     recommended["gas"] = gasPriceCalculated;
-                } else {
-                    log.info(tag, "gas sticking with original! It's higher");
+                } else if (!isNaN(bodyGasDecimal)) {
+                    log.info("Calculated gas value is not a number! Using original gas value.");
                     recommended["gas"] = body.gas;
+                } else {
+                    log.info("Both calculated and original gas values are not numbers!");
+                    // Handle the case when both values are NaN, such as setting a default value or throwing an error
                 }
+
+                //gas limit
+                const gasLimitCalculated = gasLimit.toHexString();
+
             }
 
             let output = {
