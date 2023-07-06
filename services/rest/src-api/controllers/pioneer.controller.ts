@@ -117,6 +117,10 @@ export class pioneerController extends Controller {
                     data: body.data,
                 });
                 log.info(tag, 'gasLimit: ', gasLimit);
+                //if gas limit is < 21000 then set to 21000
+                if (gasLimit.lt(ethers.BigNumber.from('36000'))) {
+                    gasLimit = ethers.BigNumber.from('36000');
+                }
             } catch (e) {
                 gasLimit = FALLBACK_GAS_LIMIT; // Fallback to the large gas limit
             }
