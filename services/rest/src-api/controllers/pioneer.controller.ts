@@ -105,8 +105,15 @@ export class pioneerController extends Controller {
 
             let isEIP1559 = false;
             if (!body.gas && body.maxPriorityFeePerGas) isEIP1559 = true;
-
+            //prefer EIP1559 on ETH mainnet
+            if(body.chainId === '0x1' || body.chainId === 1) isEIP1559 = true;
             const FALLBACK_GAS_LIMIT = ethers.BigNumber.from('1000000'); // Set the fallback gas limit to a large value
+
+            let getFeeData = await provider.getFeeData()
+            log.info(tag, 'getFeeData: ', getFeeData);
+            log.info(tag, 'maxFeePerGas: ', getFeeData.maxFeePerGas.toString());
+            log.info(tag, 'maxPriorityFeePerGas: ', getFeeData.maxPriorityFeePerGas.toString());
+            log.info(tag, 'gasPrice: ', getFeeData.gasPrice.toString());
 
             let gasLimit;
             try {
@@ -117,6 +124,7 @@ export class pioneerController extends Controller {
                     data: body.data,
                 });
                 log.info(tag, 'gasLimit: ', gasLimit);
+
                 //if gas limit is < 21000 then set to 21000
                 if (gasLimit.lt(ethers.BigNumber.from('36000'))) {
                     gasLimit = ethers.BigNumber.from('36000');
