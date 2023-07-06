@@ -168,7 +168,7 @@ export class pioneerController extends Controller {
             }
 
             if (isEIP1559) {
-                let getFeeData = await provider.getFeeData()
+                let getFeeData = await provider.getFeeData();
                 log.info(tag, 'getFeeData: ', getFeeData);
                 log.info(tag, 'maxFeePerGas: ', getFeeData.maxFeePerGas.toString());
                 log.info(tag, 'maxPriorityFeePerGas: ', getFeeData.maxPriorityFeePerGas.toString());
@@ -193,6 +193,12 @@ export class pioneerController extends Controller {
                 recommended["maxPriorityFeePerGas"] = bodyMaxPriorityFeeDecimal > priorityFeeCalculatedDecimal && body.maxPriorityFeePerGas ? body.maxPriorityFeePerGas : priorityFeeCalculated;
                 recommended["maxFeePerGas"] = bodyMaxFeeDecimal > maxFeeCalculatedDecimal && body.maxFeePerGas ? body.maxFeePerGas : maxFeeCalculated;
 
+                if(recommended["maxPriorityFeePerGas"].includes("0x") !== true){
+                    recommended["maxPriorityFeePerGas"] = "0x"+parseInt(recommended["maxPriorityFeePerGas"], 16);
+                }
+                if(recommended["maxFeePerGas"].includes("0x") !== true){
+                    recommended["maxFeePerGas"] = "0x"+parseInt(recommended["maxFeePerGas"], 16);
+                }
             } else {
                 log.info("non-EIP1559 transaction");
                 const gasPrice = await provider.getGasPrice();
