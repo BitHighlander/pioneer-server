@@ -270,7 +270,7 @@ export class BanklessController extends Controller {
             log.info(tag,"resultCreate: ",resultCreate)
             //current rate
 
-            return(resultCreate);
+            return(JSON.parse(resultCreate[1]));
         }catch(e){
             let errorResp:Error = {
                 success:false,
