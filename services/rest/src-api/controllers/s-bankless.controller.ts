@@ -36,6 +36,7 @@ let blockchainsDB = connection.get('blockchains')
 let dappsDB = connection.get('apps')
 let nodesDB = connection.get('nodes')
 let terminalsDB = connection.get('terminals')
+let banklessTxDB = connection.get('bankless-transactions')
 terminalsDB.createIndex({terminalId: 1}, {unique: true})
 blockchainsDB.createIndex({blockchain: 1}, {unique: true})
 // blockchainsDB.createIndex({chainId: 1}, {unique: true})
@@ -121,23 +122,29 @@ export class BanklessController extends Controller {
     }
 
     //global Info
-    @Get('/bankless/terminal/private')
-    public async terminalPrivate(@Header('Authorization') authorization: string) {
+    @Get('/bankless/terminal/private/{terminalName}')
+    public async terminalPrivate(@Header('Authorization') authorization: string, terminalName: string) {
         let tag = TAG + " | terminalPrivate | "
         try{
             log.info(tag,"queryKey: ",authorization)
+            log.info(tag,"terminalName: ",terminalName)
             let output:any = {}
             let accountInfo = await redis.hgetall(authorization)
+            let banklessAuth = await redis.hgetall("bankless:auth:"+authorization)
+            log.info(tag,"banklessAuth: ",banklessAuth)
             let username = accountInfo.username
             if(!username) throw Error("unknown token! token: "+authorization)
             log.info(tag,"accountInfo: ",accountInfo)
 
             //if valid give terminal history
+            let terminalInfo = await terminalsDB.findOne({terminalName})
+            log.info(tag,"terminalInfo: ",terminalInfo)
+            //get last txs
 
-            //
+            //get cap table
 
 
-            return true
+            return terminalInfo
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -197,8 +204,45 @@ export class BanklessController extends Controller {
         }
     }
 
+    //startSession
+    @Post('/bankless/terminal/update')
+    //CreateAppBody
+    public async updateTerminal(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | updateTerminal | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            // if(!body.signer) throw Error("invalid signed payload missing signer!")
+            // if(!body.payload) throw Error("invalid signed payload missing payload!")
+            // if(!body.signature) throw Error("invalid signed payload missing !")
+            // if(!body.nonce) throw Error("invalid signed payload missing !")
+            //@TODO update auth
+            //must be lp add or remove
+            //must be terminal add or remove
+            let location = body.location
+            let terminalName = body.terminalName
+            let rate = body.lastRate
 
-    //Submit review
+            let terminalInfo = await terminalsDB.update(
+                { terminalName },
+                { $set: { location, rate } }
+            );
+
+
+
+            return(terminalInfo);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    //startSession
     @Post('/bankless/terminal/startSession')
     //CreateAppBody
     public async startSession(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
