@@ -11,11 +11,11 @@ let TAG = ' | API | '
 // import jwt from 'express-jwt';
 const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
-const {subscriber, publisher, redis} = require('@pioneer-platform/default-redis')
+const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
 let ai = require('@pioneer-platform/pioneer-intelligence')
 ai.init(process.env['OPENAI_API_KEY'])
 const util = require('util')
-
+import { v4 as uuidv4 } from 'uuid';
 //TODO if no mongo use nedb?
 //https://github.com/louischatriot/nedb
 
@@ -213,15 +213,20 @@ export class BanklessController extends Controller {
 
             //must be lp add or remove
             if(!body.type) throw Error("invalid type!")
+            if(!body.terminalName) throw Error("invalid type!")
 
-
+            //create an actionId
+            let actionId = "action:"+uuidv4()
+            body.actionId = actionId
             let trade
             publisher.publish('bankless', JSON.stringify({type:"terminal",payload:body}))
-            //register location
 
+            //wait for session to be created
+            let resultCreate = await redisQueue.blpop(actionId, 30);
+            log.info(tag,"resultCreate: ",resultCreate)
             //current rate
 
-            return(true);
+            return(resultCreate);
         }catch(e){
             let errorResp:Error = {
                 success:false,

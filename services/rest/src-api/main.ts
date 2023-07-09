@@ -116,7 +116,7 @@ app.use(bodyParser.json());
 app.use(methodOverride());
 
 //socket
-let SOCKET_MAX_CONNECTIONS = parseInt(process.env["SOCKET_MAX_CONNECTIONS"]) || 20
+let SOCKET_MAX_CONNECTIONS = parseInt(process.env["SOCKET_MAX_CONNECTIONS"]) || 200
 
 //socket-io
 let io = require('socket.io')(server,{cors: {origin:'*'}});
@@ -353,20 +353,20 @@ subscriber.on('message', async function (channel, payloadS) {
         } else if(channel === 'bankless'){
             //push message to user
             let context = JSON.parse(payloadS)
-            log.debug(tag,"context: ",context)
-            log.debug(tag,"context: ",context.terminalId)
-            log.debug(tag,"usersByUsername: ",usersByUsername)
-
+            log.info(tag,"context: ",context)
+            log.info(tag,"context: ",context.terminalName)
+            log.info(tag,"usersByUsername: ",usersByUsername)
+            let terminalName = context.payload.terminalName
             //send to user
-            if(usersByUsername[context.terminalId]){
-                let sockets = usersByUsername[context.terminalId]
-                log.debug(tag,"sockets: ",sockets)
+            if(usersByUsername[terminalName]){
+                let sockets = usersByUsername[terminalName]
+                log.info(tag,"sockets: ",sockets)
                 for(let i =0; i < sockets.length; i++){
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
                         context.event = 'context'
                         globalSockets[socketid].emit('message', context);
-                        log.debug(tag,socketid+ " sending message to terminalId! msg: ",context)
+                        log.info(tag,socketid+ " sending message to terminalId! msg: ",context)
                     }
                 }
             } else {
@@ -436,6 +436,7 @@ io.on('connection', async function(socket){
             let queryKeyInfo = await redis.hgetall(queryKey)
             log.debug(tag,"ACTUAL: username: ",queryKeyInfo.username)
             if(queryKeyInfo.username === msg.username){
+                log.info("session valid starting!")
                 usersBySocketId[socket.id] = msg.username
                 if(!usersByUsername[msg.username]) usersByUsername[msg.username] = []
                 usersByUsername[msg.username].push(socket.id)
@@ -496,11 +497,29 @@ io.on('connection', async function(socket){
         }
     });
 
-    socket.on('message', async function(msg){
-        log.debug(tag,'**** Received by socket api from client : ', typeof(msg));
-        if(typeof(msg)==="string") msg = JSON.parse(msg)
-    });
+    socket.on('event', function(msg){
+        log.info(tag,'event ****************: ' + msg);
+    })
+    socket.on('message', function(msg){
+        log.info(tag,'message ****************: ' , msg);
 
+        if(msg.actionId){
+            //
+            redis.lpush(msg.actionId,JSON.stringify(msg))
+        }
+    })
+    // let startSub = async function(){
+    //     let sockets = Object.keys(globalSockets)
+    //     log.debug(tag,"sockets: ",sockets)
+    //     for(let i = 0; i < sockets.length; i++){
+    //         let socket = globalSockets[sockets[i]]
+    //         log.debug(tag,"socket: ",socket.id)
+    //         socket.on('message', function(msg){
+    //             log.debug(tag,'message: ' + msg);
+    //         })
+    //     }
+    // }
+    // startSub()
 });
 
 
