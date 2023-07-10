@@ -1450,12 +1450,13 @@ export class atlasPublicController extends Controller {
     /**
      *  ETH getTransferData
      */
-    @Get('/eth/getTransferData/{coin}/{address}/{amount}')
-    public async getTransferData(coin:string,address:string,amount:number) {
+    @Get('/eth/getTransferData/{toAddress}/{amount}/{contract}')
+    public async getTransferData(toAddress:string,amount:string,contract:string) {
         let tag = TAG + " | getGasPrice | "
         try{
-            let accounts = await networks['ETH'].getTransferData(coin,address,amount)
-            return accounts
+
+            let data = await networks['ETH'].getTransferData(toAddress,amount, contract)
+            return data
         }catch(e){
             let errorResp:Error = {
                 success:false,

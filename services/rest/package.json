@@ -60,8 +60,9 @@
     "@pioneer-platform/cosmos-network": "latest",
     "@pioneer-platform/default-mongo": "latest",
     "@pioneer-platform/default-redis": "latest",
-    "@pioneer-platform/eth-network": "^8.1.64",
+    "@pioneer-platform/eth-network": "^8.1.66",
     "@pioneer-platform/fio-network": "latest",
+    "@pioneer-platform/foxitar-client": "^8.1.27",
     "@pioneer-platform/harpie-client": "^8.1.23",
     "@pioneer-platform/kava-network": "latest",
     "@pioneer-platform/loggerdog": "latest",
@@ -82,6 +83,7 @@
     "@pioneer-platform/terra-network": "latest",
     "@pioneer-platform/thor-network": "^8.1.35",
     "@pioneer-platform/utxo-network": "^8.1.53",
+    "@pioneer-platform/zapper-client": "^8.1.18",
     "@pioneer-sdk/sdk": "^1.0.19",
     "@pioneer-sdk/tx-builder": "^1.0.3",
     "@types/jsonwebtoken": "^8.5.9",
@@ -154,7 +156,7 @@
     "tsoa": "^3.14.1",
     "url-parse": "^1.5.1",
     "wait-promise": "^0.4.1",
-    "web3": "^4.0.1"
+    "web3": "^4.0.2"
   },
   "resolutions": {
     "react-error-overlay": "6.0.11"

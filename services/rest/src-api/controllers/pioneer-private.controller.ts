@@ -273,7 +273,9 @@ export class pioneerPrivateController extends Controller {
             // Add any pubkeys missing from the user
             log.info(tag, "userInfoMongo: ", userInfoMongo);
             let pubkeysMongo = userInfoMongo.pubkeys || [];
+            //only new keys? untested
             let pubkeysRegistering = ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))); // Flatten the pubkeys array and add the context
+            //let pubkeysRegistering = body.data.pubkeys
             log.info(tag, "pubkeysMongo: ", pubkeysMongo);
             log.info(tag, "pubkeysRegistering: ", pubkeysRegistering);
             log.info(tag, "pubkeysMongo: ", pubkeysMongo.length);
@@ -284,17 +286,17 @@ export class pioneerPrivateController extends Controller {
             if(pubkeysRegistering.length > 0){
                 log.info("register newPubkeys: ", pubkeysRegistering.length);
                 //pioneer.register(username, pubkeysRegistering, body.context)
-                // let resultRegister = await pioneer.register(username, pubkeysRegistering, body.context)
-                // log.info("resultRegister: ", resultRegister);
+                let resultRegister = await pioneer.register(username, pubkeysRegistering, body.context)
+                log.info("resultRegister: ", resultRegister);
 
                 log.debug("Adding pubkey to the user: ", pubkeysRegistering);
-                await usersDB.update(
-                    { username: userInfoMongo.username },
-                    {
-                        $addToSet: { pubkeys: pubkeysRegistering },
-                        $set: { isSynced: false }
-                    }
-                );
+                // await usersDB.update(
+                //     { username: userInfoMongo.username },
+                //     {
+                //         $addToSet: { pubkeys: pubkeysRegistering },
+                //         $set: { isSynced: false }
+                //     }
+                // );
             } else {
                 log.info("No new pubkeys to register!");
             }

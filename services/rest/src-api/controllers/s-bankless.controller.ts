@@ -268,6 +268,9 @@ export class BanklessController extends Controller {
             //wait for session to be created
             let resultCreate = await redisQueue.blpop(actionId, 30);
             log.info(tag,"resultCreate: ",resultCreate)
+            log.info(tag,"resultCreate: ",resultCreate[1])
+            log.info(tag,"resultCreate: ",typeof(resultCreate[1]))
+            log.info(tag,"resultCreate: ",JSON.parse(resultCreate[1]))
             //current rate
 
             return(JSON.parse(resultCreate[1]));

@@ -43,6 +43,29 @@ const queue = require('@pioneer-platform/redis-queue');
 const uuid = require('short-uuid');
 let blocknative = require("@pioneer-platform/blocknative-client")
 blocknative.init()
+const blockbook = require('@pioneer-platform/blockbook')
+// const foxitar = require("@pioneer-platform/foxitar-client")
+let zapper = require("@pioneer-platform/zapper-client")
+let servers:any = {}
+if(process.env['BTC_BLOCKBOOK_URL']) servers['BTC'] = process.env['BTC_BLOCKBOOK_URL']
+if(process.env['ETH_BLOCKBOOK_URL']) servers['ETH'] = process.env['ETH_BLOCKBOOK_URL']
+if(process.env['DOGE_BLOCKBOOK_URL']) servers['DOGE'] = process.env['DOGE_BLOCKBOOK_URL']
+if(process.env['BCH_BLOCKBOOK_URL']) servers['BCH'] = process.env['BCH_BLOCKBOOK_URL']
+if(process.env['LTC_BLOCKBOOK_URL']) servers['LTC'] = process.env['LTC_BLOCKBOOK_URL']
+blockbook.init(servers)
+
+const networks:any = {
+    'ETH' : require('@pioneer-platform/eth-network'),
+    'ATOM': require('@pioneer-platform/cosmos-network'),
+    'OSMO': require('@pioneer-platform/osmosis-network'),
+    'BNB' : require('@pioneer-platform/binance-network'),
+    // 'EOS' : require('@pioneer-platform/eos-network'),
+    'FIO' : require('@pioneer-platform/fio-network'),
+    'ANY' : require('@pioneer-platform/utxo-network'),
+    'RUNE' : require('@pioneer-platform/thor-network'),
+}
+networks.ANY.init('full')
+networks.ETH.init()
 
 let {
     supportedBlockchains,
@@ -89,7 +112,206 @@ module.exports = {
     update: async function (username:string, xpubs:any, context:string) {
         return update_pubkeys(username, xpubs, context);
     },
+    balances: async function (pubkey:any) {
+        return get_pubkey_balances(pubkey);
+    },
 }
+
+let get_pubkey_balances = async function (pubkey:any) {
+    let tag = TAG + " | get_pubkey_balances | "
+    try {
+        let output:any = {}
+        if(!pubkey.symbol && pubkey.asset) pubkey.symbol = pubkey.asset
+        if(!pubkey.type && pubkey.address) pubkey.type = "address"
+        if(!pubkey.context) throw Error("100: invalid pubkey! missing context")
+        if(!pubkey.symbol) throw Error("101: invalid pubkey! missing symbol")
+        if(!pubkey.username) throw Error("102: invalid pubkey! missing username")
+        if(!pubkey.pubkey) throw Error("103: invalid pubkey! missing pubkey")
+        if(!pubkey.type) throw Error("105: invalid pubkey! missing type")
+        if(!pubkey.queueId) throw Error("106: invalid pubkey! missing queueId")
+        if(pubkey.type !== 'address' && pubkey.type !== 'xpub' && pubkey.type !== 'zpub' && pubkey.type !== 'contract') throw Error("Unknown type! "+pubkey.type)
+        let balances:any = []
+        let nfts:any = []
+        let positions:any = []
+        //by type
+        if(pubkey.type === "xpub" || pubkey.type === "zpub"){
+            //
+            let balance = await blockbook.getBalanceByXpub(pubkey.symbol,pubkey.pubkey)
+            log.info(tag,pubkey.username + " Balance ("+pubkey.symbol+"): ",balance)
+            //update balance
+            balances.push({
+                network:pubkey.symbol,
+                asset:pubkey.symbol,
+                isToken:false,
+                lastUpdated:new Date().getTime(),
+                balance
+            })
+        } else if(pubkey.type === "address") {
+            switch (pubkey.symbol) {
+                case "ETH":
+                    // let ethInfo = await networks['ETH'].getBalanceTokens(work.pubkey)
+                    // log.debug(tag,"ethInfo: ",ethInfo)
+
+                    let zapperInfo = await zapper.getPortfolio(pubkey.pubkey);
+                    log.info(tag, "zapperInfo: ", zapperInfo);
+
+                    if (zapperInfo?.tokens?.length > 0) {
+                        zapperInfo.tokens.forEach((token) => {
+                            let balanceInfo = token.token;
+                            balanceInfo.network = token.network;
+                            balanceInfo.asset = balanceInfo.symbol = token.token.symbol;
+                            balanceInfo.contract = token.token.address;
+                            if (token.token.address !== '0x0000000000000000000000000000000000000000') {
+                                balanceInfo.isToken = true;
+                                balanceInfo.protocal = 'erc20';
+                            }
+                            balanceInfo.lastUpdated = new Date().getTime();
+                            balanceInfo.balance = token.token.balance.toString();
+                            balances.push(balanceInfo);
+                        });
+                    }
+
+                    if (zapperInfo?.nfts?.length > 0) {
+                        nfts = zapperInfo.nfts;
+                    }
+
+                    let allPioneers = await networks['ETH'].getAllPioneers();
+                    log.info(tag, "allPioneers: ", allPioneers);
+
+                    let isPioneer = allPioneers.owners.includes(pubkey.pubkey.toLowerCase());
+                    if (isPioneer) {
+                        log.info("Pioneer detected!");
+                        let updatedUsername = await usersDB.update({ username: pubkey.username }, { $set: { isPioneer: true } }, { multi: true });
+                        log.info("Updated username PIONEER: ", updatedUsername);
+
+                        const pioneerImage = allPioneers.images.find((image) => image.address.toLowerCase() === pubkey.pubkey.toLowerCase());
+                        if (pioneerImage) {
+                            let updatedUsername2 = await usersDB.update({ username: pubkey.username }, { $set: { pioneerImage: pioneerImage.image } }, { multi: true });
+                            log.info("updatedUsername2 PIONEER: ", updatedUsername2);
+                            nfts.push({
+                                name: "Pioneer",
+                                description: "Pioneer",
+                                number: allPioneers.owners.indexOf(pubkey.pubkey.toLowerCase()),
+                                image: pioneerImage.image
+                            });
+                        }
+                    }
+
+                    // let isFox = await foxitar.isFoxOwner(pubkey.pubkey);
+                    // if (isFox > 0) {
+                    //     let foxInfo:any = {};
+                    //     let addressInfo = await redis.hgetall(pubkey.pubkey.toLowerCase());
+                    //     if (addressInfo.id) foxInfo.foxId = addressInfo.id;
+                    //     if (addressInfo.image) foxInfo.foxImage = addressInfo.image;
+                    //     if (addressInfo.xp) foxInfo.foxXp = addressInfo.xp;
+                    //     let updatedUsername = await usersDB.update({ username: pubkey.username }, { $set: { isFox: true, ...foxInfo } }, { multi: true });
+                    //     log.info("updatedUsername FOX: ", updatedUsername);
+                    // }
+
+                    let blockbookInfo = await blockbook.getAddressInfo('ETH', pubkey.pubkey);
+                    log.debug(tag, 'blockbookInfo: ', blockbookInfo);
+
+                    if (blockbookInfo?.tokens) {
+                        blockbookInfo.tokens.forEach((tokenInfo) => {
+                            if (tokenInfo.symbol && tokenInfo.symbol !== 'ETH') {
+                                let balanceInfo:any = {
+                                    network: "ETH",
+                                    type: tokenInfo.type,
+                                    asset: tokenInfo.symbol,
+                                    symbol: tokenInfo.symbol,
+                                    name: tokenInfo.name,
+                                    contract: tokenInfo.contract,
+                                    isToken: true,
+                                    protocal: 'erc20',
+                                    lastUpdated: new Date().getTime(),
+                                    decimals: tokenInfo.decimals,
+                                    balance: tokenInfo.balance / Math.pow(10, Number(tokenInfo.decimals)),
+                                    balanceNative: tokenInfo.balance / Math.pow(10, Number(tokenInfo.decimals)),
+                                    source: "blockbook"
+                                };
+
+                                if (tokenInfo.holdersCount === 1) {
+                                    // @ts-ignore
+                                    balanceInfo.nft = true;
+                                }
+
+                                if (balanceInfo.balance > 0) {
+                                    balances.push(balanceInfo);
+                                }
+                            }
+                        });
+                    }
+
+                    return
+                default:
+                    let balance = await networks[pubkey.symbol].getBalance(pubkey.pubkey)
+                    log.info(tag,"balance: ",balance)
+                    if(!balance) balance = 0
+                    balances.push({
+                        network:pubkey.symbol,
+                        asset:pubkey.symbol,
+                        symbol:pubkey.symbol,
+                        isToken:false,
+                        lastUpdated:new Date().getTime(), //TODO use block heights
+                        balance,
+                        source:"network"
+                    })
+                    return
+            }
+        }
+        let pubkeyInfo = await pubkeysDB.findOne({pubkey:pubkey.pubkey})
+        if(!pubkeyInfo || !pubkeyInfo.balances) {
+            pubkeyInfo = {
+                balances: []
+            }
+        }
+        if(!pubkeyInfo.nfts) pubkeyInfo.nfts = []
+        log.info(tag,"pubkeyInfo: ",pubkeyInfo)
+        log.info(tag,"pubkeyInfo: ",pubkeyInfo.balances)
+        log.info(tag,"nfts: ",pubkeyInfo.nfts)
+
+        let saveActions = []
+        for(let i = 0; i < balances.length; i++){
+            let balance = balances[i];
+            let balanceMongo = pubkeyInfo.balances.filter((e:any) => e.symbol === balance.symbol);
+
+            if(balanceMongo.length > 0 && balanceMongo[0].balance !== balance.balance){
+                saveActions.push({updateOne: {
+                        "filter": {pubkey: pubkey.pubkey},
+                        "update": {$addToSet: { balances: balance }}
+                    }});
+            } else {
+                //
+                log.info(tag,"balance not changed!")
+            }
+        }
+
+        for(let i = 0; i < nfts.length; i++){
+            let nft = nfts[i];
+            let existingNft = pubkeyInfo.nfts.find((e:any) => e.token.id === nft.token.id);
+
+            if(!existingNft){
+                saveActions.push({updateOne: {
+                        "filter": {pubkey: pubkey.pubkey},
+                        "update": {$addToSet: { nfts: nft }}
+                    }});
+            }
+        }
+
+        if(saveActions.length > 0){
+            let updateSuccess = await pubkeysDB.bulkWrite(saveActions,{ordered:false});
+            log.info(tag,"updateSuccess: ",updateSuccess)
+            output.dbUpdate = updateSuccess
+        }
+
+        return output
+    } catch (e) {
+        console.error(tag, "e: ", e)
+        throw e
+    }
+}
+
+
 
 let get_and_rescan_pubkeys = async function (username:string) {
     let tag = TAG + " | get_and_rescan_pubkeys | "
@@ -144,48 +366,6 @@ let get_and_rescan_pubkeys = async function (username:string) {
         throw e
     }
 }
-
-// let fix_pubkey = async function (username:string, pubkey:any, context:string) {
-//     let tag = TAG + " | register_address | "
-//     try {
-//         let output:any = {}
-//         //get pubkey from mongo
-//         let pubkeyInfoMongo = await pubkeysDB.findOne({pubkey:pubkey.pubkey})
-//
-//         if(pubkeyInfoMongo){
-//             //verify tags
-//             let tags = pubkeyInfoMongo.tags
-//             if(tags.indexOf(username) < 0){
-//                 let pushTagMongo = await pubkeysDB.update({pubkey:pubkey.pubkey},
-//                     { $addToSet: { tags: username } })
-//                 output.pushTagMongoUsername = pushTagMongo
-//             }
-//             if(tags.indexOf(context) < 0){
-//                 let pushTagMongo = await pubkeysDB.update({pubkey:pubkey.pubkey},
-//                     { $addToSet: { tags: context } })
-//                 output.pushTagMongoWalletId = pushTagMongo
-//             }
-//         } else {
-//             log.debug(tag,"pubkey NOT found in mongo! adding!")
-//             log.debug(tag,"pubkey: ",pubkey)
-//             if(pubkey.tags.indexOf(username) < 0){
-//                 pubkey.tags.push(username)
-//             }
-//             if(pubkey.tags.indexOf(context) < 0){
-//                 pubkey.tags.push(context)
-//             }
-//             let resultFix = await pubkeysDB.insert(pubkey)
-//             log.debug(tag,"resultFix: ",resultFix)
-//             output.insertPubkey = resultFix
-//         }
-//
-//         return output
-//     } catch (e) {
-//         console.error(tag, "e: ", e)
-//         throw e
-//     }
-// }
-//
 
 let get_and_verify_pubkeys = async function (username:string, context?:string) {
     let tag = TAG + " | get_and_verify_pubkeys | "
@@ -280,7 +460,9 @@ let register_zpub = async function (username:string, pubkey:any, context:string)
             inserted: new Date().getTime()
         }
         log.debug(tag,"Creating work! ",work)
-        await queue.createWork("pioneer:pubkey:ingest",work)
+        queue.createWork("pioneer:pubkey:ingest",work)
+        let result = await get_pubkey_balances(work)
+        log.info(result)
 
         return queueId
     } catch (e) {
@@ -324,10 +506,11 @@ let register_xpub = async function (username:string, pubkey:any, context:string)
             inserted: new Date().getTime()
         }
         log.debug(tag,"Creating work! ",work)
-        await queue.createWork("pioneer:pubkey:ingest",work)
+        queue.createWork("pioneer:pubkey:ingest",work)
+        let result = await get_pubkey_balances(work)
+        log.info(result)
 
-
-        return queueId
+        return result
     } catch (e) {
         console.error(tag, "e: ", e)
         throw e
@@ -358,6 +541,8 @@ let register_address = async function (username:string, pubkey:any, context:stri
         log.debug("adding work: ",work)
 
         queue.createWork("pioneer:pubkey:ingest",work)
+        let result = await get_pubkey_balances(work)
+        log.info(result)
 
         return queueId
     } catch (e) {
@@ -500,26 +685,26 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
 
             //save pubkeys in mongo
 
-            if (BALANCE_ON_REGISTER) {
-                output.results = []
-                //verifies balances returned are final
-                log.debug(tag, " BALANCE VERIFY ON")
-                //let isDone
-                let isDone = false
-                while (!isDone) {
-                    //block on
-                    log.debug(tag, "output.work: ", output.work)
-                    let promised = []
-                    for (let i = 0; i < output.work.length; i++) {
-                        let promise = redisQueue.blpop(output.work[i], 30)
-                        promised.push(promise)
-                    }
-
-                    output.results = await Promise.all(promised)
-
-                    isDone = true
-                }
-            }
+            // if (BALANCE_ON_REGISTER) {
+            //     output.results = []
+            //     //verifies balances returned are final
+            //     log.debug(tag, " BALANCE VERIFY ON")
+            //     //let isDone
+            //     let isDone = false
+            //     while (!isDone) {
+            //         //block on
+            //         log.debug(tag, "output.work: ", output.work)
+            //         let promised = []
+            //         for (let i = 0; i < output.work.length; i++) {
+            //             let promise = redisQueue.blpop(output.work[i], 30)
+            //             promised.push(promise)
+            //         }
+            //
+            //         output.results = await Promise.all(promised)
+            //
+            //         isDone = true
+            //     }
+            // }
 
 
         } else {
@@ -651,33 +836,45 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
 
         if (BALANCE_ON_REGISTER) {
             output.results = [];
-            //verifies balances returned are final
-            log.debug(tag, " BALANCE VERIFY ON");
+            // verifies balances returned are final
+            log.debug(tag, "BALANCE VERIFY ON");
             let isDone = false;
 
             while (!isDone) {
-                //block on
-                log.debug(tag, "output.work: ", output.work);
+                // block on
+                log.info(tag, "output.work: ", output.work);
                 let promised = [];
 
                 for (let i = 0; i < output.work.length; i++) {
-                    let promise = redisQueue.blpop(output.work[i], 30);
+                    let promise = Promise.race([
+                        redisQueue.blpop(output.work[i], 30),
+                        new Promise((resolve, reject) => {
+                            setTimeout(() => reject(new Error("Timeout")), 10000); // Timeout after 10 seconds
+                        })
+                    ]);
                     promised.push(promise);
                 }
 
-                output.results = await Promise.all(promised);
-                isDone = true;
+                try {
+                    output.results = await Promise.all(promised);
+                    isDone = true;
 
-                for (let i = 0; i < output.results.length; i++) {
-                    if (output.results[i] !== null) {
-                        isDone = false;
-                        break;
+                    for (let i = 0; i < output.results.length; i++) {
+                        if (output.results[i] !== null) {
+                            isDone = false;
+                            break;
+                        }
                     }
+                } catch (error) {
+                    // Handle the timeout error here
+                    // Set the failed jobs as failed in output.results
+                    output.results = output.work.map(() => "failed");
+                    isDone = true;
                 }
             }
         }
 
-        log.debug(tag, " return object: ", output);
+        log.debug(tag, "return object: ", output);
         return output;
     } catch (e) {
         console.error(tag, "e: ", e);
