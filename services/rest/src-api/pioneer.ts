@@ -91,7 +91,7 @@ let usersDB = connection.get('users')
 let txsDB = connection.get('transactions')
 let pubkeysDB = connection.get('pubkeys')
 let inputsDB = connection.get('unspent')
-
+let assetsDB = connection.get('assets')
 usersDB.createIndex({id: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
 inputsDB.createIndex({txid: 1}, {unique: true})
@@ -221,6 +221,7 @@ let get_pubkey_balances = async function (pubkey:any) {
                                     symbol: tokenInfo.symbol,
                                     name: tokenInfo.name,
                                     contract: tokenInfo.contract,
+                                    image:"https://pioneers.dev/coins/ethereum.png",
                                     isToken: true,
                                     protocal: 'erc20',
                                     lastUpdated: new Date().getTime(),
@@ -274,6 +275,17 @@ let get_pubkey_balances = async function (pubkey:any) {
         for(let i = 0; i < balances.length; i++){
             let balance = balances[i];
             let balanceMongo = pubkeyInfo.balances.filter((e:any) => e.symbol === balance.symbol);
+
+            //get asset info
+            let assetInfo = await assetsDB.findOne({symbol:balance.symbol})
+            log.info("assetInfo: ",assetInfo)
+            if(assetInfo){
+                balance.caip = assetInfo.caip
+                balance.image = assetInfo.image
+                balance.description = assetInfo.description
+                balance.website = assetInfo.website
+                balance.explorer = assetInfo.explorer
+            }
 
             if(balanceMongo.length > 0 && balanceMongo[0].balance !== balance.balance){
                 saveActions.push({updateOne: {

@@ -59,7 +59,7 @@ let txsDB = connection.get('transactions')
 let utxosDB = connection.get('utxo')
 let pubkeysDB = connection.get('pubkeys')
 let unspentDB = connection.get('unspent')
-
+let assetsDB = connection.get('assets')
 usersDB.createIndex({id: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
 utxosDB.createIndex({txid: 1}, {unique: true})
@@ -84,6 +84,23 @@ let push_balance_event = async function(work:any,balance:string){
         log.error(tag,e)
     }
 }
+
+
+/*
+    User comes online
+
+    1. check if user has pubkey
+    load pubkeys into redis set "online/watching"
+
+    for each blockchain
+    event block comes in
+    check if any pubkey is in block
+
+    if pubkey in block give insights on tx
+
+    push message to events
+
+ */
 
 let do_work = async function(){
     let tag = TAG+" | do_work | "
@@ -281,6 +298,7 @@ let do_work = async function(){
                                     asset:tokenInfo.symbol,
                                     symbol:tokenInfo.symbol,
                                     name:tokenInfo.name,
+                                    image:"https://pioneers.dev/coins/ethereum.png",
                                     contract:tokenInfo.contract,
                                     isToken:true,
                                     protocal:'erc20',
@@ -490,6 +508,19 @@ let do_work = async function(){
                 let balanceMongo = pubkeyInfo.balances.filter((e:any) => e.symbol === balance.symbol)
                 log.debug(tag,"balanceMongo: ",balanceMongo)
 
+                //get asset info
+                let assetInfo = await assetsDB.findOne({symbol:balance.symbol})
+                log.info("assetInfo: ",assetInfo)
+                if(assetInfo){
+                    balance.caip = assetInfo.caip
+                    balance.image = assetInfo.image
+                    balance.description = assetInfo.description
+                    balance.website = assetInfo.website
+                    balance.explorer = assetInfo.explorer
+                } else {
+                    //missing asset info
+                    log.error(tag,"Missing asset info for: ",balance.symbol)
+                }
                 //if update
                 if(balanceMongo.length > 0){
                     //if value is diff
