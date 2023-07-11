@@ -245,18 +245,18 @@ let get_pubkey_balances = async function (pubkey:any) {
 
                     return
                 default:
-                    // let balance = await networks[pubkey.symbol].getBalance(pubkey.pubkey)
-                    // log.info(tag,"balance: ",balance)
-                    // if(!balance) balance = 0
-                    // balances.push({
-                    //     network:pubkey.symbol,
-                    //     asset:pubkey.symbol,
-                    //     symbol:pubkey.symbol,
-                    //     isToken:false,
-                    //     lastUpdated:new Date().getTime(), //TODO use block heights
-                    //     balance,
-                    //     source:"network"
-                    // })
+                    let balance = await networks[pubkey.symbol].getBalance(pubkey.pubkey)
+                    log.info(tag,"balance: ",balance)
+                    if(!balance) balance = 0
+                    balances.push({
+                        network:pubkey.symbol,
+                        asset:pubkey.symbol,
+                        symbol:pubkey.symbol,
+                        isToken:false,
+                        lastUpdated:new Date().getTime(), //TODO use block heights
+                        balance,
+                        source:"network"
+                    })
                     return
             }
         }
