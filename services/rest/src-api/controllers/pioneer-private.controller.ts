@@ -468,7 +468,7 @@ export class pioneerPrivateController extends Controller {
                             let pubkey = pubkeys[i];
                             let balances = pubkey.balances || [];
                             //if no pubkey balances
-                            if(pubkey.balance.length === 0){
+                            if(balances.length === 0){
                                 log.info("no balances found for pubkey: ", pubkey);
                                 let resultsSync = await pioneer.get_pubkey_balances(pubkey);
                                 balances = resultsSync.balances;
