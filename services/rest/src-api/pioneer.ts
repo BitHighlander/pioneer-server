@@ -422,9 +422,13 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
             if(!pubkeyInfo.balances || pubkeyInfo.balances.length === 0){
                 log.info(tag,"no balances, getting balances...")
                 let balances = await get_pubkey_balances(pubkeyInfo.pubkey)
-                log.info(tag,"balances: ",balances)
+                // log.info(tag,"balances: ",balances)
+                // log.info(tag,"balances: ",balances)
+                log.info(tag,"balances: ",balances.length)
                 pubkeys.balances = balances.balances
                 pubkeys.nfts = balances.nfts
+            } else {
+                log.info(tag,"balances already exist! count: ",pubkeyInfo.balances.length)
             }
 
             // if(!masters[pubkeyInfo.symbol] && pubkeyInfo.master)masters[pubkeyInfo.symbol] = pubkeyInfo.master

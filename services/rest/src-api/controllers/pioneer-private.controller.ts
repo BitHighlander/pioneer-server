@@ -467,6 +467,13 @@ export class pioneerPrivateController extends Controller {
                         for (let i = 0; i < pubkeys.length; i++) {
                             let pubkey = pubkeys[i];
                             let balances = pubkey.balances || [];
+                            //if no pubkey balances
+                            if(pubkey.balance.length === 0){
+                                log.info("no balances found for pubkey: ", pubkey);
+                                let resultsSync = await pioneer.get_pubkey_balances(pubkey);
+                                balances = resultsSync.balances;
+                            }
+
                             for (let j = 0; j < balances.length; j++) {
                                 let balance = balances[j];
                                 allBalances.push(balance);
@@ -477,6 +484,8 @@ export class pioneerPrivateController extends Controller {
                                 let nft = nfts[j];
                                 allNfts.push(nft);
                             }
+
+
                         }
 
                         userInfoMongo.balances = allBalances;
