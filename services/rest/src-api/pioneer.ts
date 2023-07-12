@@ -418,6 +418,15 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
             delete pubkeyInfo._id
             //TODO validate pubkeys?
 
+            //if no balances, get balances
+            if(!pubkeyInfo.balances || pubkeyInfo.balances.length === 0){
+                log.info(tag,"no balances, getting balances...")
+                let balances = await get_pubkey_balances(pubkeyInfo.pubkey)
+                log.info(tag,"balances: ",balances)
+                pubkeys.balances = balances.balances
+                pubkeys.nfts = balances.nfts
+            }
+
             // if(!masters[pubkeyInfo.symbol] && pubkeyInfo.master)masters[pubkeyInfo.symbol] = pubkeyInfo.master
             pubkeyInfo.context = context
             pubkeys.push(pubkeyInfo)
