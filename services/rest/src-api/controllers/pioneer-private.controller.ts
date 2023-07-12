@@ -461,7 +461,8 @@ export class pioneerPrivateController extends Controller {
                         //get balances
                         let allBalances = [];
                         let allNfts = [];
-                        let { pubkeys } = await pioneer.getPubkeys(username);
+                        await pioneer.getPubkeys(username);
+                        let pubkeys = userInfoMongo.pubkeys
                         log.info("pubkeys: ", pubkeys);
 
                         for (let i = 0; i < pubkeys.length; i++) {
