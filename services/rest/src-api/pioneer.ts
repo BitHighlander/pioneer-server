@@ -96,6 +96,7 @@ usersDB.createIndex({id: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
 inputsDB.createIndex({txid: 1}, {unique: true})
 pubkeysDB.createIndex({pubkey: 1}, {unique: true})
+pubkeysDB.createIndex({ tags: 1 })
 
 const BALANCE_ON_REGISTER = true
 
@@ -243,7 +244,7 @@ let get_pubkey_balances = async function (pubkey:any) {
                         });
                     }
 
-                    return
+                    break
                 default:
                     let balance = await networks[pubkey.symbol].getBalance(pubkey.pubkey)
                     log.info(tag,"balance: ",balance)
@@ -257,7 +258,7 @@ let get_pubkey_balances = async function (pubkey:any) {
                         balance,
                         source:"network"
                     })
-                    return
+                    break
             }
         }
         let pubkeyInfo = await pubkeysDB.findOne({pubkey:pubkey.pubkey})
@@ -272,40 +273,48 @@ let get_pubkey_balances = async function (pubkey:any) {
         log.info(tag,"nfts: ",pubkeyInfo.nfts)
 
         let saveActions = []
-        for(let i = 0; i < balances.length; i++){
+        for (let i = 0; i < balances.length; i++) {
             let balance = balances[i];
-            let balanceMongo = pubkeyInfo.balances.filter((e:any) => e.symbol === balance.symbol);
+            let balanceIndex = pubkeyInfo.balances.findIndex((e) => e.symbol === balance.symbol);
 
-            //get asset info
-            let assetInfo = await assetsDB.findOne({symbol:balance.symbol})
-            log.info("assetInfo: ",assetInfo)
-            if(assetInfo){
-                balance.caip = assetInfo.caip
-                balance.image = assetInfo.image
-                balance.description = assetInfo.description
-                balance.website = assetInfo.website
-                balance.explorer = assetInfo.explorer
+            // Get asset info
+            let assetInfo = await assetsDB.findOne({ symbol: balance.symbol });
+            log.info("assetInfo: ", assetInfo);
+
+            if (assetInfo) {
+                balance.caip = assetInfo.caip;
+                balance.image = assetInfo.image;
+                balance.description = assetInfo.description;
+                balance.website = assetInfo.website;
+                balance.explorer = assetInfo.explorer;
             }
 
-            if(balanceMongo.length > 0 && balanceMongo[0].balance !== balance.balance){
-                saveActions.push({updateOne: {
-                        "filter": {pubkey: pubkey.pubkey},
-                        "update": {$addToSet: { balances: balance }}
-                    }});
+            if (balanceIndex !== -1 && pubkeyInfo.balances[balanceIndex].balance !== balance.balance) {
+                saveActions.push({
+                    updateOne: {
+                        filter: { pubkey: pubkey.pubkey },
+                        update: {
+                            $set: { [`balances.${balanceIndex}`]: balance },
+                        },
+                    },
+                });
             } else {
-                //
-                log.info(tag,"balance not changed!")
+                log.info(tag, "balance not changed!");
             }
         }
 
         for(let i = 0; i < nfts.length; i++){
             let nft = nfts[i];
-            let existingNft = pubkeyInfo.nfts.find((e:any) => e.token.id === nft.token.id);
+            log.info(tag,"pubkeyInfo.nfts: ",pubkeyInfo.nfts)
+            let existingNft = pubkeyInfo.nfts.find((e:any) => e.name === nft.name);
 
             if(!existingNft){
                 saveActions.push({updateOne: {
                         "filter": {pubkey: pubkey.pubkey},
-                        "update": {$addToSet: { nfts: nft }}
+                        "update": {
+                            // $pull: { balances: { nft.token.id: nft.token.id } },
+                            $addToSet: { nfts: nft }
+                        }
                     }});
             }
         }
@@ -315,6 +324,12 @@ let get_pubkey_balances = async function (pubkey:any) {
             log.info(tag,"updateSuccess: ",updateSuccess)
             output.dbUpdate = updateSuccess
         }
+
+        //@TODO save transactions
+
+        //build output
+        output.balances = balances
+        output.nfts = nfts
 
         return output
     } catch (e) {

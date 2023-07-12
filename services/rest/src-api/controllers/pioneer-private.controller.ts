@@ -939,54 +939,53 @@ export class pioneerPrivateController extends Controller {
         Get the balances for a given username on current context for asset
      */
     //depricated?
-    // @Get('/balance/{asset}')
-    // public async balance(asset:string,@Header('Authorization') authorization): Promise<any> {
-    //     let tag = TAG + " | balance | "
-    //     try{
-    //         log.debug(tag,"queryKey: ",authorization)
-    //         log.debug(tag,"asset: ",asset)
-    //
-    //         let accountInfo = await redis.hgetall(authorization)
-    //         let username = accountInfo.username
-    //         if(!username) throw Error("unknown token! token:"+authorization)
-    //
-    //         //get cache
-    //         log.debug(tag,"cache path: ",accountInfo.username+":cache:"+asset+":balance")
-    //         let balance = await redis.get(accountInfo.username+":cache:"+asset+":balance")
-    //         log.debug(tag,"balance: ",balance)
-    //         if(balance){
-    //             return(JSON.parse(balance));
-    //         }else{
-    //             log.debug(tag,"username: ",username)
-    //             //get pubkeys from mongo
-    //             let userInfo = await usersDB.findOne({username})
-    //             if(!userInfo) {
-    //                 throw Error("102: unknown user! username: "+username)
-    //             }
-    //             log.debug(tag,"userInfo: ",userInfo)
-    //
-    //             //reformat
-    //             let pubkeys = {}
-    //             for(let i = 0; i < userInfo.pubkeys.length; i++){
-    //                 let pubkeyInfo = userInfo.pubkeys[i]
-    //                 pubkeys[pubkeyInfo.coin] = pubkeyInfo
-    //             }
-    //
-    //             //write to cache
-    //             await redis.setex(accountInfo.username+":cache:"+asset+":balance",1000 * 5,JSON.stringify(balance))
-    //         }
-    //
-    //         return balance
-    //     }catch(e){
-    //         let errorResp:Error = {
-    //             success:false,
-    //             tag,
-    //             e
-    //         }
-    //         log.error(tag,"e: ",{errorResp})
-    //         throw new ApiError("error",503,"error: "+e.toString());
-    //     }
-    // }
+    @Get('/balance/{network}')
+    public async syncPubkeys(network:string, @Header('Authorization') authorization): Promise<any> {
+        let tag = TAG + " | balance | "
+        try{
+            log.debug(tag,"queryKey: ",authorization)
+            log.debug(tag,"network: ",network)
+
+            let accountInfo = await redis.hgetall(authorization)
+            let username = accountInfo.username
+            if(!username) throw Error("unknown token! token:"+authorization)
+
+            log.debug(tag,"username: ",username)
+            //get pubkeys from mongo
+            let userInfo = await usersDB.findOne({username})
+            if(!userInfo) {
+                throw Error("102: unknown user! username: "+username)
+            }
+            log.info(tag,"userInfo: ",userInfo)
+            log.info(tag,"pubkeys: ",userInfo.pubkeys)
+            //get pubkey for asset
+            let pubkeyAsset = userInfo.pubkeys.filter((pubkey) => pubkey.network === network);
+            log.info("pubkeyAsset: ",pubkeyAsset)
+            log.info("pubkey: ",pubkeyAsset[0].pubkey)
+            log.info("context: ",pubkeyAsset[0].context)
+            let pubkeys = []
+            for(let i = 0; i < pubkeyAsset.length; i++){
+                let pubkey = pubkeyAsset[i]
+                pubkey.username = username
+                pubkey.queueId = "placeholder"
+                let balances = await pioneer.balances(pubkey)
+                log.info("balances: ",balances)
+                //update pubkey
+                pubkey.balances = balances.balances
+                pubkey.nfts = balances.nfts
+                pubkeys.push(pubkey)
+            }
+            return pubkeys
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
     /**
      * Update current account asset context
      * @param request This is an application pairing submission
