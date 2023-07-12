@@ -461,18 +461,18 @@ export class pioneerPrivateController extends Controller {
                         //get balances
                         let allBalances = [];
                         let allNfts = [];
-                        let { pubkeys, master } = await pioneer.getPubkeys(username);
+                        let { pubkeys } = await pioneer.getPubkeys(username);
                         log.info("pubkeys: ", pubkeys);
 
                         for (let i = 0; i < pubkeys.length; i++) {
                             let pubkey = pubkeys[i];
-                            let balances = await pubkey.balances || [];
+                            let balances = pubkey.balances || [];
                             for (let j = 0; j < balances.length; j++) {
                                 let balance = balances[j];
                                 allBalances.push(balance);
                             }
 
-                            let nfts = await pubkey.nfts || []
+                            let nfts = pubkey.nfts || []
                             for (let j = 0; j < nfts.length; j++) {
                                 let nft = nfts[j];
                                 allNfts.push(nft);
