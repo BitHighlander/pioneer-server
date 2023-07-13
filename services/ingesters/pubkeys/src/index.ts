@@ -578,7 +578,6 @@ let do_work = async function(){
                 log.debug(tag,"updateSuccess: ",updateSuccess)
             }
 
-
             //release
             redis.lpush(work.queueId,JSON.stringify({success:true}))
 
