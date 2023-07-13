@@ -18,13 +18,20 @@ build::
 #     cd services/rest && npm i && npm run docker:push:all
 
 push::
-	cd services/rest && npm i && npm run docker:push:all & \
-# 	cd services/ingesters/facts/intake && npm i && npm run docker:push:all & \
-# 	cd services/events/ethereum/blocks && npm i && npm run docker:push:all & \
-# 	cd services/ingesters/pubkeys && npm i && npm run docker:push:all & \
-# 	cd services/ingesters/txs/high && npm i && npm run docker:push:all & \
-# 	cd services/ingesters/txs/low && npm i && npm run docker:push:all & \
+    cd services/rest && npm i && npm run docker:push:all & \
 	wait
+	if [ $$? -ne 0 ]; then \
+		exit 1; \
+	fi
+
+# push::
+# 	cd services/rest && npm i && npm run docker:push:all & \
+# # 	cd services/ingesters/facts/intake && npm i && npm run docker:push:all & \
+# # 	cd services/events/ethereum/blocks && npm i && npm run docker:push:all & \
+# # 	cd services/ingesters/pubkeys && npm i && npm run docker:push:all & \
+# # 	cd services/ingesters/txs/high && npm i && npm run docker:push:all & \
+# # 	cd services/ingesters/txs/low && npm i && npm run docker:push:all & \
+# 	wait
 
 ## TODO start application
 up::

@@ -27,7 +27,6 @@ import AdminLayout from "layouts/Admin.js";
 import RTLLayout from "layouts/RTL.js";
 
 ReactDOM.render(
-    <Web3OnboardProvider web3Onboard={web3Onboard}>
         <HashRouter>
             <Switch>
                 <Route path={`/auth`} component={AuthLayout} />
@@ -35,7 +34,6 @@ ReactDOM.render(
                 <Route path={`/rtl`} component={RTLLayout} />
                 <Redirect from={`/`} to="/auth/signin" />
             </Switch>
-        </HashRouter>
-    </Web3OnboardProvider>,
+        </HashRouter>,
     document.getElementById("root")
 );
