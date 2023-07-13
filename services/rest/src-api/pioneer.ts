@@ -454,7 +454,7 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
         //     }
         // }
 
-        return {pubkeys}
+        return pubkeys
     } catch (e) {
         console.error(tag, "e: ", e)
         throw e
