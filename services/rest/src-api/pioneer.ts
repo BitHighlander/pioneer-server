@@ -334,7 +334,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 
             // Get asset info
             let assetInfo = await assetsDB.findOne({ symbol: balance.symbol });
-            log.info("assetInfo: ", assetInfo);
+            log.info(tag,"assetInfo: ", assetInfo);
 
             if (assetInfo) {
                 balance.caip = assetInfo.caip;
@@ -384,6 +384,7 @@ let get_pubkey_balances = async function (pubkey: any) {
         //@TODO save transactions
 
         // Build output
+        output.pubkeys = [pubkeyInfo]
         output.balances = balances;
         output.nfts = nfts;
 
@@ -718,7 +719,7 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
 
         //reformat
         let pubkeys:any = []
-        let allBalances = []
+        let allBalances:any = []
         // let masters:any = {}
         for(let i = 0; i < userInfo.pubkeys.length; i++){
             let pubkeyInfo = userInfo.pubkeys[i]
@@ -731,10 +732,11 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
                 let balances = await get_pubkey_balances(pubkeyInfo)
                 // log.info(tag,"balances: ",balances)
                 log.info(tag,"balances: ",balances)
-                log.info(tag,"balances: ",balances.length)
+                log.info(tag,"balances: ",balances.balances.length)
                 if(balances && balances.balances) {
                     pubkeyInfo.balances = balances.balances
                     allBalances = allBalances.concat(balances.balances)
+                    log.info(tag,"allBalances: ",allBalances)
                 }
                 if(balances && balances.nfts) pubkeys.nfts = balances.nfts
             } else {
@@ -840,8 +842,8 @@ let register_xpub = async function (username:string, pubkey:any, context:string)
         log.debug(tag,"Creating work! ",work)
         queue.createWork("pioneer:pubkey:ingest",work)
         let {pubkeys, balances} = await get_pubkey_balances(work)
-        log.info(tag, "pubkeys: ",pubkeys.length)
-        log.info(tag, "balances: ",balances.length)
+        log.info(tag, "pubkeys: ",pubkeys)
+        log.info(tag, "balances: ",balances)
 
         return {pubkeys, balances}
     } catch (e) {
@@ -891,7 +893,6 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
         let saveActions = []
         //generate addresses
         let output:any = {}
-        output.work = []
         output.pubkeys = []
         let allPubkeys = []
         let PubkeyMap = {}
@@ -1048,8 +1049,8 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
         let allBalances = [];
         //generate addresses
         let output: any = {};
-        output.work = [];
         output.pubkeys = [];
+        output.balances = [];
         for (let i = 0; i < pubkeys.length; i++) {
             let pubkeyInfo = pubkeys[i];
             log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
@@ -1137,7 +1138,6 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
 
                 log.debug(tag, "pushTagMongo: ", pushTagMongo);
             } else {
-
                 if (!entryMongo.pubkey || entryMongo.pubkey == true) {
                     log.error(" **** ERROR INVALID PUBKEY ENTRY! ***** pubkeyInfo: ", pubkeyInfo);
                     log.error(" **** ERROR INVALID PUBKEY ENTRY! ***** entryMongo: ", entryMongo);
@@ -1151,6 +1151,7 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
             }
 
         }
+        output.balances = allBalances;
         log.debug(tag, "return object: ", output);
         return output;
     } catch (e) {

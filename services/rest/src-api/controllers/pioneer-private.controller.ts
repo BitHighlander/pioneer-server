@@ -282,13 +282,17 @@ export class pioneerPrivateController extends Controller {
             log.info(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
             //register new pubkeys
 
+            //get balances
+            let allBalances:any = [];
+            let allNfts = [];
+
             //add raw pubkeys to mongo
             if(pubkeysRegistering.length > 0){
                 log.info("register newPubkeys: ", pubkeysRegistering.length);
                 //pioneer.register(username, pubkeysRegistering, body.context)
                 let resultRegister = await pioneer.register(username, pubkeysRegistering, body.context)
                 log.info("resultRegister: ", resultRegister);
-
+                allBalances = resultRegister.balances
                 log.debug("Adding pubkey to the user: ", pubkeysRegistering);
                 // await usersDB.update(
                 //     { username: userInfoMongo.username },
@@ -321,9 +325,6 @@ export class pioneerPrivateController extends Controller {
                 throw new Error("Invalid pubkeys!");
             }
 
-            //get balances
-            let allBalances = [];
-            let allNfts = [];
             let { pubkeys } = await pioneer.getPubkeys(username);
             if(!pubkeys) throw new Error("No pubkeys found!")
             log.info("pubkeys returned from pioneer: ", pubkeys.length);
@@ -463,8 +464,8 @@ export class pioneerPrivateController extends Controller {
                         let allNfts = [];
                         let { pubkeys, balances } = await pioneer.getPubkeys(username);
                         //let pubkeys = userInfoMongo.pubkeys
-                        log.info(tag, "pubkeys: ", pubkeys.length);
-                        log.info(tag, "balances: ", balances.length);
+                        log.info(tag, "pubkeys: ", pubkeys);
+                        log.info(tag, "balances: ", balances);
 
                         // for (let i = 0; i < pubkeys.length; i++) {
                         //     let pubkey = pubkeys[i];

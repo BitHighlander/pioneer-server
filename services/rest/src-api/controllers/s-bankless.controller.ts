@@ -223,6 +223,9 @@ export class BanklessController extends Controller {
             let terminalName = body.terminalName
             let rate = body.lastRate
 
+            publisher.publish('bankless', JSON.stringify({type:"rate",payload:{terminalName, rate}}))
+
+
             let terminalInfo = await terminalsDB.update(
                 { terminalName },
                 { $set: { location, rate } }
