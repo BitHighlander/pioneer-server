@@ -840,8 +840,8 @@ let register_xpub = async function (username:string, pubkey:any, context:string)
         log.debug(tag,"Creating work! ",work)
         queue.createWork("pioneer:pubkey:ingest",work)
         let {pubkeys, balances} = await get_pubkey_balances(work)
-        log.info(tag, "pubkeys: ",pubkeys)
-        log.info(tag, "balances: ",balances)
+        log.info(tag, "pubkeys: ",pubkeys.length)
+        log.info(tag, "balances: ",balances.length)
 
         return {pubkeys, balances}
     } catch (e) {
