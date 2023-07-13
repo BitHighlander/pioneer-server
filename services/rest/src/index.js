@@ -18,8 +18,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { HashRouter, Route, Switch, Redirect } from "react-router-dom";
-import { Web3OnboardProvider } from '@web3-onboard/react'
-import web3Onboard from './web3-onboard'
 window.Buffer = require('buffer/').Buffer;
 
 import AuthLayout from "layouts/Auth.js";
