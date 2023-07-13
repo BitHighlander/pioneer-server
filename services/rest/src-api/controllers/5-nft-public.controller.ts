@@ -61,13 +61,13 @@ export class nftPublicController extends Controller {
         try{
 
             // let nftTxs = await axios.get("https://api.etherscan.io/api?module=account&action=tokennfttx&address="+address+"&page=1&offset=100&sort=asc&apikey="+process.env['ETHERSCAN_API_KEY'])
-            // log.info(tag,"nftTxs: ",nftTxs.data)
+            // log.debug(tag,"nftTxs: ",nftTxs.data)
             //
             // let nfts = []
             // for(let i = 0; i < nftTxs.data.result.length; i++){
             //     let nft:any = {}
             //     let entry = nftTxs.data.result[i]
-            //     log.info(tag,"entry: ",entry)
+            //     log.debug(tag,"entry: ",entry)
             //
             //     let contractAddress = entry.contractAddress
             //     let tokenID = entry.tokenID
@@ -75,7 +75,7 @@ export class nftPublicController extends Controller {
             //     nft.tokenID = tokenID
             //
             //     let url = "https://api.opensea.io/api/v1/asset/"+contractAddress+"/"+tokenID+"?format=json"
-            //     log.info(tag,"url: ",url)
+            //     log.debug(tag,"url: ",url)
             //
             //     var headers = {
             //         'x-api-key': "",
@@ -85,7 +85,7 @@ export class nftPublicController extends Controller {
             //     let openSeaInfo = await axios.get(url,{
             //         headers
             //     })
-            //     log.info(tag,"openSeaInfo: ",openSeaInfo.data)
+            //     log.debug(tag,"openSeaInfo: ",openSeaInfo.data)
             //
             //     //image
             //     let imageUrl = openSeaInfo.data.image_original_url

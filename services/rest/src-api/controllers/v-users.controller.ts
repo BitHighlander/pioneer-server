@@ -73,8 +73,8 @@ export class VUsersController extends Controller {
     //             let countUsers = await usersDB.count()
     //             let countDevs = await devsDB.count()
     //             let countDapps = await dapsDB.count()
-    //             log.info(tag,"countDevs: ",countDevs)
-    //             log.info(tag,"countDapps: ",countDapps)
+    //             log.debug(tag,"countDevs: ",countDevs)
+    //             log.debug(tag,"countDapps: ",countDapps)
     //             info = {
     //                 users:countUsers,
     //                 devs:countDevs,
@@ -87,7 +87,7 @@ export class VUsersController extends Controller {
     //         let motd = await redis.get("MOTD")
     //         info.motd = motd
     //
-    //         log.info(tag,"INFO: ",info)
+    //         log.debug(tag,"INFO: ",info)
     //         return(info);
     //     }catch(e){
     //         let errorResp:Error = {
@@ -107,7 +107,7 @@ export class VUsersController extends Controller {
     //     let tag = TAG + " | users | "
     //     try{
     //         let devs = await devsDB.find()
-    //         log.info(tag,"devs: ",devs)
+    //         log.debug(tag,"devs: ",devs)
     //         return(devs);
     //     }catch(e){
     //         let errorResp:Error = {
@@ -125,8 +125,8 @@ export class VUsersController extends Controller {
     //     let tag = TAG + " | users | "
     //     try{
     //         let authInfo = await redis.hgetall(authorization)
-    //         log.info(tag,"authInfo: ",authInfo)
-    //         log.info(tag,"Object: ",Object.keys(authInfo))
+    //         log.debug(tag,"authInfo: ",authInfo)
+    //         log.debug(tag,"Object: ",Object.keys(authInfo))
     //         if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
     //         let publicAddress = authInfo.publicAddress
     //         if(!publicAddress) throw Error("invalid auth key info!")
@@ -134,7 +134,7 @@ export class VUsersController extends Controller {
     //
     //
     //         let user = await usersDB.findOne({publicAddress})
-    //         log.info(tag,"user: ",user)
+    //         log.debug(tag,"user: ",user)
     //         return(user);
     //     }catch(e){
     //         let errorResp:Error = {
@@ -159,10 +159,10 @@ export class VUsersController extends Controller {
     public async lookupPublicUserByAddress(publicAddress:any) {
         let tag = TAG + " | lookupPublicUserByAddress | "
         try{
-            log.info(tag,"publicAddress: ",publicAddress)
+            log.debug(tag,"publicAddress: ",publicAddress)
 
             let devs = await usersDB.findOne({publicAddress})
-            log.info(tag,"devs: ",devs)
+            log.debug(tag,"devs: ",devs)
 
             if(!devs){
                 //create
@@ -171,7 +171,7 @@ export class VUsersController extends Controller {
                     nonce : Math.floor(Math.random() * 10000)
                 }
                 let success = await usersDB.insert(devs)
-                log.info(tag,"success: ",success)
+                log.debug(tag,"success: ",success)
             }
 
             return(devs);
@@ -194,12 +194,12 @@ export class VUsersController extends Controller {
     public async updateDeveloper(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | /updateDeveloper | "
         try{
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"authorization: ",authorization)
             let authInfo = await redis.hgetall(authorization)
             if(!authInfo || Object.keys(authInfo).length === 0) throw Error("Token unknown or Expired!")
 
-            log.info(tag,"body: ",body)
-            log.info(tag,"authInfo: ",authInfo)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authInfo: ",authInfo)
             //if username set username
 
             //TODO

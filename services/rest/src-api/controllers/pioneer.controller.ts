@@ -87,7 +87,7 @@ export class pioneerController extends Controller {
     ): Promise<any> {
         const tag = TAG + ' | smartInsight | ';
         try {
-            log.info(tag, 'tx: ', body);
+            log.debug(tag, 'tx: ', body);
             if (!body.to) throw new Error('to is required!');
             if (!body.from) throw new Error('from is required!');
             if (!body.data) throw new Error('data is required!');
@@ -99,7 +99,7 @@ export class pioneerController extends Controller {
             // get node for chainId
             const service = entry.service;
             log.debug(tag, 'entry: ', entry);
-            log.info(tag, 'service: ', service);
+            log.debug(tag, 'service: ', service);
 
             const provider = new ethers.providers.JsonRpcProvider(service);
 
@@ -117,7 +117,7 @@ export class pioneerController extends Controller {
                     value: 0,
                     data: body.data,
                 });
-                log.info(tag, 'gasLimit: ', gasLimit);
+                log.debug(tag, 'gasLimit: ', gasLimit);
 
                 //if gas limit is < 21000 then set to 21000
                 if (gasLimit.lt(ethers.BigNumber.from('36000'))) {
@@ -127,7 +127,7 @@ export class pioneerController extends Controller {
                 gasLimit = FALLBACK_GAS_LIMIT; // Fallback to the large gas limit
             }
 
-            log.info("gasLimit: ", gasLimit);
+            log.debug("gasLimit: ", gasLimit);
             log.info("gasLimit: ", gasLimit.toString());
 
             let recommended = {

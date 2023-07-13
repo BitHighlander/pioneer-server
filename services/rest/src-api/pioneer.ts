@@ -154,14 +154,14 @@ let get_pubkey_balances = async function (pubkey: any) {
 
         // By type
         if (pubkey.type === "xpub" || pubkey.type === "zpub") {
-            let cacheKey = `balances:blockbook:getBalanceByXpub:${pubkey.username}:${pubkey.symbol}:${pubkey.pubkey}`;
+            let cacheKey = `balances:blockbook:getBalanceByXpub:${pubkey.symbol}:${pubkey.pubkey}`;
             let cachedData = await getFromCache(cacheKey);
             let balance: any;
             if (cachedData) {
                 balance = JSON.parse(cachedData);
             } else {
                 balance = await blockbook.getBalanceByXpub(pubkey.symbol, pubkey.pubkey);
-                log.info(tag, pubkey.username + " Balance (" + pubkey.symbol + "): ", balance);
+                log.debug(tag, pubkey.username + " Balance (" + pubkey.symbol + "): ", balance);
                 await setInCache(cacheKey, JSON.stringify(balance), 60 * 60 * 1);
             }
             // Update balance
@@ -175,25 +175,25 @@ let get_pubkey_balances = async function (pubkey: any) {
         } else if (pubkey.type === "address") {
             switch (pubkey.symbol) {
                 case "ETH":
-                    let cacheKeyZapper = `balances:zapperInfo:getPortfolio:${pubkey.username}:${pubkey.pubkey}`;
+                    let cacheKeyZapper = `balances:zapperInfo:getPortfolio:${pubkey.pubkey}`;
                     let cachedDataZapper = await getFromCache(cacheKeyZapper);
                     let zapperInfo;
                     if (cachedDataZapper) {
                         zapperInfo = JSON.parse(cachedDataZapper);
                     } else {
                         zapperInfo = await zapper.getPortfolio(pubkey.pubkey);
-                        log.info(tag, "zapperInfo: ", zapperInfo);
+                        log.debug(tag, "zapperInfo: ", zapperInfo);
                         await setInCache(cacheKeyZapper, JSON.stringify(zapperInfo), 60 * 60 * 1);
                     }
 
-                    let cacheKeyBlockbook = `balances:blockbook:getBalanceByXpub:${pubkey.username}:${pubkey.symbol}::${pubkey.symbol}`;
+                    let cacheKeyBlockbook = `balances:blockbook:getBalanceByXpub:${pubkey.symbol}:${pubkey.pubkey}`;
                     let cachedDataBlockbook = await getFromCache(cacheKeyBlockbook);
                     let balance;
                     if (cachedDataBlockbook) {
                         balance = JSON.parse(cachedDataBlockbook);
                     } else {
                         balance = await blockbook.getBalanceByXpub(pubkey.symbol, pubkey.pubkey);
-                        log.info(tag, pubkey.username + " Balance (" + pubkey.symbol + "): ", balance);
+                        log.debug(tag, pubkey.username + " Balance (" + pubkey.symbol + "): ", balance);
                         await setInCache(cachedDataBlockbook, JSON.stringify(balance), 60 * 60 * 1);
                     }
 
@@ -226,18 +226,18 @@ let get_pubkey_balances = async function (pubkey: any) {
                         allPioneers = await networks['ETH'].getAllPioneers();
                         await setInCache(cacheKeyAllPioneers, JSON.stringify(allPioneers), 60 * 60 * 1);
                     }
-                    log.info(tag, "allPioneers: ", allPioneers);
+                    log.debug(tag, "allPioneers: ", allPioneers);
 
                     let isPioneer = allPioneers.owners.includes(pubkey.pubkey.toLowerCase());
                     if (isPioneer) {
-                        log.info("Pioneer detected!");
+                        log.debug("Pioneer detected!");
                         let updatedUsername = await usersDB.update({ username: pubkey.username }, { $set: { isPioneer: true } }, { multi: true });
-                        log.info("Updated username PIONEER: ", updatedUsername);
+                        log.debug("Updated username PIONEER: ", updatedUsername);
 
                         const pioneerImage = allPioneers.images.find((image) => image.address.toLowerCase() === pubkey.pubkey.toLowerCase());
                         if (pioneerImage) {
                             let updatedUsername2 = await usersDB.update({ username: pubkey.username }, { $set: { pioneerImage: pioneerImage.image } }, { multi: true });
-                            log.info("updatedUsername2 PIONEER: ", updatedUsername2);
+                            log.debug("updatedUsername2 PIONEER: ", updatedUsername2);
                             nfts.push({
                                 name: "Pioneer",
                                 description: "Pioneer",
@@ -323,9 +323,9 @@ let get_pubkey_balances = async function (pubkey: any) {
             };
         }
         if (!pubkeyInfo.nfts) pubkeyInfo.nfts = [];
-        log.info(tag, "pubkeyInfo: ", pubkeyInfo);
-        log.info(tag, "pubkeyInfo.balances: ", pubkeyInfo.balances);
-        log.info(tag, "nfts: ", pubkeyInfo.nfts);
+        log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
+        log.debug(tag, "pubkeyInfo.balances: ", pubkeyInfo.balances);
+        log.debug(tag, "nfts: ", pubkeyInfo.nfts);
 
         let saveActions = [];
         for (let i = 0; i < balances.length; i++) {
@@ -334,7 +334,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 
             // Get asset info
             let assetInfo = await assetsDB.findOne({ symbol: balance.symbol });
-            log.info(tag,"assetInfo: ", assetInfo);
+            log.debug(tag,"assetInfo: ", assetInfo);
 
             if (assetInfo) {
                 balance.caip = assetInfo.caip;
@@ -354,13 +354,13 @@ let get_pubkey_balances = async function (pubkey: any) {
                     },
                 });
             } else {
-                log.info(tag, "balance not changed!");
+                log.debug(tag, "balance not changed!");
             }
         }
 
         for (let i = 0; i < nfts.length; i++) {
             let nft = nfts[i];
-            log.info(tag, "pubkeyInfo.nfts: ", pubkeyInfo.nfts);
+            log.debug(tag, "pubkeyInfo.nfts: ", pubkeyInfo.nfts);
             let existingNft = pubkeyInfo.nfts.find((e: any) => e.name === nft.name);
 
             if (!existingNft) {
@@ -377,7 +377,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 
         if (saveActions.length > 0) {
             let updateSuccess = await pubkeysDB.bulkWrite(saveActions, { ordered: false });
-            log.info(tag, "updateSuccess: ", updateSuccess);
+            log.debug(tag, "updateSuccess: ", updateSuccess);
             output.dbUpdate = updateSuccess;
         }
 
@@ -422,7 +422,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 //                 balance = JSON.parse(cachedData)
 //             } else{
 //                 let balance = await blockbook.getBalanceByXpub(pubkey.symbol,pubkey.pubkey)
-//                 log.info(tag,pubkey.username + " Balance ("+pubkey.symbol+"): ",balance)
+//                 log.debug(tag,pubkey.username + " Balance ("+pubkey.symbol+"): ",balance)
 //                 await setInCache(cacheKey, JSON.stringify(balance), 60 * 60 * 1);
 //             }
 //             //update balance
@@ -444,7 +444,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 //                     let zapperInfo
 //                     if(cachedDataZapper){
 //                         zapperInfo = await zapper.getPortfolio(pubkey.pubkey);
-//                         log.info(tag, "zapperInfo: ", zapperInfo);
+//                         log.debug(tag, "zapperInfo: ", zapperInfo);
 //                         await setInCache(cacheKeyZapper, JSON.stringify(zapperInfo), 60 * 60 * 1);
 //                     } else{
 //                         zapperInfo = JSON.parse(cachedDataZapper)
@@ -458,7 +458,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 //                         balance = JSON.parse(cachedDataBlockbook)
 //                     } else{
 //                         let balance = await blockbook.getBalanceByXpub(pubkey.symbol,pubkey.pubkey)
-//                         log.info(tag,pubkey.username + " Balance ("+pubkey.symbol+"): ",balance)
+//                         log.debug(tag,pubkey.username + " Balance ("+pubkey.symbol+"): ",balance)
 //                         await setInCache(cacheKey, JSON.stringify(balance), 60 * 60 * 1);
 //                     }
 //
@@ -483,18 +483,18 @@ let get_pubkey_balances = async function (pubkey: any) {
 //                     }
 //
 //                     let allPioneers = await networks['ETH'].getAllPioneers();
-//                     log.info(tag, "allPioneers: ", allPioneers);
+//                     log.debug(tag, "allPioneers: ", allPioneers);
 //
 //                     let isPioneer = allPioneers.owners.includes(pubkey.pubkey.toLowerCase());
 //                     if (isPioneer) {
-//                         log.info("Pioneer detected!");
+//                         log.debug("Pioneer detected!");
 //                         let updatedUsername = await usersDB.update({ username: pubkey.username }, { $set: { isPioneer: true } }, { multi: true });
-//                         log.info("Updated username PIONEER: ", updatedUsername);
+//                         log.debug("Updated username PIONEER: ", updatedUsername);
 //
 //                         const pioneerImage = allPioneers.images.find((image) => image.address.toLowerCase() === pubkey.pubkey.toLowerCase());
 //                         if (pioneerImage) {
 //                             let updatedUsername2 = await usersDB.update({ username: pubkey.username }, { $set: { pioneerImage: pioneerImage.image } }, { multi: true });
-//                             log.info("updatedUsername2 PIONEER: ", updatedUsername2);
+//                             log.debug("updatedUsername2 PIONEER: ", updatedUsername2);
 //                             nfts.push({
 //                                 name: "Pioneer",
 //                                 description: "Pioneer",
@@ -512,7 +512,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 //                     //     if (addressInfo.image) foxInfo.foxImage = addressInfo.image;
 //                     //     if (addressInfo.xp) foxInfo.foxXp = addressInfo.xp;
 //                     //     let updatedUsername = await usersDB.update({ username: pubkey.username }, { $set: { isFox: true, ...foxInfo } }, { multi: true });
-//                     //     log.info("updatedUsername FOX: ", updatedUsername);
+//                     //     log.debug("updatedUsername FOX: ", updatedUsername);
 //                     // }
 //
 //                     let blockbookInfo = await blockbook.getAddressInfo('ETH', pubkey.pubkey);
@@ -553,7 +553,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 //                     break
 //                 default:
 //                     let balance = await networks[pubkey.symbol].getBalance(pubkey.pubkey)
-//                     log.info(tag,"balance: ",balance)
+//                     log.debug(tag,"balance: ",balance)
 //                     if(!balance) balance = 0
 //                     balances.push({
 //                         network:pubkey.symbol,
@@ -574,9 +574,9 @@ let get_pubkey_balances = async function (pubkey: any) {
 //             }
 //         }
 //         if(!pubkeyInfo.nfts) pubkeyInfo.nfts = []
-//         log.info(tag,"pubkeyInfo: ",pubkeyInfo)
-//         log.info(tag,"pubkeyInfo: ",pubkeyInfo.balances)
-//         log.info(tag,"nfts: ",pubkeyInfo.nfts)
+//         log.debug(tag,"pubkeyInfo: ",pubkeyInfo)
+//         log.debug(tag,"pubkeyInfo: ",pubkeyInfo.balances)
+//         log.debug(tag,"nfts: ",pubkeyInfo.nfts)
 //
 //         let saveActions = []
 //         for (let i = 0; i < balances.length; i++) {
@@ -585,7 +585,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 //
 //             // Get asset info
 //             let assetInfo = await assetsDB.findOne({ symbol: balance.symbol });
-//             log.info("assetInfo: ", assetInfo);
+//             log.debug("assetInfo: ", assetInfo);
 //
 //             if (assetInfo) {
 //                 balance.caip = assetInfo.caip;
@@ -605,13 +605,13 @@ let get_pubkey_balances = async function (pubkey: any) {
 //                     },
 //                 });
 //             } else {
-//                 log.info(tag, "balance not changed!");
+//                 log.debug(tag, "balance not changed!");
 //             }
 //         }
 //
 //         for(let i = 0; i < nfts.length; i++){
 //             let nft = nfts[i];
-//             log.info(tag,"pubkeyInfo.nfts: ",pubkeyInfo.nfts)
+//             log.debug(tag,"pubkeyInfo.nfts: ",pubkeyInfo.nfts)
 //             let existingNft = pubkeyInfo.nfts.find((e:any) => e.name === nft.name);
 //
 //             if(!existingNft){
@@ -627,7 +627,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 //
 //         if(saveActions.length > 0){
 //             let updateSuccess = await pubkeysDB.bulkWrite(saveActions,{ordered:false});
-//             log.info(tag,"updateSuccess: ",updateSuccess)
+//             log.debug(tag,"updateSuccess: ",updateSuccess)
 //             output.dbUpdate = updateSuccess
 //         }
 //
@@ -651,7 +651,7 @@ let get_and_rescan_pubkeys = async function (username:string) {
     try {
         //get pubkeys from mongo with context tagged
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [username]}})
-        log.info(tag,"pubkeysMongo: ",pubkeysMongo.length)
+        log.debug(tag,"pubkeysMongo: ",pubkeysMongo.length)
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
@@ -707,12 +707,12 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
         //get pubkeys from mongo with context tagged
         if(!context) context = username
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [context]}})
-        log.info(tag,"pubkeysMongo: ",pubkeysMongo.length)
+        log.debug(tag,"pubkeysMongo: ",pubkeysMongo.length)
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
         if(!userInfo) throw Error("get_and_verify_pubkeys User not found!")
-        log.info(tag,"userInfo: ",userInfo)
+        log.debug(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
         if(!blockchains) blockchains = []
         //if(!userInfo.blockchains) throw Error("Invalid user!")
@@ -728,19 +728,19 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
             pubkeyInfo.username = username
             //if no balances, get balances
             if(!pubkeyInfo.balances || pubkeyInfo.balances.length === 0){
-                log.info(tag,"no balances, getting balances...")
+                log.debug(tag,"no balances, getting balances...")
                 let balances = await get_pubkey_balances(pubkeyInfo)
-                // log.info(tag,"balances: ",balances)
-                log.info(tag,"balances: ",balances)
-                log.info(tag,"balances: ",balances.balances.length)
+                // log.debug(tag,"balances: ",balances)
+                log.debug(tag,"balances: ",balances)
+                log.debug(tag,"balances: ",balances.balances.length)
                 if(balances && balances.balances) {
                     pubkeyInfo.balances = balances.balances
                     allBalances = allBalances.concat(balances.balances)
-                    log.info(tag,"allBalances: ",allBalances)
+                    log.debug(tag,"allBalances: ",allBalances)
                 }
                 if(balances && balances.nfts) pubkeys.nfts = balances.nfts
             } else {
-                log.info(tag,"balances already exist! count: ",pubkeyInfo.balances.length)
+                log.debug(tag,"balances already exist! count: ",pubkeyInfo.balances.length)
             }
 
             // if(!masters[pubkeyInfo.symbol] && pubkeyInfo.master)masters[pubkeyInfo.symbol] = pubkeyInfo.master
@@ -771,8 +771,8 @@ let register_zpub = async function (username:string, pubkey:any, context:string)
         let account = 0
         let index = 0
         let address = await get_address_from_xpub(pubkey.zpub,pubkey.scriptType,pubkey.symbol,account,index,false,false)
-        log.info(tag,"Master(Local): ",address)
-        log.info(tag,"Master(hdwallet): ",pubkey.master)
+        log.debug(tag,"Master(Local): ",address)
+        log.debug(tag,"Master(hdwallet): ",pubkey.master)
         if(address !== pubkey.master){
             log.error(tag,"Local Master NOT VALID!!")
             log.error(tag,"Local Master: ",address)
@@ -796,7 +796,7 @@ let register_zpub = async function (username:string, pubkey:any, context:string)
         log.debug(tag,"Creating work! ",work)
         queue.createWork("pioneer:pubkey:ingest",work)
         let result = await get_pubkey_balances(work)
-        log.info(result)
+        log.debug(result)
 
         return queueId
     } catch (e) {
@@ -842,8 +842,8 @@ let register_xpub = async function (username:string, pubkey:any, context:string)
         log.debug(tag,"Creating work! ",work)
         queue.createWork("pioneer:pubkey:ingest",work)
         let {pubkeys, balances} = await get_pubkey_balances(work)
-        log.info(tag, "pubkeys: ",pubkeys)
-        log.info(tag, "balances: ",balances)
+        log.debug(tag, "pubkeys: ",pubkeys.length)
+        log.debug(tag, "balances: ",balances.length)
 
         return {pubkeys, balances}
     } catch (e) {
@@ -877,7 +877,7 @@ let register_address = async function (username:string, pubkey:any, context:stri
 
         queue.createWork("pioneer:pubkey:ingest",work)
         let result = await get_pubkey_balances(work)
-        log.info(result)
+        log.debug(result)
 
         return queueId
     } catch (e) {
@@ -1026,7 +1026,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
             log.debug(tag," No new pubkeys! ")
         }
 
-        log.info(tag,"output: ",output)
+        log.debug(tag,"output: ",output)
         if(allBalances.length === 0){
             log.error(tag,"No balances found! allBalances: ",allBalances)
             // throw Error("No balances found!")

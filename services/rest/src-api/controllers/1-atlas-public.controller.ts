@@ -636,7 +636,7 @@ export class pioneerPublicController extends Controller {
             }
 
             // Get tracked networks with sort, limit, and skip parameters
-            log.info(tag,"filterTags: ",filterTags)
+            log.debug(tag,"filterTags: ",filterTags)
             let assets = await assetsDB.find(query, { sort, limit, skip });
             let total = await assetsDB.count(query);
 

@@ -134,8 +134,8 @@ export class pioneerOsmosisController extends Controller {
     public async quoteSwap(pair:string,amountIn:string) {
         let tag = TAG + " | pair | "
         try{
-            log.info(tag,"pair: ",pair)
-            log.info(tag,"amountIn: ",amountIn)
+            log.debug(tag,"pair: ",pair)
+            log.debug(tag,"amountIn: ",amountIn)
 
             let pool = await networks['OSMO'].getPool(pair)
 
@@ -158,27 +158,27 @@ export class pioneerOsmosisController extends Controller {
                 throw new Error("Pair not supported!")
             }
 
-            log.info(tag,"sellAssetInitialPoolSize: ",sellAssetInitialPoolSize)
-            log.info(tag,"buyAssetInitialPoolSize: ",buyAssetInitialPoolSize)
+            log.debug(tag,"sellAssetInitialPoolSize: ",sellAssetInitialPoolSize)
+            log.debug(tag,"buyAssetInitialPoolSize: ",buyAssetInitialPoolSize)
             let amountInNumber = new BigNumber(amountIn)
 
             const initialMarketPrice = sellAssetInitialPoolSize.dividedBy(buyAssetInitialPoolSize)
-            log.info(tag,"initialMarketPrice: ",initialMarketPrice)
+            log.debug(tag,"initialMarketPrice: ",initialMarketPrice)
 
             const sellAssetFinalPoolSize = sellAssetInitialPoolSize.plus(amountInNumber)
-            log.info(tag,"sellAssetFinalPoolSize: ",sellAssetFinalPoolSize)
+            log.debug(tag,"sellAssetFinalPoolSize: ",sellAssetFinalPoolSize)
 
             const buyAssetFinalPoolSize = constantProduct.dividedBy(sellAssetFinalPoolSize)
-            log.info(tag,"buyAssetFinalPoolSize: ",buyAssetFinalPoolSize)
+            log.debug(tag,"buyAssetFinalPoolSize: ",buyAssetFinalPoolSize)
 
             const finalMarketPrice = sellAssetFinalPoolSize.dividedBy(buyAssetFinalPoolSize)
-            log.info(tag,"finalMarketPrice: ",finalMarketPrice)
+            log.debug(tag,"finalMarketPrice: ",finalMarketPrice)
 
             const buyAmount = buyAssetInitialPoolSize.minus(buyAssetFinalPoolSize)
-            log.info(tag,"buyAmount: ",buyAmount)
+            log.debug(tag,"buyAmount: ",buyAmount)
 
             const rate = new BigNumber(buyAmount).dividedBy(amountInNumber)
-            log.info(tag,"rate: ",rate)
+            log.debug(tag,"rate: ",rate)
 
             const priceImpact = new BigNumber(1).minus(initialMarketPrice.dividedBy(finalMarketPrice)).abs()
             return {

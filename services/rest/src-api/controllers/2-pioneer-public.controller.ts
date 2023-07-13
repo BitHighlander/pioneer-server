@@ -301,7 +301,7 @@ export class atlasPublicController extends Controller {
             try{
                 updateRango()
             }catch(e){
-                log.info("failed to get rango markets! ",e)
+                log.debug("failed to get rango markets! ",e)
             }
 
 
@@ -603,7 +603,7 @@ export class atlasPublicController extends Controller {
         try{
             if(!invocationId) throw Error("102: invocationId required! ")
             let output = await invocationsDB.findOne({invocationId})
-            log.info(tag,"invocation MONGO: ",output)
+            log.debug(tag,"invocation MONGO: ",output)
 
             //hack, if a disagreement in txid, use broadcast (bad hash bug) TODO FIXME
             if(
@@ -631,19 +631,19 @@ export class atlasPublicController extends Controller {
             //if type is swap get blockchain info for fullfillment
             if(output && output.state === 'broadcasted'){
                 if(!output.isConfirmed){
-                    log.info(tag,"Checkpoint broadcasted but NOT confirmed!")
+                    log.debug(tag,"Checkpoint broadcasted but NOT confirmed!")
                     //get confirmation status
                     // let txid = output.signedTx.txid || output.broadcast.txid
                     // if(!txid && output?.broadcast && output?.broadcast.result && output?.broadcast?.result?.txid) txid = output?.broadcast?.result?.txid
-                    // log.info(tag,"***** txid: ",txid)
+                    // log.debug(tag,"***** txid: ",txid)
 
                     let txInfo
                     //TODO normalize tx response between ALL blockchains
 
-                    log.info(tag,"txid: ",txid)
+                    log.debug(tag,"txid: ",txid)
                     if(txid){
                         try{
-                            log.info(tag,"txid: ",txid)
+                            log.debug(tag,"txid: ",txid)
                             if(output?.invocation?.swap?.input?.blockchain){
                                 //get block explorer for txid
                                 let explorerUrl = getExplorerTxUrl(output?.invocation?.swap?.input?.blockchain,txid,false)
@@ -658,7 +658,7 @@ export class atlasPublicController extends Controller {
 
                             if(UTXO_COINS.indexOf(output.network) >= 0){
                                 txInfo = await networks['ANY'].getTransaction(output.network,txid)
-                                log.info(tag,"UTXO txInfo: ",txInfo)
+                                log.debug(tag,"UTXO txInfo: ",txInfo)
                             } else {
                                 if(!networks[output.network]) throw Error("102: coin not supported! coin: "+output.network)
                                 txInfo = await networks[output.network].getTransaction(txid)
@@ -667,14 +667,14 @@ export class atlasPublicController extends Controller {
                             //@TODO standardize getTransaction in network
 
                             if(txInfo && txInfo.blockHeight && parseInt(txInfo.blockHeight) > 0){
-                                log.info(tag,"Confirmed!")
+                                log.debug(tag,"Confirmed!")
                                 output.isConfirmed = true
 
                                 //update entry
                                 let mongoSave3 = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{state:"confirmed"}})
-                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                log.debug(tag,"mongoSave3: ",mongoSave3)
                                 output.resultUpdateState = mongoSave3
 
                                 //update entry
@@ -694,7 +694,7 @@ export class atlasPublicController extends Controller {
                                 let mongoSave3 = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{state:"confirmed"}})
-                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                log.debug(tag,"mongoSave3: ",mongoSave3)
                                 output.resultUpdateState = mongoSave3
 
                                 //update entry
@@ -714,7 +714,7 @@ export class atlasPublicController extends Controller {
                                 let mongoSave3 = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{state:"confirmed"}})
-                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                log.debug(tag,"mongoSave3: ",mongoSave3)
                                 output.resultUpdateState = mongoSave3
 
                                 //update entry
@@ -734,7 +734,7 @@ export class atlasPublicController extends Controller {
                                 let mongoSave3 = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{state:"confirmed"}})
-                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                log.debug(tag,"mongoSave3: ",mongoSave3)
                                 output.resultUpdateState = mongoSave3
 
                                 //update entry
@@ -759,12 +759,12 @@ export class atlasPublicController extends Controller {
             if(output.type === 'swap' && output.isConfirmed){
                 //txid
                 try{
-                    log.info(tag,"Checkpoint thorchain swap check ID")
+                    log.debug(tag,"Checkpoint thorchain swap check ID")
                     //parse tx
                     txid = txid.replace("0X","")
-                    log.info(tag,"txid: ",txid)
+                    log.debug(tag,"txid: ",txid)
                     let midgardInfo = await midgard.getTransaction(txid)
-                    log.info(tag,"midgardInfo: ",midgardInfo)
+                    log.debug(tag,"midgardInfo: ",midgardInfo)
 
                     if(midgardInfo && midgardInfo.actions && midgardInfo.actions[0]){
                         let depositInfo = midgardInfo.actions[0].in
@@ -783,7 +783,7 @@ export class atlasPublicController extends Controller {
                                 let mongoSave3 = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{state:"refunded"}})
-                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                log.debug(tag,"mongoSave3: ",mongoSave3)
                                 output.resultUpdateState = mongoSave3
 
                                 //
@@ -802,16 +802,16 @@ export class atlasPublicController extends Controller {
                                 output.fullfillmentTxid = fullfillmentInfo.out[0].txID
 
                                 //get block explorer for txid
-                                log.info(tag,"output?.invocation?.swap?.output?.blockchain: ",output?.invocation?.swap?.output?.blockchain)
+                                log.debug(tag,"output?.invocation?.swap?.output?.blockchain: ",output?.invocation?.swap?.output?.blockchain)
                                 let explorerUrl = getExplorerTxUrl(output?.invocation?.swap?.output?.blockchain,output.fullfillmentTxid,false)
-                                log.info(tag,"explorerUrl: ",explorerUrl)
+                                log.debug(tag,"explorerUrl: ",explorerUrl)
                                 output.withdrawalUrl = explorerUrl
 
                                 //update entry
                                 let mongoSave3 = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{state:"fullfilled"}})
-                                log.info(tag,"mongoSave3: ",mongoSave3)
+                                log.debug(tag,"mongoSave3: ",mongoSave3)
                                 output.resultUpdateState = mongoSave3
 
                                 //update entry

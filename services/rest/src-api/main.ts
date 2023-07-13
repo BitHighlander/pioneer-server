@@ -18,9 +18,9 @@ import * as methodOverride from 'method-override';
 import { RegisterRoutes } from './routes/routes';  // here
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../api/dist/swagger.json')
-const metrics = require('datadog-metrics');
+// const metrics = require('datadog-metrics');
 let os = require('os')
-metrics.init({ host: os.hostname(), prefix: pjson.name });
+// metrics.init({ host: os.hostname(), prefix: pjson.name });
 
 const markets = require('@pioneer-platform/markets')
 let connection  = require("@pioneer-platform/default-mongo")
@@ -45,17 +45,17 @@ const rateLimiterRedis = new RateLimiterRedis({
     duration: 1, // Per second
 });
 
-const loggerDogMiddleWare = async (req, res, next) => {
-    try{
-        //
-        console.log("path",req.path)
-        metrics.increment('requests:total');
-        metrics.increment('path:'+req.path);
-        next();
-    }catch(e){
-        console.error(e)
-    }
-};
+// const loggerDogMiddleWare = async (req, res, next) => {
+//     try{
+//         //
+//         console.log("path",req.path)
+//         metrics.increment('requests:total');
+//         metrics.increment('path:'+req.path);
+//         next();
+//     }catch(e){
+//         console.error(e)
+//     }
+// };
 
 
 //TODO handle broke redis
@@ -109,7 +109,7 @@ let corsOptions = {
 
 
 app.use(cors(corsOptions))
-app.use(loggerDogMiddleWare);
+// app.use(loggerDogMiddleWare);
 // app.use(rateLimiterMiddleware);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -353,20 +353,20 @@ subscriber.on('message', async function (channel, payloadS) {
         } else if(channel === 'bankless'){
             //push message to user
             let context = JSON.parse(payloadS)
-            log.info(tag,"context: ",context)
-            log.info(tag,"context: ",context.terminalName)
-            log.info(tag,"usersByUsername: ",usersByUsername)
+            log.debug(tag,"context: ",context)
+            log.debug(tag,"context: ",context.terminalName)
+            log.debug(tag,"usersByUsername: ",usersByUsername)
             let terminalName = context.payload.terminalName
             //send to user
             if(usersByUsername[terminalName]){
                 let sockets = usersByUsername[terminalName]
-                log.info(tag,"sockets: ",sockets)
+                log.debug(tag,"sockets: ",sockets)
                 for(let i =0; i < sockets.length; i++){
                     let socketid = sockets[i]
                     if(globalSockets[socketid]){
                         context.event = 'context'
                         globalSockets[socketid].emit('message', context);
-                        log.info(tag,socketid+ " sending message to terminalId! msg: ",context)
+                        log.debug(tag,socketid+ " sending message to terminalId! msg: ",context)
                     }
                 }
             } else {
@@ -436,7 +436,7 @@ io.on('connection', async function(socket){
             let queryKeyInfo = await redis.hgetall(queryKey)
             log.debug(tag,"ACTUAL: username: ",queryKeyInfo.username)
             if(queryKeyInfo.username === msg.username){
-                log.info("session valid starting!")
+                log.debug("session valid starting!")
                 usersBySocketId[socket.id] = msg.username
                 if(!usersByUsername[msg.username]) usersByUsername[msg.username] = []
                 usersByUsername[msg.username].push(socket.id)
@@ -457,7 +457,7 @@ io.on('connection', async function(socket){
             } else if(!queryKeyInfo.username){
                 //new queryKey
                 //register Username
-                log.info(tag,"New queryKey! msg.username: ",msg.username)
+                log.debug(tag,"New queryKey! msg.username: ",msg.username)
                 await redis.hset(queryKey,"username",msg.username)
                 await redis.hset(msg.username,"queryKey",queryKey)
                 usersBySocketId[socket.id] = msg.username
@@ -498,10 +498,10 @@ io.on('connection', async function(socket){
     });
 
     socket.on('event', function(msg){
-        log.info(tag,'event ****************: ' + msg);
+        log.debug(tag,'event ****************: ' + msg);
     })
     socket.on('message', function(msg){
-        log.info(tag,'message ****************: ' , msg);
+        log.debug(tag,'message ****************: ' , msg);
 
         if(msg.actionId){
             //

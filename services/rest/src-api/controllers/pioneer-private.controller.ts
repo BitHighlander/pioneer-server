@@ -169,8 +169,8 @@ export class pioneerPrivateController extends Controller {
     public async register(@Header('Authorization') authorization: string, @Body() body: RegisterBody): Promise<any> {
         let tag = TAG + " | register | ";
         try {
-            log.info("register body: ", body);
-            log.info("register body: ", JSON.stringify(body));
+            log.debug("register body: ", body);
+            log.debug("register body: ", JSON.stringify(body));
             if (!body.context) throw new Error("Missing context parameter!");
             if (!body.blockchains) throw new Error("Missing blockchains parameter!");
             if (!body.walletDescription || typeof body.walletDescription === 'string') throw new Error("Invalid walletDescription parameter! Expected a non-string value.");
@@ -179,7 +179,7 @@ export class pioneerPrivateController extends Controller {
             let username;
             const authInfo = await redis.hgetall(authorization);
             if (Object.keys(authInfo).length === 0) {
-                log.info("New user!");
+                log.debug("New user!");
                 // Generate a unique identifier for each registration if the user hasn't chosen a username
                 username = body.username || "user:" + uuidv4();
                 let userInfo = {
@@ -192,10 +192,10 @@ export class pioneerPrivateController extends Controller {
                 };
                 await redis.hmset(authorization, userInfo);
             } else {
-                log.info(tag,"Existing user!");
+                log.debug(tag,"Existing user!");
                 if(body.username !== authInfo.username){
                     //update username
-                    log.info(tag,"Updating username!");
+                    log.debug(tag,"Updating username!");
                     redis.hset(authorization,"username",body.username)
                     username = body.username
                 } else {
@@ -271,15 +271,15 @@ export class pioneerPrivateController extends Controller {
             // pioneer.register(username, ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))), body.context);
 
             // Add any pubkeys missing from the user
-            log.info(tag, "userInfoMongo: ", userInfoMongo);
+            log.debug(tag, "userInfoMongo: ", userInfoMongo);
             let pubkeysMongo = userInfoMongo.pubkeys || [];
             //only new keys? untested
             let pubkeysRegistering = ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))); // Flatten the pubkeys array and add the context
             //let pubkeysRegistering = body.data.pubkeys
-            log.info(tag, "pubkeysMongo: ", pubkeysMongo);
-            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering);
-            log.info(tag, "pubkeysMongo: ", pubkeysMongo.length);
-            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
+            log.debug(tag, "pubkeysMongo: ", pubkeysMongo);
+            log.debug(tag, "pubkeysRegistering: ", pubkeysRegistering);
+            log.debug(tag, "pubkeysMongo: ", pubkeysMongo.length);
+            log.debug(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
             //register new pubkeys
 
             //get balances
@@ -288,10 +288,10 @@ export class pioneerPrivateController extends Controller {
 
             //add raw pubkeys to mongo
             if(pubkeysRegistering.length > 0){
-                log.info("register newPubkeys: ", pubkeysRegistering.length);
+                log.debug("register newPubkeys: ", pubkeysRegistering.length);
                 //pioneer.register(username, pubkeysRegistering, body.context)
                 let resultRegister = await pioneer.register(username, pubkeysRegistering, body.context)
-                log.info("resultRegister: ", resultRegister);
+                log.debug("resultRegister: ", resultRegister);
                 allBalances = resultRegister.balances
                 log.debug("Adding pubkey to the user: ", pubkeysRegistering);
                 // await usersDB.update(
@@ -302,11 +302,11 @@ export class pioneerPrivateController extends Controller {
                 //     }
                 // );
             } else {
-                log.info("No new pubkeys to register!");
+                log.debug("No new pubkeys to register!");
             }
 
             let userInfoFinal = await usersDB.findOne({ username });
-            log.info("userInfoFinal: ", userInfoFinal);
+            log.debug("userInfoFinal: ", userInfoFinal);
 
             // Validate the context is in wallets
             if (!userInfoFinal.wallets.includes(body.context)) {
@@ -327,7 +327,7 @@ export class pioneerPrivateController extends Controller {
 
             let { pubkeys } = await pioneer.getPubkeys(username);
             if(!pubkeys) throw new Error("No pubkeys found!")
-            log.info("pubkeys returned from pioneer: ", pubkeys.length);
+            log.debug("pubkeys returned from pioneer: ", pubkeys.length);
 
 
             for (let i = 0; i < pubkeys.length; i++) {
@@ -434,7 +434,7 @@ export class pioneerPrivateController extends Controller {
     public async user(@Header('Authorization') authorization: string): Promise<any> {
         let tag = TAG + " | user | "
         try{
-            log.info(tag,"queryKey: ",authorization)
+            log.debug(tag,"queryKey: ",authorization)
             let accountInfo = await redis.hgetall(authorization)
             if(Object.keys(accountInfo).length === 0) {
                 return {
@@ -464,15 +464,15 @@ export class pioneerPrivateController extends Controller {
                         let allNfts = [];
                         let { pubkeys, balances } = await pioneer.getPubkeys(username);
                         //let pubkeys = userInfoMongo.pubkeys
-                        log.info(tag, "pubkeys: ", pubkeys);
-                        log.info(tag, "balances: ", balances);
+                        log.debug(tag, "pubkeys: ", pubkeys);
+                        log.debug(tag, "balances: ", balances);
 
                         // for (let i = 0; i < pubkeys.length; i++) {
                         //     let pubkey = pubkeys[i];
                         //     let balances = pubkey.balances || [];
                         //     //if no pubkey balances
                         //     if(balances.length === 0){
-                        //         log.info("no balances found for pubkey: ", pubkey);
+                        //         log.debug("no balances found for pubkey: ", pubkey);
                         //         let resultsSync = await pioneer.balances(pubkey);
                         //         balances = resultsSync.balances;
                         //     }
@@ -542,9 +542,9 @@ export class pioneerPrivateController extends Controller {
     // public async info(context:string,@Header('Authorization') authorization: string): Promise<any> {
     //     let tag = TAG + " | info | "
     //     try{
-    //         log.info(tag,"queryKey: ",authorization)
+    //         log.debug(tag,"queryKey: ",authorization)
     //         if(!context) throw Error("103: context required!")
-    //         log.info(tag,"context: ",context)
+    //         log.debug(tag,"context: ",context)
     //
     //         let accountInfo = await redis.hgetall(authorization)
     //         log.debug(tag,"accountInfo: ",accountInfo)
@@ -968,20 +968,20 @@ export class pioneerPrivateController extends Controller {
             if(!userInfo) {
                 throw Error("102: unknown user! username: "+username)
             }
-            log.info(tag,"userInfo: ",userInfo)
-            log.info(tag,"pubkeys: ",userInfo.pubkeys)
+            log.debug(tag,"userInfo: ",userInfo)
+            log.debug(tag,"pubkeys: ",userInfo.pubkeys)
             //get pubkey for asset
             let pubkeyAsset = userInfo.pubkeys.filter((pubkey) => pubkey.network === network);
-            log.info("pubkeyAsset: ",pubkeyAsset)
-            log.info("pubkey: ",pubkeyAsset[0].pubkey)
-            log.info("context: ",pubkeyAsset[0].context)
+            log.debug("pubkeyAsset: ",pubkeyAsset)
+            log.debug("pubkey: ",pubkeyAsset[0].pubkey)
+            log.debug("context: ",pubkeyAsset[0].context)
             let pubkeys = []
             for(let i = 0; i < pubkeyAsset.length; i++){
                 let pubkey = pubkeyAsset[i]
                 pubkey.username = username
                 pubkey.queueId = "placeholder"
                 let balances = await pioneer.balances(pubkey)
-                log.info("balances: ",balances)
+                log.debug("balances: ",balances)
                 //update pubkey
                 pubkey.balances = balances.balances
                 pubkey.nfts = balances.nfts

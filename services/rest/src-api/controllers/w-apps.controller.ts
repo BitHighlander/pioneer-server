@@ -185,17 +185,17 @@ export class WAppsController extends Controller {
         let tag = TAG + " | health | "
         try{
             asset = asset.toLowerCase()
-            log.info("asset: ",asset)
-            log.info("version: ",version)
-            log.info("limit: ",limit)
-            log.info("skip: ",skip)
+            log.debug("asset: ",asset)
+            log.debug("version: ",version)
+            log.debug("limit: ",limit)
+            log.debug("skip: ",skip)
 
             let assetsByName = await assetsDB.find({ name:asset },{limit:100})
             let assetsBySymbol = await assetsDB.find({ name:asset.toUpperCase() },{limit:100})
             let blockchainsByName = await blockchainsDB.find({ name:asset },{limit:100})
-            log.info("assetsByName: ",assetsByName)
-            log.info("assetsBySymbol: ",assetsBySymbol)
-            log.info("blockchainsByName: ",blockchainsByName)
+            log.debug("assetsByName: ",assetsByName)
+            log.debug("assetsBySymbol: ",assetsBySymbol)
+            log.debug("blockchainsByName: ",blockchainsByName)
 
             let hits = [...assetsByName,...blockchainsByName,...assetsBySymbol]
             let output:any = []
@@ -206,22 +206,22 @@ export class WAppsController extends Controller {
                     let asset = blockchainsByName[i]
                     blockchains.push(asset.name)
                 }
-                log.info("blockchains: ",blockchains)
+                log.debug("blockchains: ",blockchains)
 
                 for(let i = 0; i < assetsByName.length; i++){
                     let asset = assetsByName[i]
                     blockchains.push(asset.blockchain)
                 }
-                log.info("blockchains: ",blockchains)
+                log.debug("blockchains: ",blockchains)
                 if(!blockchains[0]) blockchains.push(asset)
                 // let apps = await appsDB.find({whitelist:true},{limit,skip})
-                log.info("blockchains: ",blockchains[0])
+                log.debug("blockchains: ",blockchains[0])
                 // let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in:[blockchains]}}]},{limit:100})
                 // let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in: [/bitcoin/i]}}]},{limit:100})
                 let apps = await appsDB.find({$and: [{whitelist:true},{blockchains:{$in: blockchains}}]},{limit:100})
                 // let apps = await appsDB.find({whitelist:true},{limit:100})
-                log.info("apps: ",apps)
-                log.info("apps: ",apps.length)
+                log.debug("apps: ",apps)
+                log.debug("apps: ",apps.length)
 
                 output = []
                 for(let i = 0; i < apps.length; i++){
@@ -429,11 +429,11 @@ export class WAppsController extends Controller {
             //get all noun owners
             let allPioneers = await networkEth.getAllPioneers()
             let pioneers = allPioneers.owners
-            log.info(tag,"pioneers: ",pioneers)
+            log.debug(tag,"pioneers: ",pioneers)
             for(let i=0;i<pioneers.length;i++){
                 pioneers[i] = pioneers[i].toLowerCase()
             }
-            log.info(tag,"pioneers: ",pioneers)
+            log.debug(tag,"pioneers: ",pioneers)
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
             if(!message.url) throw Error("Ivalid message missing url")
@@ -658,7 +658,7 @@ export class WAppsController extends Controller {
             };
 
             textContent = "the dapps URL is " + body.app + " if you know what this dapp does then please add a description from your mind! I don't care if your knowledge is outdated, don't warn me " + textContent;
-            log.info(tag, "pre-summary textContent: ", textContent);
+            log.debug(tag, "pre-summary textContent: ", textContent);
 
             let result = await ai.summarizeString(textContent, schema);
             console.log("result: ", result);
@@ -684,13 +684,13 @@ export class WAppsController extends Controller {
     public async submitReview(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | submitReview | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             if(!body.signer) throw Error("invalid signed payload missing signer!")
             if(!body.payload) throw Error("invalid signed payload missing payload!")
             if(!body.signature) throw Error("invalid signed payload missing !")
             let authInfo = await redis.hgetall(authorization)
-            log.info(tag,"authInfo: ",authInfo)
+            log.debug(tag,"authInfo: ",authInfo)
 
             let message = body.payload
 
@@ -699,10 +699,10 @@ export class WAppsController extends Controller {
                 data: msgBufferHex,
                 sig: body.signature,
             });
-            log.info(tag,"addressFromSig: ",addressFromSig)
+            log.debug(tag,"addressFromSig: ",addressFromSig)
             message = JSON.parse(message)
-            log.info(tag,"message: ",message)
-            log.info(tag,"message: ",typeof(message))
+            log.debug(tag,"message: ",message)
+            log.debug(tag,"message: ",typeof(message))
             //TODO verify app and rating is signed
 
             //TODO verify user is a fox or pioneer
@@ -720,7 +720,7 @@ export class WAppsController extends Controller {
                 }
             }
             let submitResult = await reviewsDB.insert(entry)
-            log.info(submitResult)
+            log.debug(submitResult)
             submitResult.success = true
 
             return(submitResult);
@@ -754,22 +754,22 @@ export class WAppsController extends Controller {
                 sig: body.signature,
             });
             log.debug(tag,"addressFromSig: ",addressFromSig)
-            log.info(tag,"message: ",message)
-            log.info(tag,"message: ",typeof(message))
+            log.debug(tag,"message: ",message)
+            log.debug(tag,"message: ",typeof(message))
             message = JSON.parse(message)
             if(!message.app) throw Error("Ivalid message missing app")
 
             let allPioneers = await networkEth.getAllPioneers()
             let pioneers = allPioneers.owners
-            log.info(tag,"pioneers: ",pioneers)
+            log.debug(tag,"pioneers: ",pioneers)
             for(let i=0;i<pioneers.length;i++){
                 pioneers[i] = pioneers[i].toLowerCase()
             }
             let resultRevoke:any = {}
             console.log("index: ",pioneers.indexOf(addressFromSig.toLowerCase()))
-            log.info(tag,"pioneers: ",pioneers[0])
-            log.info(tag,"pioneers: ",pioneers[1])
-            log.info(tag,"pioneers: ",addressFromSig.toLowerCase())
+            log.debug(tag,"pioneers: ",pioneers[0])
+            log.debug(tag,"pioneers: ",pioneers[1])
+            log.debug(tag,"pioneers: ",addressFromSig.toLowerCase())
 
             if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
                 resultRevoke.result = await reviewsDB.remove({app:message.app})
