@@ -18,11 +18,8 @@ build::
 #     cd services/rest && npm i && npm run docker:push:all
 
 push::
-    cd services/rest && npm i && npm run docker:push:all & \
-	wait
-	if [ $$? -ne 0 ]; then \
-		exit 1; \
-	fi
+	cd services/rest && npm i && npm run docker:push:all & \
+	wait || exit $$?
 
 # push::
 # 	cd services/rest && npm i && npm run docker:push:all & \
