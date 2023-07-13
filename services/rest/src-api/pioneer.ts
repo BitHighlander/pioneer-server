@@ -610,7 +610,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
         }
         //remove duplicates
         allPubkeys = Array.from(new Set(allPubkeys))
-
+        let allBalances = []
         //get pubkeys from mongo
         log.debug(tag,"allPubkeys: ",allPubkeys)
         let allKnownPubkeys = await pubkeysDB.find({"pubkey" : {"$in" : allPubkeys}})
@@ -674,9 +674,9 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
                     }
                     saveActions.push({insertOne:entryMongo})
                     let result = await register_xpub(username,pubkeyInfo,context)
-
                     entryMongo.balances = result.balances
-                    output.work.push(result)
+                    allBalances.push(...result.balances);
+                    output.pubkeys.push(result)
                 } else if(pubkeyInfo.type === "zpub" || pubkeyInfo.zpub){
                     if(pubkeyInfo.zpub){
                         entryMongo.pubkey = pubkeyInfo.pubkey
@@ -687,12 +687,14 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
                     saveActions.push({insertOne:entryMongo})
                     let result = await register_zpub(username,pubkeyInfo,context)
                     entryMongo.balances = result.balances
-                    output.work.push(result)
+                    allBalances.push(...result.balances);
+                    output.pubkeys.push(result)
                 } else if(pubkeyInfo.type === "address"){
                     entryMongo.pubkey = pubkeyInfo.pubkey
                     let result = await register_address(username,pubkeyInfo,context)
                     entryMongo.balances = result.balances
-                    output.work.push(result)
+                    allBalances.push(...result.balances);
+                    output.pubkeys.push(result)
                 } else {
                     log.error("Unhandled type: ",pubkeyInfo.type)
                 }
@@ -754,7 +756,12 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
             log.debug(tag," No new pubkeys! ")
         }
 
-
+        log.info(tag,"output: ",output)
+        if(allBalances.length === 0){
+            log.error(tag,"No balances found! allBalances: ",allBalances)
+            // throw Error("No balances found!")
+        }
+        output.balances = allBalances
 
         log.debug(tag," return object: ",output)
         return output
