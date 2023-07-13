@@ -673,9 +673,10 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
                         throw Error("102: Invalid xpub pubkey!")
                     }
                     saveActions.push({insertOne:entryMongo})
-                    let queueId = await register_xpub(username,pubkeyInfo,context)
-                    //add to Mutex array for async xpub register option
-                    output.work.push(queueId)
+                    let result = await register_xpub(username,pubkeyInfo,context)
+
+                    entryMongo.balances = result.balances
+                    output.work.push(result)
                 } else if(pubkeyInfo.type === "zpub" || pubkeyInfo.zpub){
                     if(pubkeyInfo.zpub){
                         entryMongo.pubkey = pubkeyInfo.pubkey
@@ -684,13 +685,14 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
                         throw Error("102: Invalid zpub pubkey!")
                     }
                     saveActions.push({insertOne:entryMongo})
-                    let queueId = await register_zpub(username,pubkeyInfo,context)
-                    //add to Mutex array for async xpub register option
-                    output.work.push(queueId)
+                    let result = await register_zpub(username,pubkeyInfo,context)
+                    entryMongo.balances = result.balances
+                    output.work.push(result)
                 } else if(pubkeyInfo.type === "address"){
                     entryMongo.pubkey = pubkeyInfo.pubkey
-                    let queueId = await register_address(username,pubkeyInfo,context)
-                    output.work.push(queueId)
+                    let result = await register_address(username,pubkeyInfo,context)
+                    entryMongo.balances = result.balances
+                    output.work.push(result)
                 } else {
                     log.error("Unhandled type: ",pubkeyInfo.type)
                 }
