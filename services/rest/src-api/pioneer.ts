@@ -326,8 +326,11 @@ let get_pubkey_balances = async function (pubkey: any) {
         }
         if (!pubkeyInfo.nfts) pubkeyInfo.nfts = [];
         log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
-        log.debug(tag, "pubkeyInfo.balances: ", pubkeyInfo.balances);
-        log.debug(tag, "nfts: ", pubkeyInfo.nfts);
+        log.info(tag, "pubkeyInfo.balances: ", pubkeyInfo.balances.length);
+        log.info(tag, "nfts: ", pubkeyInfo.nfts.length);
+
+        log.debug(tag, "balances: ", balances);
+        log.info(tag, "balances: ", balances.length);
 
         let saveActions = [];
         for (let i = 0; i < balances.length; i++) {
@@ -356,13 +359,13 @@ let get_pubkey_balances = async function (pubkey: any) {
                     },
                 });
             } else {
-                log.debug(tag, "balance not changed!");
+                log.info(tag, "balance not changed!");
             }
         }
 
         for (let i = 0; i < nfts.length; i++) {
             let nft = nfts[i];
-            log.debug(tag, "pubkeyInfo.nfts: ", pubkeyInfo.nfts);
+            log.info(tag, "pubkeyInfo.nfts: ", pubkeyInfo.nfts.length);
             let existingNft = pubkeyInfo.nfts.find((e: any) => e.name === nft.name);
 
             if (!existingNft) {
@@ -379,7 +382,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 
         if (saveActions.length > 0) {
             let updateSuccess = await pubkeysDB.bulkWrite(saveActions, { ordered: false });
-            log.debug(tag, "updateSuccess: ", updateSuccess);
+            log.info(tag, "updateSuccess: ", updateSuccess);
             output.dbUpdate = updateSuccess;
         }
 
@@ -389,7 +392,7 @@ let get_pubkey_balances = async function (pubkey: any) {
         output.pubkeys = [pubkeyInfo]
         output.balances = balances;
         output.nfts = nfts;
-
+        output.success = true;
         return output;
     } catch (e) {
         console.error(tag, "e: ", e);
@@ -716,12 +719,14 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
         if(!userInfo) throw Error("get_and_verify_pubkeys User not found!")
         log.debug(tag,"userInfo: ",userInfo)
         let blockchains = userInfo.blockchains
+        log.debug(tag,"userInfo: ",userInfo)
         if(!blockchains) blockchains = []
         //if(!userInfo.blockchains) throw Error("Invalid user!")
 
         //reformat
         let pubkeys:any = []
         let allBalances:any = []
+        let synced:any = []
         // let masters:any = {}
         for(let i = 0; i < userInfo.pubkeys.length; i++){
             let pubkeyInfo = userInfo.pubkeys[i]
@@ -732,13 +737,14 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
             if(!pubkeyInfo.balances || pubkeyInfo.balances.length === 0){
                 log.debug(tag,"no balances, getting balances...")
                 let balances = await get_pubkey_balances(pubkeyInfo)
+                if(balances.success) synced.push(pubkeyInfo.blockchain)
                 // log.debug(tag,"balances: ",balances)
                 log.debug(tag,"balances: ",balances)
-                log.debug(tag,"balances: ",balances.balances.length)
+                log.info(tag,"balances: ",balances.balances.length)
                 if(balances && balances.balances) {
                     pubkeyInfo.balances = balances.balances
                     allBalances = allBalances.concat(balances.balances)
-                    log.debug(tag,"allBalances: ",allBalances)
+                    log.info(tag,"allBalances: ",allBalances.length)
                 }
                 if(balances && balances.nfts) pubkeys.nfts = balances.nfts
             } else {
@@ -748,6 +754,17 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
             // if(!masters[pubkeyInfo.symbol] && pubkeyInfo.master)masters[pubkeyInfo.symbol] = pubkeyInfo.master
             pubkeyInfo.context = context
             pubkeys.push(pubkeyInfo)
+        }
+
+        //validate isSynced
+        let isSynced = false
+        for(let i = 0; i < blockchains.length; i++){
+            let blockchain = blockchains[i]
+            if(synced.indexOf(blockchain) === -1){
+                log.info(tag,"blockchain not synced: ",blockchain)
+                isSynced = false
+                break
+            }
         }
 
         return { pubkeys, balances: allBalances }

@@ -169,6 +169,7 @@ export class BanklessController extends Controller {
             // if(!body.signature) throw Error("invalid signed payload missing !")
             // if(!body.nonce) throw Error("invalid signed payload missing !")
 
+
             //get bankless auth info
             let banklessAuth = await redis.hgetall("bankless:auth:"+authorization)
             log.info(tag,"banklessAuth: ",banklessAuth)
@@ -182,6 +183,8 @@ export class BanklessController extends Controller {
                 tradePair: body.tradePair,
                 rate: body.rate,
                 pubkey:body.pubkey,
+                TOTAL_CASH:body.TOTAL_CASH,
+                TOTAL_DAI:body.TOTAL_DAI,
                 fact:"",
                 location:body.location
             }
@@ -222,13 +225,15 @@ export class BanklessController extends Controller {
             let location = body.location
             let terminalName = body.terminalName
             let rate = body.lastRate
+            let TOTAL_CASH = body.TOTAL_CASH
+            let TOTAL_DAI = body.TOTAL_DAI
 
-            publisher.publish('bankless', JSON.stringify({type:"rate",payload:{terminalName, rate}}))
+            publisher.publish('bankless', JSON.stringify({type:"rate",payload:{terminalName, rate, TOTAL_CASH, TOTAL_DAI}}))
 
 
             let terminalInfo = await terminalsDB.update(
                 { terminalName },
-                { $set: { location, rate } }
+                { $set: { location, rate, TOTAL_CASH, TOTAL_DAI } }
             );
 
 

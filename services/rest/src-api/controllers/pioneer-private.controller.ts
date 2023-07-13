@@ -464,32 +464,8 @@ export class pioneerPrivateController extends Controller {
                         let allNfts = [];
                         let { pubkeys, balances } = await pioneer.getPubkeys(username);
                         //let pubkeys = userInfoMongo.pubkeys
-                        log.debug(tag, "pubkeys: ", pubkeys);
-                        log.debug(tag, "balances: ", balances);
-
-                        // for (let i = 0; i < pubkeys.length; i++) {
-                        //     let pubkey = pubkeys[i];
-                        //     let balances = pubkey.balances || [];
-                        //     //if no pubkey balances
-                        //     if(balances.length === 0){
-                        //         log.debug("no balances found for pubkey: ", pubkey);
-                        //         let resultsSync = await pioneer.balances(pubkey);
-                        //         balances = resultsSync.balances;
-                        //     }
-                        //
-                        //     for (let j = 0; j < balances.length; j++) {
-                        //         let balance = balances[j];
-                        //         allBalances.push(balance);
-                        //     }
-                        //
-                        //     let nfts = pubkey.nfts || []
-                        //     for (let j = 0; j < nfts.length; j++) {
-                        //         let nft = nfts[j];
-                        //         allNfts.push(nft);
-                        //     }
-                        //
-                        //
-                        // }
+                        log.info(tag, "pubkeys: ", pubkeys.length);
+                        log.info(tag, "balances: ", balances.length);
 
                         userInfoMongo.balances = balances;
                         userInfoMongo.nfts = allNfts;
@@ -505,6 +481,8 @@ export class pioneerPrivateController extends Controller {
                             }
                             // Add other conditions for different nft names if needed
                         }
+
+                        //is synced
 
                         if (!userInfoMongo.balances) userInfoMongo.balances = [];
 
