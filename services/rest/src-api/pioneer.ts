@@ -345,7 +345,7 @@ let get_and_rescan_pubkeys = async function (username:string) {
     try {
         //get pubkeys from mongo with context tagged
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [username]}})
-        log.debug(tag,"pubkeysMongo: ",pubkeysMongo)
+        log.info(tag,"pubkeysMongo: ",pubkeysMongo.length)
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
@@ -401,7 +401,7 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
         //get pubkeys from mongo with context tagged
         if(!context) context = username
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [context]}})
-        log.info(tag,"pubkeysMongo: ",pubkeysMongo)
+        log.info(tag,"pubkeysMongo: ",pubkeysMongo.length)
 
         //get user info from mongo
         let userInfo = await usersDB.findOne({username})
@@ -413,6 +413,7 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
 
         //reformat
         let pubkeys:any = []
+        let allBalances = []
         // let masters:any = {}
         for(let i = 0; i < userInfo.pubkeys.length; i++){
             let pubkeyInfo = userInfo.pubkeys[i]
@@ -424,10 +425,13 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
                 log.info(tag,"no balances, getting balances...")
                 let balances = await get_pubkey_balances(pubkeyInfo.pubkey)
                 // log.info(tag,"balances: ",balances)
-                // log.info(tag,"balances: ",balances)
+                log.info(tag,"balances: ",balances)
                 log.info(tag,"balances: ",balances.length)
-                pubkeys.balances = balances.balances
-                pubkeys.nfts = balances.nfts
+                if(balances && balances.balances) {
+                    pubkeyInfo.balances = balances.balances
+                    allBalances = allBalances.concat(balances.balances)
+                }
+                if(balances && balances.nfts) pubkeys.nfts = balances.nfts
             } else {
                 log.info(tag,"balances already exist! count: ",pubkeyInfo.balances.length)
             }
@@ -437,25 +441,7 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
             pubkeys.push(pubkeyInfo)
         }
 
-        // //verify pubkey list match's blockchains enabled
-        // for(let i = 0; i < blockchains.length; i++){
-        //     let blockchain = blockchains[i]
-        //     let nativeAsset = getNativeAssetForBlockchain(blockchain)
-        //     if(!masters[nativeAsset]) {
-        //         log.error(tag,"blockchain: ",blockchain)
-        //         log.error(tag,"nativeAsset: ",nativeAsset)
-        //         log.error(tag,"masters: ",masters)
-        //         log.error(tag,"blockchains: ",blockchains)
-        //
-        //         //remove blockchain from supported
-        //         let pullResult = await usersDB.update({username},{$pull:{blockchains:blockchain}})
-        //         log.debug(tag,"pullResult: ",pullResult)
-        //
-        //         // throw Error(" Missing Master for supported blockchain! "+blockchain)
-        //     }
-        // }
-
-        return pubkeys
+        return { pubkeys, balances: allBalances }
     } catch (e) {
         console.error(tag, "e: ", e)
         throw e
