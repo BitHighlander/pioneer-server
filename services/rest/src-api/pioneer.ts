@@ -192,7 +192,9 @@ let get_pubkey_balances = async function (pubkey: any) {
                     if (cachedDataBlockbook) {
                         balance = JSON.parse(cachedDataBlockbook);
                     } else {
-                        balance = await blockbook.getBalanceByXpub(pubkey.symbol, pubkey.pubkey);
+                        log.info(tag,"symbol: ",pubkey.symbol)
+                        log.info(tag,"pubkey: ",pubkey.pubkey)
+                        balance = await blockbook.getAddressInfo(pubkey.symbol, pubkey.pubkey);
                         log.debug(tag, pubkey.username + " Balance (" + pubkey.symbol + "): ", balance);
                         await setInCache(cachedDataBlockbook, JSON.stringify(balance), 60 * 60 * 1);
                     }
