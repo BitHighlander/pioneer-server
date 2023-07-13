@@ -397,6 +397,7 @@ let get_and_rescan_pubkeys = async function (username:string) {
 let get_and_verify_pubkeys = async function (username:string, context?:string) {
     let tag = TAG + " | get_and_verify_pubkeys | "
     try {
+
         //get pubkeys from mongo with context tagged
         if(!context) context = username
         let pubkeysMongo = await pubkeysDB.find({tags:{ $all: [context]}})
@@ -413,8 +414,8 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
         //reformat
         let pubkeys:any = []
         // let masters:any = {}
-        for(let i = 0; i < pubkeysMongo.length; i++){
-            let pubkeyInfo = pubkeysMongo[i]
+        for(let i = 0; i < userInfo.pubkeys.length; i++){
+            let pubkeyInfo = userInfo.pubkeys[i]
             delete pubkeyInfo._id
             //TODO validate pubkeys?
 
