@@ -129,7 +129,7 @@ let get_pubkey_balances = async function (pubkey:any) {
         if(!pubkey.username) throw Error("102: invalid pubkey! missing username")
         if(!pubkey.pubkey) throw Error("103: invalid pubkey! missing pubkey")
         if(!pubkey.type) throw Error("105: invalid pubkey! missing type")
-        if(!pubkey.queueId) throw Error("106: invalid pubkey! missing queueId")
+        // if(!pubkey.queueId) throw Error("106: invalid pubkey! missing queueId")
         if(pubkey.type !== 'address' && pubkey.type !== 'xpub' && pubkey.type !== 'zpub' && pubkey.type !== 'contract') throw Error("Unknown type! "+pubkey.type)
         let balances:any = []
         let nfts:any = []
@@ -419,11 +419,11 @@ let get_and_verify_pubkeys = async function (username:string, context?:string) {
             let pubkeyInfo = userInfo.pubkeys[i]
             delete pubkeyInfo._id
             //TODO validate pubkeys?
-
+            pubkeyInfo.username = username
             //if no balances, get balances
             if(!pubkeyInfo.balances || pubkeyInfo.balances.length === 0){
                 log.info(tag,"no balances, getting balances...")
-                let balances = await get_pubkey_balances(pubkeyInfo.pubkey)
+                let balances = await get_pubkey_balances(pubkeyInfo)
                 // log.info(tag,"balances: ",balances)
                 log.info(tag,"balances: ",balances)
                 log.info(tag,"balances: ",balances.length)
@@ -534,10 +534,11 @@ let register_xpub = async function (username:string, pubkey:any, context:string)
         }
         log.debug(tag,"Creating work! ",work)
         queue.createWork("pioneer:pubkey:ingest",work)
-        let result = await get_pubkey_balances(work)
-        log.info(result)
+        let {pubkeys, balances} = await get_pubkey_balances(work)
+        log.info(tag, "pubkeys: ",pubkeys)
+        log.info(tag, "balances: ",balances)
 
-        return result
+        return {pubkeys, balances}
     } catch (e) {
         console.error(tag, "e: ", e)
         throw e
@@ -586,7 +587,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
         //generate addresses
         let output:any = {}
         output.work = []
-
+        output.pubkeys = []
         let allPubkeys = []
         let PubkeyMap = {}
         for (let i = 0; i < pubkeys.length; i++) {
@@ -662,7 +663,7 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
                     let result = await register_xpub(username,pubkeyInfo,context)
                     entryMongo.balances = result.balances
                     allBalances.push(...result.balances);
-                    output.pubkeys.push(result)
+                    output.pubkeys.push(...result.pubkeys)
                 } else if(pubkeyInfo.type === "zpub" || pubkeyInfo.zpub){
                     if(pubkeyInfo.zpub){
                         entryMongo.pubkey = pubkeyInfo.pubkey
@@ -674,13 +675,13 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
                     let result = await register_zpub(username,pubkeyInfo,context)
                     entryMongo.balances = result.balances
                     allBalances.push(...result.balances);
-                    output.pubkeys.push(result)
+                    output.pubkeys.push(...result.pubkeys)
                 } else if(pubkeyInfo.type === "address"){
                     entryMongo.pubkey = pubkeyInfo.pubkey
                     let result = await register_address(username,pubkeyInfo,context)
                     entryMongo.balances = result.balances
                     allBalances.push(...result.balances);
-                    output.pubkeys.push(result)
+                    output.pubkeys.push(...result.pubkeys)
                 } else {
                     log.error("Unhandled type: ",pubkeyInfo.type)
                 }
@@ -714,29 +715,6 @@ let update_pubkeys = async function (username:string, pubkeys:any, context:strin
                 }
             }
 
-            //save pubkeys in mongo
-
-            // if (BALANCE_ON_REGISTER) {
-            //     output.results = []
-            //     //verifies balances returned are final
-            //     log.debug(tag, " BALANCE VERIFY ON")
-            //     //let isDone
-            //     let isDone = false
-            //     while (!isDone) {
-            //         //block on
-            //         log.debug(tag, "output.work: ", output.work)
-            //         let promised = []
-            //         for (let i = 0; i < output.work.length; i++) {
-            //             let promise = redisQueue.blpop(output.work[i], 30)
-            //             promised.push(promise)
-            //         }
-            //
-            //         output.results = await Promise.all(promised)
-            //
-            //         isDone = true
-            //     }
-            // }
-
 
         } else {
             log.debug(tag," No new pubkeys! ")
@@ -762,10 +740,11 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
     try {
         log.debug(tag, "input: ", { username, pubkeys, context });
         let saveActions = [];
+        let allBalances = [];
         //generate addresses
         let output: any = {};
         output.work = [];
-
+        output.pubkeys = [];
         for (let i = 0; i < pubkeys.length; i++) {
             let pubkeyInfo = pubkeys[i];
             log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
@@ -808,10 +787,9 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
                 entryMongo.type = 'xpub';
                 entryMongo.master = pubkeyInfo.address;
                 entryMongo.address = pubkeyInfo.address;
-                let queueId = await register_xpub(username, pubkeyInfo, context);
-
-                //add to Mutex array for async xpub register option
-                output.work.push(queueId);
+                let result = await register_xpub(username, pubkeyInfo, context);
+                allBalances.push(...result.balances);
+                output.pubkeys.push(...result.pubkeys);
 
             } else if (pubkeyInfo.type === "zpub") {
                 let zpub = pubkeyInfo.pubkey;
@@ -822,19 +800,18 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
                 entryMongo.master = pubkeyInfo.address;
                 entryMongo.address = pubkeyInfo.address;
 
-                let queueId = await register_xpub(username, pubkeyInfo, context);
-
-                //add to Mutex array for async xpub register option
-                output.work.push(queueId);
+                let result = await register_xpub(username, pubkeyInfo, context);
+                allBalances.push(...result.balances);
+                output.pubkeys.push(...result.pubkeys);
 
             } else if (pubkeyInfo.type === "address") {
                 entryMongo.pubkey = pubkeyInfo.pubkey;
                 entryMongo.master = pubkeyInfo.pubkey;
                 entryMongo.type = pubkeyInfo.type;
                 entryMongo.address = pubkeyInfo.address;
-                let queueId = await register_address(username, pubkeyInfo, context);
-
-                output.work.push(queueId);
+                let result = await register_address(username, pubkeyInfo, context);
+                allBalances.push(...result.balances);
+                output.pubkeys.push(...result.pubkeys);
             } else {
                 log.error("Unhandled type: ", pubkeyInfo.type);
             }
@@ -869,47 +846,6 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
             }
 
         }
-
-        if (BALANCE_ON_REGISTER) {
-            output.results = [];
-            // verifies balances returned are final
-            log.debug(tag, "BALANCE VERIFY ON");
-            let isDone = false;
-
-            while (!isDone) {
-                // block on
-                log.info(tag, "output.work: ", output.work);
-                let promised = [];
-
-                for (let i = 0; i < output.work.length; i++) {
-                    let promise = Promise.race([
-                        redisQueue.blpop(output.work[i], 30),
-                        new Promise((resolve, reject) => {
-                            setTimeout(() => reject(new Error("Timeout")), 10000); // Timeout after 10 seconds
-                        })
-                    ]);
-                    promised.push(promise);
-                }
-
-                try {
-                    output.results = await Promise.all(promised);
-                    isDone = true;
-
-                    for (let i = 0; i < output.results.length; i++) {
-                        if (output.results[i] !== null) {
-                            isDone = false;
-                            break;
-                        }
-                    }
-                } catch (error) {
-                    // Handle the timeout error here
-                    // Set the failed jobs as failed in output.results
-                    output.results = output.work.map(() => "failed");
-                    isDone = true;
-                }
-            }
-        }
-
         log.debug(tag, "return object: ", output);
         return output;
     } catch (e) {
