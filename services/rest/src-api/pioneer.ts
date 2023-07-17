@@ -64,7 +64,7 @@ const networks:any = {
     'ANY' : require('@pioneer-platform/utxo-network'),
     'RUNE' : require('@pioneer-platform/thor-network'),
 }
-networks.ANY.init('full')
+// networks.ANY.init('full')
 networks.ETH.init()
 
 let {
@@ -168,6 +168,9 @@ let get_pubkey_balances = async function (pubkey: any) {
             balances.push({
                 network: pubkey.symbol,
                 asset: pubkey.symbol,
+                symbol: pubkey.symbol,
+                pubkey: pubkey.pubkey,
+                context: pubkey.context,
                 isToken: false,
                 lastUpdated: new Date().getTime(),
                 balance
@@ -186,25 +189,16 @@ let get_pubkey_balances = async function (pubkey: any) {
                         await setInCache(cacheKeyZapper, JSON.stringify(zapperInfo), 60 * 60 * 1);
                     }
 
-                    let cacheKeyBlockbook = `balances:blockbook:getBalanceByXpub:${pubkey.symbol}:${pubkey.pubkey}`;
-                    let cachedDataBlockbook = await getFromCache(cacheKeyBlockbook);
-                    let balance;
-                    if (cachedDataBlockbook) {
-                        balance = JSON.parse(cachedDataBlockbook);
-                    } else {
-                        log.info(tag,"symbol: ",pubkey.symbol)
-                        log.info(tag,"pubkey: ",pubkey.pubkey)
-                        balance = await blockbook.getAddressInfo(pubkey.symbol, pubkey.pubkey);
-                        log.debug(tag, pubkey.username + " Balance (" + pubkey.symbol + "): ", balance);
-                        await setInCache(cachedDataBlockbook, JSON.stringify(balance), 60 * 60 * 1);
-                    }
-
                     if (zapperInfo?.tokens?.length > 0) {
                         zapperInfo.tokens.forEach((token) => {
                             let balanceInfo = token.token;
                             balanceInfo.network = token.network;
-                            balanceInfo.asset = balanceInfo.symbol = token.token.symbol;
+                            balanceInfo.asset = token.token.symbol;
+                            balanceInfo.symbol = token.token.symbol
+                            balanceInfo.pubkey = pubkey.pubkey;
+                            balanceInfo.context = pubkey.context;
                             balanceInfo.contract = token.token.address;
+                            balanceInfo.source = 'zapper';
                             if (token.token.address !== '0x0000000000000000000000000000000000000000') {
                                 balanceInfo.isToken = true;
                                 balanceInfo.protocal = 'erc20';
@@ -243,6 +237,9 @@ let get_pubkey_balances = async function (pubkey: any) {
                             nfts.push({
                                 name: "Pioneer",
                                 description: "Pioneer",
+                                source: "pioneer",
+                                pubkey: pubkey.pubkey,
+                                context: pubkey.context,
                                 number: allPioneers.owners.indexOf(pubkey.pubkey.toLowerCase()),
                                 image: pioneerImage.image
                             });
@@ -270,6 +267,8 @@ let get_pubkey_balances = async function (pubkey: any) {
                                     symbol: tokenInfo.symbol,
                                     name: tokenInfo.name,
                                     contract: tokenInfo.contract,
+                                    pubkey: pubkey.pubkey,
+                                    context: pubkey.context,
                                     image: "https://pioneers.dev/coins/ethereum.png",
                                     isToken: true,
                                     protocal: 'erc20',
@@ -312,7 +311,7 @@ let get_pubkey_balances = async function (pubkey: any) {
                         isToken: false,
                         lastUpdated: new Date().getTime(), //TODO use block heights
                         balance: balanceNetwork,
-                        source: "network"
+                        source: "pioneer-network-"+pubkey.symbol
                     });
                     break;
             }

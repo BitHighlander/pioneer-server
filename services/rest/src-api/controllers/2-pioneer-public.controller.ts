@@ -52,7 +52,6 @@ if(process.env['FEATURE_BITCOIN_BLOCKCHAIN']){
     blockchains.push('bitcoin')
     //all utxo's share
     networks['ANY'] = require('@pioneer-platform/utxo-network')
-    networks['ANY'].init('full')
 }
 
 if(process.env['FEATURE_BITCOINCASH_BLOCKCHAIN']){
@@ -133,34 +132,20 @@ let {
     getExplorerTxUrl
 } = require('@pioneer-platform/pioneer-coins')
 
-const parseThorchainAssetString = function(input:string){
+
+let onStart = async function(){
+    let tag = TAG+" | onStart | "
     try{
-        let parts = input.split(".")
-        let network = parts[0]
-        let asset
-        let symbol
-        let contract
-        if(parts[1].indexOf("-") >= 0){
-            //is Token
-            let parts2 = parts[1].split("-")
-            contract = parts2[1]
-            asset = parts2[0]
-            symbol = parts2[0]
-        }else{
-            //is Native asset
-            asset = parts[0]
-            symbol = parts[0]
-        }
-        return {
-            asset,
-            symbol,
-            network,
-            contract
-        }
+        //get nodes
+        let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
+        log.info(tag,"unchainedNodes: ",unchainedNodes)
+        //init networks with gaurenteed live nodes
+        await networks['ANY'].init(unchainedNodes)
     }catch(e){
-        log.error(e)
+        console.error(e)
     }
 }
+onStart()
 
 //route
 @Tags('Public Endpoints')
@@ -657,6 +642,7 @@ export class atlasPublicController extends Controller {
                             }
 
                             if(UTXO_COINS.indexOf(output.network) >= 0){
+                                await networks['ANY'].init()
                                 txInfo = await networks['ANY'].getTransaction(output.network,txid)
                                 log.debug(tag,"UTXO txInfo: ",txInfo)
                             } else {
@@ -882,6 +868,7 @@ export class atlasPublicController extends Controller {
                 } else if(UTXO_COINS.indexOf(asset) >= 0){
                     log.info(tag,"UTXO_COINS path")
                     //get xpub/zpub
+                    await networks['ANY'].init()
                     output = await networks['ANY'].getBalanceByXpub(asset,pubkey)
                 } else {
                     if(!networks[asset]) {
@@ -926,6 +913,7 @@ export class atlasPublicController extends Controller {
             if(type) output.type = type
             //if UXTO coin = any
             if(UTXO_COINS.indexOf(network) >= 0){
+                await networks['ANY'].init()
                 output = await networks['ANY'].getTransaction(network,txid)
             } else {
                 if(!networks[network]) throw Error("102: coin not supported! coin: "+network)
@@ -955,16 +943,17 @@ export class atlasPublicController extends Controller {
 
     @Get('/getFeeInfo/{coin}')
     public async getFeeInfo(coin:string) {
-        let tag = TAG + " | getFee | "
+        let tag = TAG + " | getFeeInfo | "
         try{
             let output
             if(UTXO_COINS.indexOf(coin) >= 0){
                 //TODO supported assets
                 output = await networks['ANY'].getFee(coin)
-                log.debug("output:",output)
+                log.info("output:",output)
                 //else error
             }else{
                 output = await networks[coin].getFee(coin)
+                log.info("output:",output)
             }
 
             return(output)
@@ -1214,7 +1203,6 @@ export class atlasPublicController extends Controller {
             //TODO does this scale on large xpubs?
             log.debug(tag,"network: ",network)
             log.debug(tag,"xpub: ",xpub)
-            await networks.ANY.init()
             //log.debug("networks: ",networks)
             //log.debug("networks: ",networks.ANY)
             let inputs = await networks.ANY.utxosByXpub(network,xpub)
@@ -1719,6 +1707,7 @@ export class atlasPublicController extends Controller {
 
             if(UTXO_COINS.indexOf(body.network) >= 0){
                 //TODO supported assets
+                await networks['ANY'].init()
                 let resp = await networks['ANY'].getFeesWithRates(body.network,body.memo)
                 log.debug("resp:",resp)
                 //else error
@@ -1839,7 +1828,7 @@ export class atlasPublicController extends Controller {
 
             //broadcast
             if(!body.noBroadcast){
-                log.debug(tag,"broadcasting!")
+                log.info(tag,"broadcasting!")
                 let result
                 try{
                     if(network === 'EOS'){
@@ -1881,9 +1870,8 @@ export class atlasPublicController extends Controller {
                                 throw Error("Type not supported! "+body.type)
                         }
                     } else if(UTXO_COINS.indexOf(network) >= 0){
-                        log.debug(tag,"123 UXTO DETECTED!: ",network)
+                        log.info(tag,"UXTO DETECTED!: ",network)
                         //normal broadcast
-                        await networks.ANY.init('full')
                         try{
                             if(!body.serialized) throw Error("signature required!")
                             if(!body.network) throw Error("network required!")
@@ -1913,13 +1901,11 @@ export class atlasPublicController extends Controller {
                     } else {
                         log.info(tag,"normal broadcast! ")
                         //All over coins
-                        //normal broadcast
-                        await networks[network].init()
                         try{
                             log.info(tag,"body: ",body)
                             log.info(tag,"body.serialized: ",body.serialized)
                             log.info(tag,"network: ",network)
-
+                            network = COIN_MAP[network]
                             let result = await networks[network].broadcast(body.serialized)
                             log.info(tag,"BROADCASAT RESULT: ",result)
                             output.result = result

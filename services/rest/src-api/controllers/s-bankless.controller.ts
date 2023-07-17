@@ -37,6 +37,7 @@ let dappsDB = connection.get('apps')
 let nodesDB = connection.get('nodes')
 let terminalsDB = connection.get('terminals')
 let banklessTxDB = connection.get('bankless-transactions')
+let sessionsDB = connection.get('bankless-sessions')
 terminalsDB.createIndex({terminalId: 1}, {unique: true})
 blockchainsDB.createIndex({blockchain: 1}, {unique: true})
 // blockchainsDB.createIndex({chainId: 1}, {unique: true})
@@ -132,8 +133,8 @@ export class BanklessController extends Controller {
             let accountInfo = await redis.hgetall(authorization)
             let banklessAuth = await redis.hgetall("bankless:auth:"+authorization)
             log.info(tag,"banklessAuth: ",banklessAuth)
-            let username = accountInfo.username
-            if(!username) throw Error("unknown token! token: "+authorization)
+            // let username = accountInfo.username
+            // if(!username) throw Error("unknown token! token: "+authorization)
             log.info(tag,"accountInfo: ",accountInfo)
 
             //if valid give terminal history
@@ -168,11 +169,12 @@ export class BanklessController extends Controller {
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
             // if(!body.nonce) throw Error("invalid signed payload missing !")
-
+            let output:any = {}
 
             //get bankless auth info
             let banklessAuth = await redis.hgetall("bankless:auth:"+authorization)
             log.info(tag,"banklessAuth: ",banklessAuth)
+
 
             if(Object.keys(banklessAuth).length === 0) {
                 //new terminal
@@ -190,12 +192,25 @@ export class BanklessController extends Controller {
             }
             let saveDb = await terminalsDB.insert(entry)
             log.info(tag,"saveDb: ",saveDb)
+            output.success = true
+            output.saveDb = saveDb
+            //start session
+            let session = {
+                terminalName:entry.terminalName,
+                location,
+                rate:entry.rate,
+                TOTAL_CASH:entry.TOTAL_CASH,
+                TOTAL_DAI:entry.TOTAL_DAI,
+                start: new Date(),
+                sessionId: "session:"+uuidv4()
+            }
+            sessionsDB.insert(session)
+            output.sessionId = session.sessionId
 
-            //register location
+            //txs history
 
-            //current rate
 
-            return(true);
+            return(output);
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -236,8 +251,22 @@ export class BanklessController extends Controller {
                 { $set: { location, rate, TOTAL_CASH, TOTAL_DAI } }
             );
 
+            //start session
+            let session = {
+                terminalName,
+                location,
+                rate,
+                TOTAL_CASH,
+                TOTAL_DAI,
+                start: new Date(),
+                sessionId: "session:"+uuidv4()
+            }
+            sessionsDB.insert(session)
+            terminalInfo.sessionId = session.sessionId
 
-
+            //get public tx history
+            let txHistory = await banklessTxDB.find({terminalName})
+            terminalInfo.txHistory = txHistory
             return(terminalInfo);
         }catch(e){
             let errorResp:Error = {
@@ -265,6 +294,7 @@ export class BanklessController extends Controller {
 
             //must be lp add or remove
             if(!body.type) throw Error("invalid type!")
+            if(!body.address) throw Error("invalid required address!")
             if(!body.terminalName) throw Error("invalid type!")
 
             //create an actionId

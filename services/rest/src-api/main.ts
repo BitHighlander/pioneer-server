@@ -44,7 +44,9 @@ const rateLimiterRedis = new RateLimiterRedis({
     points: RATE_LIMIT_RPM, // Number of points
     duration: 1, // Per second
 });
-
+let PIONEER_SPEC = process.env['PIONEER_SPEC'] || 'http://127.0.0.1:9001/spec/swagger.json'
+log.info("PIONEER_SPEC",PIONEER_SPEC)
+process.env['PIONEER_SPEC'] = PIONEER_SPEC
 // const loggerDogMiddleWare = async (req, res, next) => {
 //     try{
 //         //
@@ -106,7 +108,6 @@ const rateLimiterRedis = new RateLimiterRedis({
 let corsOptions = {
     origin: '*',
 }
-
 
 app.use(cors(corsOptions))
 // app.use(loggerDogMiddleWare);

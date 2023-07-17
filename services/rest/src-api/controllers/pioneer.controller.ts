@@ -87,7 +87,7 @@ export class pioneerController extends Controller {
     ): Promise<any> {
         const tag = TAG + ' | smartInsight | ';
         try {
-            log.debug(tag, 'tx: ', body);
+            log.info(tag, 'tx: ', body);
             if (!body.to) throw new Error('to is required!');
             if (!body.from) throw new Error('from is required!');
             if (!body.data) throw new Error('data is required!');
@@ -96,10 +96,12 @@ export class pioneerController extends Controller {
             const chainId = parseInt(body.chainId, 10) || 1;
             const sort = { ping: -1 };
             const entry = await nodesDB.findOne({ chainId }, { sort });
+            if(!entry) throw new Error('no node found for chainId: ' + chainId)
+            log.info(tag, 'entry: ', entry);
             // get node for chainId
             const service = entry.service;
-            log.debug(tag, 'entry: ', entry);
-            log.debug(tag, 'service: ', service);
+            log.info(tag, 'entry: ', entry);
+            log.info(tag, 'service: ', service);
 
             const provider = new ethers.providers.JsonRpcProvider(service);
 
@@ -150,7 +152,7 @@ export class pioneerController extends Controller {
             if (!isNaN(gasLimitCalculated) && !isNaN(bodyGasLimitDecimal)) {
                 if (gasLimitCalculated > bodyGasLimitDecimal) {
                     log.info("calculated gas limit is larger!");
-                    recommended["gasLimit"] = "0x"+gasLimitCalculated.toString(16);;
+                    recommended["gasLimit"] = "0x"+gasLimitCalculated.toString(16);
                 } else {
                     log.info("original gas limit is larger!");
                     log.info("Original: ", body.gasLimit);
@@ -158,7 +160,7 @@ export class pioneerController extends Controller {
                 }
             } else if (!isNaN(gasLimitCalculated)) {
                 log.info("original gas limit is not a number! Using calculated gas limit.");
-                recommended["gasLimit"] = "0x"+gasLimitCalculated.toString(16);;
+                recommended["gasLimit"] = "0x"+gasLimitCalculated.toString(16);
             } else if (!isNaN(bodyGasLimitDecimal)) {
                 log.info("calculated gas limit is not a number! Using original gas limit.");
                 recommended["gasLimit"] = body.gasLimit;
@@ -269,7 +271,7 @@ export class pioneerController extends Controller {
     * */
     @Post('pioneer/evm/tx/simulate')
     public async simulation(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
-        let tag = TAG + " | smartInsight | "
+        let tag = TAG + " | simulation | "
         try{
             log.info(tag,"mempool tx: ",body)
             if(!body.to) throw Error("to is required!")

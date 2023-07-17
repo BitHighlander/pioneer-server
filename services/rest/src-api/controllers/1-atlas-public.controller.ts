@@ -1162,6 +1162,25 @@ export class pioneerPublicController extends Controller {
         }
     }
 
+    @Get('/atlas/search/nodes/byType/{type}')
+    public async searchNodesByType(type:string) {
+        let tag = TAG + " | searchNodesByType | "
+        try{
+            //Get tracked networks
+            //any node with this type in tags
+            let nodes = await nodesDB.find({ tags: { $in: [type] } },{limit:100})
+
+            return nodes
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 
     /*
      * ATLAS
@@ -1375,11 +1394,12 @@ export class pioneerPublicController extends Controller {
             if(!body.signer) throw Error("signer is required!")
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("payload is required!")
+            if(!body.blockchain) throw Error("blockchain is required!")
             if(!body.caip) throw Error("caip is required!")
             let asset:any = {
                 name:body.name.toLowerCase(),
                 type:body.type,
-                caip:body.caip,
+                caip:body.caip.toLowerCase(),
                 tags:body.tags,
                 blockchain:body.blockchain.toLowerCase(),
                 symbol:body.symbol,
@@ -1519,7 +1539,7 @@ export class pioneerPublicController extends Controller {
         let tag = TAG + " | chartNode | "
         try{
             log.debug(tag,"mempool tx: ",body)
-            if(body.type !== 'EVM') throw Error("Network Type Not Supported!")
+            //if(body.type !== 'EVM') throw Error("Network Type Not Supported!")
             if(!body.name) throw Error("Name is required!")
             if(!body.type) throw Error("type is required!")
             if(!body.tags) throw Error("tags is required!")
@@ -1529,10 +1549,12 @@ export class pioneerPublicController extends Controller {
             if(!body.signer) throw Error("signer address is required!")
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("signature is required!")
+            if(!body.caip) throw Error("caip is required!")
             let evmNetwork:any = {
                 name:body.name,
                 type:body.type,
                 tags:body.tags,
+                caip:body.caip,
                 image:body.image,
                 blockchain:body.name.toLowerCase(),
                 symbol:body.chain.toUpperCase(),
@@ -1547,6 +1569,7 @@ export class pioneerPublicController extends Controller {
                     }
                 ]
             }
+            if(body.swagger) evmNetwork.swagger = body.swagger
             if(body.infoURL) evmNetwork.infoURL = body.infoURL
             if(body.shortName) evmNetwork.shortName = body.shortName
             if(body.nativeCurrency) evmNetwork.nativeCurrency = body.nativeCurrency
@@ -1758,8 +1781,9 @@ export class pioneerPublicController extends Controller {
     @Post('/asset/update')
     //CreateAppBody
     public async updateAsset(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
-        let tag = TAG + " | updateApp | "
+        let tag = TAG + " | updateAsset | "
         try{
+            let output:any = {}
             log.debug(tag,"body: ",body)
             log.debug(tag,"body: ",body)
             log.debug(tag,"authorization: ",authorization)
@@ -1782,28 +1806,50 @@ export class pioneerPublicController extends Controller {
             let resultWhitelist:any = {}
 
             //get entry for name
-            let entry = await assetsDB.findOne({name:message.name})
+            let entryMongo = await assetsDB.findOne({name:message.name})
 
-            if(addressFromSig === ADMIN_PUBLIC_ADDRESS) {
-                delete message["_id"]
-                resultWhitelist = await assetsDB.update({name:message.name},{$set:{[message.key]:message.value}})
-                log.debug(tag,"resultWhitelist: ",resultWhitelist)
-            } else if(addressFromSig === entry.developer){
-                resultWhitelist = await assetsDB.update({name:message.name},{$set:{[message.key]:message.value}})
-                log.debug(tag,"resultWhitelist: ",resultWhitelist)
+            let allPioneers = await networkEth.getAllPioneers()
+            let pioneers = allPioneers.owners
+            log.info(tag,"pioneers: ",pioneers)
+            for(let i=0;i<pioneers.length;i++){
+                pioneers[i] = pioneers[i].toLowerCase()
+            }
+            if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
+                //update the Asset
+                if(message.key === "name"){
+                    //add old name to aliases
+                    let aliases = entryMongo.aliases || []
+                    aliases.push(entryMongo.name)
+                    aliases.push(message.value)
+
+                    //update aliases
+                    let saveAliasesResult = await assetsDB.update({ name: message.name }, { $set: { aliases } })
+                    log.info("saveAliasesResult: ",saveAliasesResult)
+                    output.saveAliasesResult = saveAliasesResult
+                }
+                //TODO tags, if tag, simply add to array
+                if(message.key === "tag"){
+                    //add old name to aliases
+                    let tags = entryMongo.tags || []
+                    tags.push(message.value)
+                    //update aliases
+                    let saveAliasesResult = await assetsDB.update({ name: message.name }, { $set: { tags } })
+                    log.info("saveAliasesResult: ",saveAliasesResult)
+                    output.saveAliasesResult = saveAliasesResult
+                } else {
+                    //TODO this is kinda not readable, but it works
+                    //Everything that is NOT a tag update in mongo
+                    let saveNamesResult = await assetsDB.update({ name: message.name }, { $set: { [message.key]: message.value } })
+                    log.info("saveNamesResult: ",saveNamesResult)
+                    output.saveNamesResult = saveNamesResult
+                }
             } else {
-                //get fox balance of address
-                let work:any = {}
-                let queueId = uuid.generate()
-                work.queueId = queueId
-                work.payload = body
-                resultWhitelist.success = true
-                resultWhitelist.message = 'Address '+addressFromSig+' voted to update app '+message.name+' in the dapp store!'
-                resultWhitelist.result = await queue.createWork("pioneer:facts:ingest",work)
+                output.error = "user is not a pioneer!"
+                output.success = false
             }
 
 
-            return(resultWhitelist);
+            return(output);
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -1816,8 +1862,8 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
-update
-*/
+    update
+    */
     @Post('/asset/delete')
     //CreateAppBody
     public async deleteAsset(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {

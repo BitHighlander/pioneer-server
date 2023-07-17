@@ -23,7 +23,10 @@ const pubkeysDB = connection.get('pubkeys')
 const txsDB = connection.get('transactions')
 const utxosDB = connection.get('utxo')
 const redemptionsDB = connection.get('redemptions')
-const util = require('util')
+const assetsDB = connection.get('assets')
+const blockchainsDB = connection.get('blockchains')
+let dappsDB = connection.get('apps')
+let nodesDB = connection.get('nodes')
 
 const invocationsDB = connection.get('invocations')
 usersDB.createIndex({id: 1}, {unique: true})
@@ -62,7 +65,7 @@ if(process.env['FEATURE_BITCOIN_BLOCKCHAIN']){
     blockchains.push('bitcoin')
     //all utxo's share
     networks['ANY'] = require('@pioneer-platform/utxo-network')
-    networks['ANY'].init('full')
+    // networks['ANY'].init('full')
 }
 
 if(process.env['FEATURE_BITCOINCASH_BLOCKCHAIN']){
@@ -129,6 +132,20 @@ interface Pubkey {
     type: string;
     address: string;
 }
+
+let onStart = async function(){
+    let tag = TAG+" | onStart | "
+    try{
+        //get nodes
+        let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
+        log.info(tag,"unchainedNodes: ",unchainedNodes)
+        //init networks with gaurenteed live nodes
+        networks['ANY'].init(unchainedNodes)
+    }catch(e){
+        console.error(e)
+    }
+}
+onStart()
 
 //route
 @Tags('Private Endpoints')
@@ -362,6 +379,11 @@ export class pioneerPrivateController extends Controller {
 
             if (!userInfoFinal.balances) userInfoFinal.balances = [];
 
+            //if no context, set to wallet0
+            if (!userInfoFinal.context) {
+                userInfoFinal.context = userInfoFinal.wallets[0]
+            }
+
             return userInfoFinal;
         } catch (e) {
             throw new ApiError("error", 503, "error: " + e.toString());
@@ -485,7 +507,10 @@ export class pioneerPrivateController extends Controller {
                         //is synced
 
                         if (!userInfoMongo.balances) userInfoMongo.balances = [];
-
+                        //if no context, set to wallet0
+                        if (!userInfoMongo.context) {
+                            userInfoMongo.context = userInfoMongo.wallets[0]
+                        }
 
                         return userInfoMongo
                     }
