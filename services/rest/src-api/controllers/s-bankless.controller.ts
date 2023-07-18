@@ -105,12 +105,26 @@ export class BanklessController extends Controller {
     }
 
     //global Info
-    @Get('/bankless/terminal/public')
-    public async terminalListing(@Header('Authorization') authorization: string) {
+    @Get('/bankless/terminal/{terminalName}')
+    public async terminalListing(terminalName: string) {
         let tag = TAG + " | terminalListing | "
         try{
 
-            return true
+            log.info(tag,"terminalName: ",terminalName)
+            let output:any = {}
+            // let username = accountInfo.username
+            // if(!username) throw Error("unknown token! token: "+authorization)
+
+            //if valid give terminal history
+            let terminalInfo = await terminalsDB.findOne({terminalName})
+            log.info(tag,"terminalInfo: ",terminalInfo)
+            output.terminalInfo = terminalInfo
+
+            //get last txs
+
+            //get cap table
+
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -140,12 +154,17 @@ export class BanklessController extends Controller {
             //if valid give terminal history
             let terminalInfo = await terminalsDB.findOne({terminalName})
             log.info(tag,"terminalInfo: ",terminalInfo)
+            output.terminalInfo = terminalInfo
+
             //get last txs
 
             //get cap table
 
+            //get sessions:
+            let sessions = await sessionsDB.find({terminalName})
+            output.sessions = sessions
 
-            return terminalInfo
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -168,7 +187,14 @@ export class BanklessController extends Controller {
             // if(!body.signer) throw Error("invalid signed payload missing signer!")
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
-            // if(!body.nonce) throw Error("invalid signed payload missing !")
+            if(!body.terminalName) throw Error("invalid terminalName missing !")
+            if(!body.rate) throw Error("invalid rate missing !")
+            if(!body.pubkey) throw Error("invalid pubkey missing !")
+            if(!body.TOTAL_CASH) throw Error("invalid TOTAL_CASH missing !")
+            if(!body.TOTAL_DAI) throw Error("invalid TOTAL_DAI missing !")
+            if(!body.location) throw Error("invalid location missing !")
+            if(!body.captable) throw Error("invalid captable missing !")
+
             let output:any = {}
 
             //get bankless auth info
@@ -187,6 +213,7 @@ export class BanklessController extends Controller {
                 pubkey:body.pubkey,
                 TOTAL_CASH:body.TOTAL_CASH,
                 TOTAL_DAI:body.TOTAL_DAI,
+                captable:body.captable,
                 fact:"",
                 location:body.location
             }
@@ -197,12 +224,14 @@ export class BanklessController extends Controller {
             //start session
             let session = {
                 terminalName:entry.terminalName,
-                location,
+                type:"onStart",
+                action:"start device",
+                sessionId:body.sessionId,
+                location:body.location,
                 rate:entry.rate,
                 TOTAL_CASH:entry.TOTAL_CASH,
                 TOTAL_DAI:entry.TOTAL_DAI,
-                start: new Date(),
-                sessionId: "session:"+uuidv4()
+                start: new Date()
             }
             sessionsDB.insert(session)
             output.sessionId = session.sessionId
@@ -211,6 +240,40 @@ export class BanklessController extends Controller {
 
 
             return(output);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Post('/bankless/terminal/captable/update')
+    //CreateAppBody
+    public async updateTerminalCaptable(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | updateTerminalCaptable | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            // if(!body.signer) throw Error("invalid signed payload missing signer!")
+            // if(!body.payload) throw Error("invalid signed payload missing payload!")
+            // if(!body.signature) throw Error("invalid signed payload missing !")
+            // if(!body.nonce) throw Error("invalid signed payload missing !")
+            //@TODO update auth
+            //must be lp add or remove
+            //must be terminal add or remove
+            let captable = body.captable
+            let terminalName = body.terminalName
+
+            let terminalInfo = await terminalsDB.update(
+                { terminalName },
+                { $set: { captable } }
+            );
+
+            return(terminalInfo);
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -234,9 +297,18 @@ export class BanklessController extends Controller {
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
             // if(!body.nonce) throw Error("invalid signed payload missing !")
+            if(!body.terminalName) throw Error("invalid terminalName missing !")
+            if(!body.rate) throw Error("invalid rate missing !")
+            if(!body.pubkey) throw Error("invalid pubkey missing !")
+            if(!body.TOTAL_CASH) throw Error("invalid TOTAL_CASH missing !")
+            if(!body.TOTAL_DAI) throw Error("invalid TOTAL_DAI missing !")
+            if(!body.location) throw Error("invalid location missing !")
+            if(!body.captable) throw Error("invalid captable missing !")
+
             //@TODO update auth
             //must be lp add or remove
             //must be terminal add or remove
+            let captable = body.captable
             let location = body.location
             let terminalName = body.terminalName
             let rate = body.lastRate
@@ -245,29 +317,71 @@ export class BanklessController extends Controller {
 
             publisher.publish('bankless', JSON.stringify({type:"rate",payload:{terminalName, rate, TOTAL_CASH, TOTAL_DAI}}))
 
-
             let terminalInfo = await terminalsDB.update(
                 { terminalName },
-                { $set: { location, rate, TOTAL_CASH, TOTAL_DAI } }
+                { $set: { location, rate, TOTAL_CASH, TOTAL_DAI, captable } }
             );
 
             //start session
-            let session = {
-                terminalName,
-                location,
-                rate,
-                TOTAL_CASH,
-                TOTAL_DAI,
-                start: new Date(),
-                sessionId: "session:"+uuidv4()
-            }
-            sessionsDB.insert(session)
-            terminalInfo.sessionId = session.sessionId
+            // let session = {
+            //     terminalName,
+            //     location,
+            //     rate,
+            //     TOTAL_CASH,
+            //     TOTAL_DAI,
+            //     start: new Date(),
+            //     sessionId: "session:"+uuidv4()
+            // }
+            // sessionsDB.insert(session)
+            // terminalInfo.sessionId = session.sessionId
 
             //get public tx history
             let txHistory = await banklessTxDB.find({terminalName})
             terminalInfo.txHistory = txHistory
             return(terminalInfo);
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    //startSession
+    @Post('/bankless/terminal/event')
+    //CreateAppBody
+    public async pushEvent(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
+        let tag = TAG + " | pushEvent | "
+        try{
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
+            // if(!body.signer) throw Error("invalid signed payload missing signer!")
+            // if(!body.payload) throw Error("invalid signed payload missing payload!")
+            // if(!body.signature) throw Error("invalid signed payload missing !")
+            // if(!body.nonce) throw Error("invalid signed payload missing !")
+
+            //must be lp add or remove
+            if(!body.type) throw Error("invalid type!")
+            if(!body.event) throw Error("invalid event!")
+            if(!body.terminalName) throw Error("invalid type!")
+
+            let session = {
+                terminalName:body.terminalName,
+                type:body.type,
+                event:body.event,
+                sessionId:body.sessionId,
+                location:body.location,
+                rate:body.rate,
+                TOTAL_CASH:body.TOTAL_CASH,
+                TOTAL_DAI:body.TOTAL_DAI,
+            }
+            let result = await sessionsDB.insert(session)
+
+            log.info(tag,"result: ",result)
+            return(result);
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -295,7 +409,7 @@ export class BanklessController extends Controller {
             //must be lp add or remove
             if(!body.type) throw Error("invalid type!")
             if(!body.address) throw Error("invalid required address!")
-            if(!body.terminalName) throw Error("invalid type!")
+            if(!body.terminalName) throw Error("invalid required terminalName!")
 
             //create an actionId
             let actionId = "action:"+uuidv4()
