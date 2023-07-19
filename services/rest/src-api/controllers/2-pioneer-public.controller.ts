@@ -642,7 +642,6 @@ export class atlasPublicController extends Controller {
                             }
 
                             if(UTXO_COINS.indexOf(output.network) >= 0){
-                                await networks['ANY'].init()
                                 txInfo = await networks['ANY'].getTransaction(output.network,txid)
                                 log.debug(tag,"UTXO txInfo: ",txInfo)
                             } else {
@@ -868,7 +867,6 @@ export class atlasPublicController extends Controller {
                 } else if(UTXO_COINS.indexOf(asset) >= 0){
                     log.info(tag,"UTXO_COINS path")
                     //get xpub/zpub
-                    await networks['ANY'].init()
                     output = await networks['ANY'].getBalanceByXpub(asset,pubkey)
                 } else {
                     if(!networks[asset]) {
@@ -913,7 +911,6 @@ export class atlasPublicController extends Controller {
             if(type) output.type = type
             //if UXTO coin = any
             if(UTXO_COINS.indexOf(network) >= 0){
-                await networks['ANY'].init()
                 output = await networks['ANY'].getTransaction(network,txid)
             } else {
                 if(!networks[network]) throw Error("102: coin not supported! coin: "+network)
@@ -1043,7 +1040,6 @@ export class atlasPublicController extends Controller {
         try{
             log.debug(tag,"network: ",network)
             log.debug(tag,"xpub: ",xpub)
-            await networks.ANY.init()
             //log.debug("networks: ",networks)
             //log.debug("networks: ",networks.ANY)
             let data = await networks.ANY.getPubkeyInfo(network,xpub)
@@ -1142,7 +1138,6 @@ export class atlasPublicController extends Controller {
 
             log.debug(tag,"network: ",network)
             log.debug(tag,"xpub: ",xpub)
-            await networks.ANY.init()
             //log.debug("networks: ",networks)
             //log.debug("networks: ",networks.ANY)
             let data = await networks.ANY.getPubkeyInfo(network,xpub)
