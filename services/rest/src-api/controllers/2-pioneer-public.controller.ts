@@ -1284,11 +1284,6 @@ export class atlasPublicController extends Controller {
         let tag = TAG + " | getBalance | "
         try{
             let output:any = []
-            //TODO if UTXO coin else error
-            //TODO does this scale on large xpubs?
-            log.debug(tag,"network: ",network)
-            log.debug(tag,"xpub: ",xpub)
-            await networks.ANY.init()
             //log.debug("networks: ",networks)
             //log.debug("networks: ",networks.ANY)
             let balances = await networks.ANY.getBalanceByXpub(network,xpub)
