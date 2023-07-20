@@ -304,19 +304,19 @@ export class pioneerPrivateController extends Controller {
             let allNfts = [];
 
             // Validate pubkeys are in pubkeys
-            let missingPubkeys = body.data.pubkeys.flat().filter(pubkey =>
-                !userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey)
-            );
-
-            if (missingPubkeys.length > 0) {
-                missingPubkeys.forEach(pubkey => console.log("Pubkey not found:", pubkey.pubkey));
-                for(let i = 0; i < missingPubkeys.length; i++){
-                    let pubkey = missingPubkeys[i]
-                    let resultRegister = await pioneer.register(username, [pubkey], body.context)
-                    allBalances = resultRegister.balances
-                    allNfts = resultRegister.nfts || []
-                }
-            }
+            // let missingPubkeys = body.data.pubkeys.flat().filter(pubkey =>
+            //     !userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey)
+            // );
+            //
+            // if (missingPubkeys.length > 0) {
+            //     missingPubkeys.forEach(pubkey => console.log("Pubkey not found:", pubkey.pubkey));
+            //     for(let i = 0; i < missingPubkeys.length; i++){
+            //         let pubkey = missingPubkeys[i]
+            //         let resultRegister = await pioneer.register(username, [pubkey], body.context)
+            //         allBalances = resultRegister.balances
+            //         allNfts = resultRegister.nfts || []
+            //     }
+            // }
 
             //add raw pubkeys to mongo
             if(pubkeysRegistering.length > 0){
@@ -406,6 +406,7 @@ export class pioneerPrivateController extends Controller {
 
             return userInfoFinal;
         } catch (e) {
+            log.error(tag,"Error: ", e);
             throw new ApiError("error", 503, "error: " + e.toString());
         }
     }
