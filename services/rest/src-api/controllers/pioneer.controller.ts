@@ -175,7 +175,9 @@ export class pioneerController extends Controller {
                 recommended["maxPriorityFeePerGas"] = getFeeData.maxPriorityFeePerGas.toHexString();
                 recommended["maxFeePerGas"] = getFeeData.maxFeePerGas.toHexString();
 
-                if(recommended["maxFeePerGas"] > recommended["maxPriorityFeePerGas"]) throw Error("maxFeePerGas is greater than maxPriorityFeePerGas")
+                if(recommended["maxFeePerGas"] > recommended["maxPriorityFeePerGas"]){
+                    recommended["maxPriorityFeePerGas"] = recommended["maxFeePerGas"];
+                }
                 if(recommended["maxFeePerGas"] === '0x0' || parseInt(recommended["maxFeePerGas"]) === 0) throw Error("Invalid! maxFeePerGas is 0x0");
                 if(recommended["maxPriorityFeePerGas"] === '0x0' || parseInt(recommended["maxPriorityFeePerGas"]) === 0) throw Error("Invalid! maxFeePerGas is 0x0");
 

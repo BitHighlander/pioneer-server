@@ -110,14 +110,14 @@ export class BanklessController extends Controller {
         let tag = TAG + " | terminalListing | "
         try{
 
-            log.info(tag,"terminalName: ",terminalName)
+            log.debug(tag,"terminalName: ",terminalName)
             let output:any = {}
             // let username = accountInfo.username
             // if(!username) throw Error("unknown token! token: "+authorization)
 
             //if valid give terminal history
             let terminalInfo = await terminalsDB.findOne({terminalName})
-            log.info(tag,"terminalInfo: ",terminalInfo)
+            log.debug(tag,"terminalInfo: ",terminalInfo)
             output.terminalInfo = terminalInfo
 
             //get last txs
@@ -141,19 +141,19 @@ export class BanklessController extends Controller {
     public async terminalPrivate(@Header('Authorization') authorization: string, terminalName: string) {
         let tag = TAG + " | terminalPrivate | "
         try{
-            log.info(tag,"queryKey: ",authorization)
-            log.info(tag,"terminalName: ",terminalName)
+            log.debug(tag,"queryKey: ",authorization)
+            log.debug(tag,"terminalName: ",terminalName)
             let output:any = {}
             let accountInfo = await redis.hgetall(authorization)
             let banklessAuth = await redis.hgetall("bankless:auth:"+authorization)
-            log.info(tag,"banklessAuth: ",banklessAuth)
+            log.debug(tag,"banklessAuth: ",banklessAuth)
             // let username = accountInfo.username
             // if(!username) throw Error("unknown token! token: "+authorization)
-            log.info(tag,"accountInfo: ",accountInfo)
+            log.debug(tag,"accountInfo: ",accountInfo)
 
             //if valid give terminal history
             let terminalInfo = await terminalsDB.findOne({terminalName})
-            log.info(tag,"terminalInfo: ",terminalInfo)
+            log.debug(tag,"terminalInfo: ",terminalInfo)
             output.terminalInfo = terminalInfo
 
             //get last txs
@@ -182,8 +182,8 @@ export class BanklessController extends Controller {
     public async submitTerminal(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | submitTerminal | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             // if(!body.signer) throw Error("invalid signed payload missing signer!")
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
@@ -199,7 +199,7 @@ export class BanklessController extends Controller {
 
             //get bankless auth info
             let banklessAuth = await redis.hgetall("bankless:auth:"+authorization)
-            log.info(tag,"banklessAuth: ",banklessAuth)
+            log.debug(tag,"banklessAuth: ",banklessAuth)
 
 
             if(Object.keys(banklessAuth).length === 0) {
@@ -218,7 +218,7 @@ export class BanklessController extends Controller {
                 location:body.location
             }
             let saveDb = await terminalsDB.insert(entry)
-            log.info(tag,"saveDb: ",saveDb)
+            log.debug(tag,"saveDb: ",saveDb)
             output.success = true
             output.saveDb = saveDb
             //start session
@@ -256,8 +256,8 @@ export class BanklessController extends Controller {
     public async updateTerminalCaptable(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | updateTerminalCaptable | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             // if(!body.signer) throw Error("invalid signed payload missing signer!")
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
@@ -291,8 +291,8 @@ export class BanklessController extends Controller {
     public async updateTerminal(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | updateTerminal | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             // if(!body.signer) throw Error("invalid signed payload missing signer!")
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
@@ -356,8 +356,8 @@ export class BanklessController extends Controller {
     public async pushEvent(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | pushEvent | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             // if(!body.signer) throw Error("invalid signed payload missing signer!")
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
@@ -380,7 +380,7 @@ export class BanklessController extends Controller {
             }
             let result = await sessionsDB.insert(session)
 
-            log.info(tag,"result: ",result)
+            log.debug(tag,"result: ",result)
             return(result);
         }catch(e){
             let errorResp:Error = {
@@ -399,8 +399,8 @@ export class BanklessController extends Controller {
     public async startSession(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | startSession | "
         try{
-            log.info(tag,"body: ",body)
-            log.info(tag,"authorization: ",authorization)
+            log.debug(tag,"body: ",body)
+            log.debug(tag,"authorization: ",authorization)
             // if(!body.signer) throw Error("invalid signed payload missing signer!")
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
@@ -419,13 +419,13 @@ export class BanklessController extends Controller {
 
             //wait for session to be created
             let resultCreate = await redisQueue.blpop(actionId, 30);
-            log.info(tag,"resultCreate: ",resultCreate)
-            log.info(tag,"resultCreate: ",resultCreate[1])
-            log.info(tag,"resultCreate: ",typeof(resultCreate[1]))
-            log.info(tag,"resultCreate: ",JSON.parse(resultCreate[1]))
+            log.debug(tag,"resultCreate: ",resultCreate)
+            log.debug(tag,"resultCreate: ",resultCreate[1])
+            log.debug(tag,"resultCreate: ",typeof(resultCreate[1]))
+            log.debug(tag,"resultCreate: ",JSON.parse(resultCreate[1]))
             //current rate
             let result = JSON.parse(resultCreate[1])
-            log.info(tag,"result: ",result)
+            log.debug(tag,"result: ",result)
             return(result);
         }catch(e){
             let errorResp:Error = {

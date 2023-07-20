@@ -303,6 +303,21 @@ export class pioneerPrivateController extends Controller {
             let allBalances:any = [];
             let allNfts = [];
 
+            // Validate pubkeys are in pubkeys
+            let missingPubkeys = body.data.pubkeys.flat().filter(pubkey =>
+                !userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey)
+            );
+
+            if (missingPubkeys.length > 0) {
+                missingPubkeys.forEach(pubkey => console.log("Pubkey not found:", pubkey.pubkey));
+                for(let i = 0; i < missingPubkeys.length; i++){
+                    let pubkey = missingPubkeys[i]
+                    let resultRegister = await pioneer.register(username, [pubkey], body.context)
+                    allBalances = resultRegister.balances
+                    allNfts = resultRegister.nfts || []
+                }
+            }
+
             //add raw pubkeys to mongo
             if(pubkeysRegistering.length > 0){
                 log.debug("register newPubkeys: ", pubkeysRegistering.length);
@@ -337,9 +352,14 @@ export class pioneerPrivateController extends Controller {
             }
 
             // Validate pubkeys are in pubkeys
-            let pubkeysMatch = body.data.pubkeys.flat().every(pubkey => userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey));
-            if (!pubkeysMatch) {
-                throw new Error("Invalid pubkeys!");
+            let missingPubkeysFinal = body.data.pubkeys.flat().filter(pubkey =>
+                !userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey)
+            );
+
+            if (missingPubkeysFinal.length > 0) {
+                missingPubkeysFinal.forEach(pubkey => console.log("Pubkey not found:", pubkey.pubkey));
+                log.error(tag,"Failed to register: missingPubkeysFinal: ", missingPubkeysFinal);
+                throw new Error("Failed to register pubkey!");
             }
 
             let { pubkeys } = await pioneer.getPubkeys(username);
