@@ -163,6 +163,7 @@ subscriber.on('message', async function (channel, payloadS) {
         if(channel === 'payments'){
             let payload = JSON.parse(payloadS)
             log.debug(tag,"payments: ",payload)
+            if(!payload.accounts) return
             //for each username
             for(let i = 0; i < payload.accounts.length; i++){
                 let username = payload.accounts[i]

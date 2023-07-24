@@ -222,8 +222,8 @@ let get_pubkey_balances = async function (pubkey: any) {
                         allPioneers = await networks['ETH'].getAllPioneers();
                         await setInCache(cacheKeyAllPioneers, JSON.stringify(allPioneers), 60 * 60 * 1);
                     }
-                    log.debug(tag, "allPioneers: ", allPioneers);
-
+                    log.info(tag, "allPioneers: ", allPioneers);
+                    if(!allPioneers || allPioneers.owners) allPioneers = { owners: [], images: [] };
                     let isPioneer = allPioneers.owners.includes(pubkey.pubkey.toLowerCase());
                     if (isPioneer) {
                         log.debug("Pioneer detected!");
