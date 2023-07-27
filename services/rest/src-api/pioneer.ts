@@ -47,98 +47,6 @@ const blockbook = require('@pioneer-platform/blockbook')
 // const foxitar = require("@pioneer-platform/foxitar-client")
 let zapper = require("@pioneer-platform/zapper-client")
 
-let servers = [
-    {
-        symbol:"MATIC",
-        blockchain:"polygon",
-        caip:"eip155:137/slip44:60",
-        type:"blockbook",
-        service:"https://indexer.polygon.shapeshift.com",
-        websocket:"wss://indexer.polygon.shapeshift.com/websocket"
-    },
-    {
-        symbol:"ETH",
-        blockchain:"optimism",
-        caip:"eip155:10/slip44:60",
-        type:"blockbook",
-        service:"https://indexer.optimism.shapeshift.com",
-        websocket:"wss://indexer.optimism.shapeshift.com/websocket"
-    },
-    {
-        symbol:"LTC",
-        blockchain:"litecoin",
-        caip:"bip122:12a765e31ffd4059bada1e25190f6e98/slip44:2",
-        type:"blockbook",
-        service:"https://indexer.litecoin.shapeshift.com",
-        websocket:"wss://indexer.litecoin.shapeshift.com/websocket"
-    },
-    {
-        symbol:"xDAI",
-        blockchain:"gnosis",
-        caip:"eip155:100/slip44:60",
-        type:"blockbook",
-        service:"https://indexer.gnosis.shapeshift.com",
-        websocket:"wss://indexer.gnosis.shapeshift.com/websocket"
-    },
-    {
-        symbol:"ETH",
-        blockchain:"ethereum",
-        caip:"eip155:1/slip44:60",
-        type:"blockbook",
-        service:"https://indexer.ethereum.shapeshift.com",
-        websocket:"wss://indexer.ethereum.shapeshift.com/websocket"
-    },
-    {
-        symbol:"DOGE",
-        blockchain:"dogecoin",
-        caip:"bip122:00000000001a91e3dace36e2be3bf030/slip44:3",
-        type:"blockbook",
-        service:"https://indexer.dogecoin.shapeshift.com",
-        websocket:"wss://indexer.dogecoin.shapeshift.com/websocket"
-    },
-    {
-        symbol:"BNB",
-        blockchain:"bnbsmartchain",
-        caip:"eip155:56/slip44:60",
-        type:"blockbook",
-        service:"https://indexer.bnbsmartchain.shapeshift.com",
-        websocket:"wss://indexer.bnbsmartchain.shapeshift.com/websocket"
-    },
-    {
-        symbol:"BCH",
-        blockchain:"bitcoincash",
-        caip:"bip122:000000000000000000651ef99cb9fcbe/slip44:145",
-        type:"blockbook",
-        service:"https://indexer.bitcoincash.shapeshift.com",
-        websocket:"wss://indexer.bitcoincash.shapeshift.com/websocket"
-    },
-    {
-        symbol:"BTC",
-        blockchain:"bitcoin",
-        caip:"bip122:000000000019d6689c085ae165831e93/slip44:0",
-        type:"blockbook",
-        service:"https://indexer.bitcoin.shapeshift.com",
-        websocket:"wss://indexer.bitcoin.shapeshift.com/websocket"
-    },
-    {
-        symbol:"AVAX",
-        blockchain:"avalanche",
-        caip:"eip155:43114/slip44:60",
-        type:"blockbook",
-        service:"https://indexer.avalanche.shapeshift.com",
-        websocket:"wss://indexer.avalanche.shapeshift.com/websocket"
-    },
-    {
-        symbol:"AVAX",
-        blockchain:"avalanche",
-        caip:"eip155:43114/slip44:60",
-        type:"blockbook",
-        service:"https://indexer.avalanche.shapeshift.com",
-        websocket:"wss://indexer.avalanche.shapeshift.com/websocket"
-    }
-]
-blockbook.init(servers)
-
 const networks:any = {
     'ETH' : require('@pioneer-platform/eth-network'),
     'ATOM': require('@pioneer-platform/cosmos-network'),
@@ -149,8 +57,6 @@ const networks:any = {
     'ANY' : require('@pioneer-platform/utxo-network'),
     'RUNE' : require('@pioneer-platform/thor-network'),
 }
-// networks.ANY.init('full')
-networks.ETH.init()
 
 let {
     supportedBlockchains,
@@ -177,6 +83,7 @@ let txsDB = connection.get('transactions')
 let pubkeysDB = connection.get('pubkeys')
 let inputsDB = connection.get('unspent')
 let assetsDB = connection.get('assets')
+let nodesDB = connection.get('nodes')
 usersDB.createIndex({id: 1}, {unique: true})
 txsDB.createIndex({txid: 1}, {unique: true})
 inputsDB.createIndex({txid: 1}, {unique: true})
@@ -184,6 +91,21 @@ pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 pubkeysDB.createIndex({ tags: 1 })
 
 const BALANCE_ON_REGISTER = true
+
+let onStart = async function(){
+    let tag = TAG + " | onStart | "
+    try{
+        //get servers
+        let servers = await nodesDB.find({type:'blockbook'})
+        log.info(tag,"servers: ",servers.length)
+        blockbook.init(servers)
+        // networks.ANY.init('full')
+        networks.ETH.init()
+    }catch(e){
+        log.error(e)
+    }
+}
+onStart()
 
 module.exports = {
     refresh: async function (username:string) {

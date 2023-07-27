@@ -1569,6 +1569,7 @@ export class pioneerPublicController extends Controller {
                     }
                 ]
             }
+            if(body.websocket) evmNetwork.websocket = body.websocket
             if(body.swagger) evmNetwork.swagger = body.swagger
             if(body.infoURL) evmNetwork.infoURL = body.infoURL
             if(body.shortName) evmNetwork.shortName = body.shortName
