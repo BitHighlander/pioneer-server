@@ -44,6 +44,9 @@ import { Body, Controller, Get, Post, Route, Tags } from 'tsoa';
 // const axios = require('axios')
 // const sdk = require('api')('@opensea/v1.0#jblb1ukzswdj7x');
 
+let zapper = require("@pioneer-platform/zapper-client")
+
+
 //route
 @Tags('NFT Endpoints')
 @Route('')
@@ -60,46 +63,8 @@ export class nftPublicController extends Controller {
         let tag = TAG + " | nfts | "
         try{
 
-            // let nftTxs = await axios.get("https://api.etherscan.io/api?module=account&action=tokennfttx&address="+address+"&page=1&offset=100&sort=asc&apikey="+process.env['ETHERSCAN_API_KEY'])
-            // log.debug(tag,"nftTxs: ",nftTxs.data)
-            //
-            // let nfts = []
-            // for(let i = 0; i < nftTxs.data.result.length; i++){
-            //     let nft:any = {}
-            //     let entry = nftTxs.data.result[i]
-            //     log.debug(tag,"entry: ",entry)
-            //
-            //     let contractAddress = entry.contractAddress
-            //     let tokenID = entry.tokenID
-            //     nft.contractAddress = contractAddress
-            //     nft.tokenID = tokenID
-            //
-            //     let url = "https://api.opensea.io/api/v1/asset/"+contractAddress+"/"+tokenID+"?format=json"
-            //     log.debug(tag,"url: ",url)
-            //
-            //     var headers = {
-            //         'x-api-key': "",
-            //         'User-Agent': fakeUa()
-            //     };
-            //     //get openSea info
-            //     let openSeaInfo = await axios.get(url,{
-            //         headers
-            //     })
-            //     log.debug(tag,"openSeaInfo: ",openSeaInfo.data)
-            //
-            //     //image
-            //     let imageUrl = openSeaInfo.data.image_original_url
-            //     nft.imageUrl = imageUrl
-            //
-            //     //traits
-            //     nft.traits = openSeaInfo.data.traits
-            //
-            //
-            //     nfts.push(nft)
-            // }
-            //
-            // return({nfts})
-            return true
+            let tokens = await zapper.getTokens(address)
+            return tokens
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -111,5 +76,21 @@ export class nftPublicController extends Controller {
         }
     }
 
+    @Get('/portfolio/{address}')
+    public async getPortfolio(address:string) {
+        let tag = TAG + " | getPortfolio | "
+        try{
 
+            let tokens = await zapper.getPortfolio(address)
+            return tokens
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
 }

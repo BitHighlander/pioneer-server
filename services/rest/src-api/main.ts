@@ -355,9 +355,9 @@ subscriber.on('message', async function (channel, payloadS) {
         } else if(channel === 'bankless'){
             //push message to user
             let context = JSON.parse(payloadS)
-            log.debug(tag,"context: ",context)
-            log.debug(tag,"context: ",context.terminalName)
-            log.debug(tag,"usersByUsername: ",usersByUsername)
+            log.info(tag,"context: ",context)
+            log.info(tag,"context: ",context.terminalName)
+            log.info(tag,"usersByUsername: ",usersByUsername)
             let terminalName = context.payload.terminalName
             //send to user
             if(usersByUsername[terminalName]){
@@ -416,8 +416,8 @@ io.on('connection', async function(socket){
     globalSockets[socket.id] = socket
 
     socket.on('disconnect', function(){
-        let username = usersByUsername[socket.id]
-        log.debug(tag,socket.id+" username: "+username+' disconnected');
+        let username = usersBySocketId[socket.id]
+        log.info(tag,socket.id+" username: "+username+' disconnected');
         redis.srem('online',username)
         //remove socket.id from username list
         if(usersByUsername[username])usersByUsername[username].splice(usersByUsername[username].indexOf(socket.id), 1);
@@ -433,12 +433,14 @@ io.on('connection', async function(socket){
 
         let queryKey = msg.queryKey
         if(queryKey && msg.username){
-            log.debug(tag,"GIVEN: username: ",msg.username)
+            log.info(tag,"GIVEN: username: ",msg.username)
             //get pubkeyInfo
             let queryKeyInfo = await redis.hgetall(queryKey)
-            log.debug(tag,"ACTUAL: username: ",queryKeyInfo.username)
+            log.info(tag,"ACTUAL: username: ",queryKeyInfo.username)
             if(queryKeyInfo.username === msg.username){
-                log.debug("session valid starting!")
+                log.info(tag,"session valid starting!")
+                log.info(tag,"socket.id: ",socket.id)
+                log.info(tag,"msg.username: ",msg.username)
                 usersBySocketId[socket.id] = msg.username
                 if(!usersByUsername[msg.username]) usersByUsername[msg.username] = []
                 usersByUsername[msg.username].push(socket.id)
@@ -456,7 +458,7 @@ io.on('connection', async function(socket){
                     msg:"(error) Failed to join! pubkeyInfo.username: "+queryKeyInfo.username+" msg.username: "+msg.username
                 }
                 globalSockets[socket.id].emit('errorMessage', error);
-            } else if(!queryKeyInfo.username){
+            }else if(!queryKeyInfo.username){
                 //new queryKey
                 //register Username
                 log.debug(tag,"New queryKey! msg.username: ",msg.username)
@@ -504,28 +506,25 @@ io.on('connection', async function(socket){
     })
     socket.on('message', function(msg){
         log.debug(tag,'message ****************: ' , msg);
-
         if(msg.actionId){
-            //
+            //actionId
             redis.lpush(msg.actionId,JSON.stringify(msg))
         }
     })
-    // let startSub = async function(){
-    //     let sockets = Object.keys(globalSockets)
-    //     log.debug(tag,"sockets: ",sockets)
-    //     for(let i = 0; i < sockets.length; i++){
-    //         let socket = globalSockets[sockets[i]]
-    //         log.debug(tag,"socket: ",socket.id)
-    //         socket.on('message', function(msg){
-    //             log.debug(tag,'message: ' + msg);
-    //         })
-    //     }
-    // }
-    // startSub()
 });
 
+let subsribe_to_payments = async function () {
+    try{
+        //@TODO
+        //User goes online
 
+        //get all pubkeys
 
+        //subscribe to all pubkeys
+    }catch(e){
+        console.error(e)
+    }
+}
 
 //Error handeling
 function errorHandler (err, req, res, next) {
@@ -540,47 +539,13 @@ function errorHandler (err, req, res, next) {
 }
 app.use(errorHandler)
 
-// module.exports = {
-//     start: function () {
-//         return start_server();
-//     }
-// }
-
-/*
-    Markets cache
-        Goal: build a redis cache of non-price data for top 1000 assets
-            + any manually added assets
-
-    onStart()
-
-    get top 1000 from mongo
-        //verify redis cache on mongo info
-
-
-    Get top 1000 assets from coincap
-
-    get top 1000 from coincecko
-
-    //check diff on coincap from mongo
-    //check diff on coingecko from mongo
-
-    //any new assets
-        //save to mongo
-        //save to redis cache
-
-    Follow up
-        track all pubkeys with a user online
-        subscribe to live price data on all assets with users online
-        push price updates to user over socket
- */
-
 let start_server = async function () {
     let tag = TAG + " | start_server | "
     try {
-
+        //clear online
+        await redis.del("online")
 
         server.listen(API_PORT, () => console.log(`Server started listening to port ${API_PORT}`));
-
         //TODO handle exit
 
         return true
