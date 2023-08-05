@@ -347,7 +347,7 @@ let getMarketData = async function(){
 
 //Do all the things
 // onCrawalFoxitars();
-getMarketData()
+// getMarketData()
 //start working on install
 log.debug(TAG," worker started! ","")
 do_work()
