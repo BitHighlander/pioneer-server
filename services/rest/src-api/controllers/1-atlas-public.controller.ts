@@ -620,7 +620,7 @@ export class pioneerPublicController extends Controller {
 
             // Add filter for isWhitelisted
             if (typeof isWhitelisted === 'boolean') {
-                query.whitelist = isWhitelisted;
+                if(isWhitelisted) query.whitelist = true
             }
 
             // Add filter for blockchain
