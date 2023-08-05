@@ -1436,7 +1436,7 @@ export class pioneerPublicController extends Controller {
             if(!body.name) throw Error("Name is required!")
             if(!body.app) throw Error("app is required!")
             if(!body.tags) throw Error("tags is required!")
-            if(!body.image) throw Error("decimals is required!")
+            if(!body.image) throw Error("image is required!")
             if(!body.signer) throw Error("signer address is required!")
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("payload is required!")

@@ -7,11 +7,6 @@
  */
 let TAG = ' | API | '
 
-//rango SDK for markets
-import {
-    RangoClient
-} from "rango-sdk"
-
 const pjson = require('../../package.json');
 const log = require('@pioneer-platform/loggerdog')()
 const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
@@ -38,8 +33,8 @@ pubkeysDB.createIndex({pubkey: 1}, {unique: true})
 invocationsDB.createIndex({invocationId: 1}, {unique: true})
 txsDB.createIndex({invocationId: 1})
 
-const RANGO_API_KEY = process.env['RANGO_API_KEY'] || '4a624ab5-16ff-4f96-90b7-ab00ddfc342c'
-const rangoClient = new RangoClient(RANGO_API_KEY)
+// const RANGO_API_KEY = process.env['RANGO_API_KEY'] || '4a624ab5-16ff-4f96-90b7-ab00ddfc342c'
+// const rangoClient = new RangoClient(RANGO_API_KEY)
 
 /*
     Feature Flags per blockchain
@@ -276,18 +271,18 @@ export class atlasPublicController extends Controller {
             output.rango = await redis.get('rango:markets')
             output.rango = JSON.parse(output.rango)
 
-            let updateRango = async function(){
-                let metaInfo = await rangoClient.getAllMetadata()
-                if(metaInfo){
-                    let updateRedis = await redis.set('rango:markets',JSON.stringify(metaInfo))
-                    log.debug(tag,"updateRedis: ",updateRedis)
-                }
-            }
-            try{
-                updateRango()
-            }catch(e){
-                log.debug("failed to get rango markets! ",e)
-            }
+            // let updateRango = async function(){
+            //     let metaInfo = await rangoClient.getAllMetadata()
+            //     if(metaInfo){
+            //         let updateRedis = await redis.set('rango:markets',JSON.stringify(metaInfo))
+            //         log.debug(tag,"updateRedis: ",updateRedis)
+            //     }
+            // }
+            // try{
+            //     //updateRango()
+            // }catch(e){
+            //     log.debug("failed to get rango markets! ",e)
+            // }
 
 
             // for(let i = 0; i < pools.length; i++){
