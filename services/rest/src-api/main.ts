@@ -505,7 +505,7 @@ io.on('connection', async function(socket){
         log.debug(tag,'event ****************: ' + msg);
     })
     socket.on('message', function(msg){
-        log.debug(tag,'message ****************: ' , msg);
+        log.info(tag,'message ****************: ' , msg);
         if(msg.actionId){
             //actionId
             redis.lpush(msg.actionId,JSON.stringify(msg))

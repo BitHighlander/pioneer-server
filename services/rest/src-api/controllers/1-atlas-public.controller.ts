@@ -1293,6 +1293,61 @@ export class pioneerPublicController extends Controller {
     }
 
     /*
+        Search by Dapp Name
+
+     */
+    @Get('/atlas/search/dapps/{name}')
+    public async searchDappsByName(name:string) {
+        let tag = TAG + " | searchDappsByName | "
+        try{
+            //TODO sanitize
+            //look for direct match
+            let directMatch = await dappsDB.findOne({ "name": name })
+            log.info(tag,"directMatch: ",directMatch)
+            let dappInfo
+            if(!directMatch){
+                directMatch = await dappsDB.findOne({ $or: [{ "app": name },{ "name": name }] })
+                log.info("No direct match found!")
+                if(!directMatch){
+                    const escapeRegex = function (text) {
+                        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+                    };
+
+                    const regex = new RegExp(escapeRegex(name), 'gi');
+                    console.log("regex: ", regex); // Use console.log instead of log.info for debugging
+
+                    // Use the regex to search for documents in the collection.
+                    dappInfo = await dappsDB.find({ name: regex });
+                    console.log("dappInfo", dappInfo);
+
+                    if(dappInfo.length === 0){
+                        log.info("No REGEX match found on name!")
+                        dappInfo = await dappsDB.find({ "name": regex },{limit:10})
+                        if(!dappInfo.length){
+                            log.info("No REGEX match found on description!")
+                            dappInfo = await dappsDB.find({ "description": regex },{limit:10})
+                        }
+                    }
+                } else {
+                    dappInfo = directMatch
+                }
+            } else {
+                dappInfo = directMatch
+            }
+            return dappInfo
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
+    /*
      * CHART Dapp
      *
      *    Build an atlas on a new Dapp

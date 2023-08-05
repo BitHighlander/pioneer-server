@@ -399,8 +399,8 @@ export class BanklessController extends Controller {
     public async startSession(@Header('Authorization') authorization: string,@Body() body: any): Promise<any> {
         let tag = TAG + " | startSession | "
         try{
-            log.debug(tag,"body: ",body)
-            log.debug(tag,"authorization: ",authorization)
+            log.info(tag,"body: ",body)
+            log.info(tag,"authorization: ",authorization)
             // if(!body.signer) throw Error("invalid signed payload missing signer!")
             // if(!body.payload) throw Error("invalid signed payload missing payload!")
             // if(!body.signature) throw Error("invalid signed payload missing !")
@@ -414,18 +414,17 @@ export class BanklessController extends Controller {
             //create an actionId
             let actionId = "action:"+uuidv4()
             body.actionId = actionId
-            let trade
             publisher.publish('bankless', JSON.stringify({type:"terminal",payload:body}))
 
             //wait for session to be created
             let resultCreate = await redisQueue.blpop(actionId, 30);
-            log.debug(tag,"resultCreate: ",resultCreate)
-            log.debug(tag,"resultCreate: ",resultCreate[1])
-            log.debug(tag,"resultCreate: ",typeof(resultCreate[1]))
-            log.debug(tag,"resultCreate: ",JSON.parse(resultCreate[1]))
+            log.info(tag,"resultCreate: ",resultCreate)
+            log.info(tag,"resultCreate: ",resultCreate[1])
+            log.info(tag,"resultCreate: ",typeof(resultCreate[1]))
+            log.info(tag,"resultCreate: ",JSON.parse(resultCreate[1]))
             //current rate
             let result = JSON.parse(resultCreate[1])
-            log.debug(tag,"result: ",result)
+            log.info(tag,"result: ",result)
             return(result);
         }catch(e){
             let errorResp:Error = {

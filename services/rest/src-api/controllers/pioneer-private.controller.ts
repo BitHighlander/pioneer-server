@@ -186,8 +186,8 @@ export class pioneerPrivateController extends Controller {
     public async register(@Header('Authorization') authorization: string, @Body() body: RegisterBody): Promise<any> {
         let tag = TAG + " | register | ";
         try {
-            log.debug("register body: ", body);
-            log.debug("register body: ", JSON.stringify(body));
+            log.info("register body: ", body);
+            log.info("register body: ", JSON.stringify(body));
             if (!body.context) throw new Error("Missing context parameter!");
             if (!body.blockchains) throw new Error("Missing blockchains parameter!");
             if (!body.walletDescription || typeof body.walletDescription === 'string') throw new Error("Invalid walletDescription parameter! Expected a non-string value.");

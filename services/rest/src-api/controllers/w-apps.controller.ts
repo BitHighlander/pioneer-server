@@ -663,7 +663,11 @@ export class WAppsController extends Controller {
             let result = await ai.summarizeString(textContent, schema);
             console.log("result: ", result);
             console.log("result: ", typeof(result));
-            if (!result) result = schema;
+            if (!result) {
+                result = schema;
+                result.name = body.app.replace("https://", "");
+                result.name = result.name.replace(".com", "");
+            }
             //TODO save into knowledge db
 
             return(result);
