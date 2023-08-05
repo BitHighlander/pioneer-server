@@ -630,7 +630,25 @@ export class pioneerPublicController extends Controller {
 
             // Get dapps with sort, limit, and skip parameters
             log.debug(tag, 'filterTags: ', filterTags);
-            let dapps = await dappsDB.find(query, { sort, limit, skip });
+            let dapps = await dappsDB.find(query, { limit, skip });
+
+            //if no score then set to 0
+            dapps = dapps.map((dapp) => {
+                if (!dapp.score) {
+                    dapp.score = 0;
+                }
+                return dapp;
+            })
+            //sort by score
+            const sortArrayByScore = (arr: any[]) => {
+                return arr.sort((a, b) => {
+                    if (a.score === undefined) a.score = 0;
+                    if (b.score === undefined) b.score = 0;
+                    return b.score - a.score;
+                });
+            };
+            dapps = sortArrayByScore(dapps);
+
             let total = await dappsDB.count(query);
 
             return { dapps, total };
