@@ -570,6 +570,81 @@ export class pioneerPublicController extends Controller {
         }
     }
 
+    /**
+     * ATLAS
+     * Search for dapps
+     */
+    @Post('/atlas/search/dapp')
+    public async searchDapps(
+        @Body()
+            payload: {
+            sortBy: string;
+            limit: number;
+            skip: number;
+            sortOrder?: string;
+            filterTags?: string[];
+            isWhitelisted?: boolean;
+            blockchain?: string;
+        }
+    ) {
+        let tag = TAG + ' | getDapps | ';
+        try {
+            const {
+                sortBy,
+                limit,
+                skip,
+                sortOrder = 'asc',
+                filterTags = [],
+                isWhitelisted,
+                blockchain,
+            } = payload;
+
+            // Create sort object
+            const sort: any = {};
+            if (sortBy) {
+                sort[sortBy] = sortOrder === 'desc' ? -1 : 1; // -1 for descending, 1 for ascending (default)
+            }
+
+            // Build query object
+            let query: any = {};
+
+            // Filter out dapps without rank
+            if (sortBy === 'rank') {
+                query.rank = { $exists: true };
+            }
+
+            // Add filters based on the filter tags
+            if (filterTags && filterTags.length > 0 && filterTags[0] !== '') {
+                query.tags = { $in: filterTags };
+            }
+
+            // Add filter for isWhitelisted
+            if (typeof isWhitelisted === 'boolean') {
+                query.whitelist = isWhitelisted;
+            }
+
+            // Add filter for blockchain
+            if (blockchain && typeof blockchain === 'string') {
+                query.blockchain = blockchain;
+            }
+
+            // Get dapps with sort, limit, and skip parameters
+            log.debug(tag, 'filterTags: ', filterTags);
+            let dapps = await dappsDB.find(query, { sort, limit, skip });
+            let total = await dappsDB.count(query);
+
+            return { dapps, total };
+        } catch (e) {
+            let errorResp: Error = {
+                success: false,
+                tag,
+                e,
+            };
+            log.error(tag, 'e: ', { errorResp });
+            throw new ApiError('error', 503, 'error: ' + e.toString());
+        }
+    }
+
 
     /**
      * ATLAS
