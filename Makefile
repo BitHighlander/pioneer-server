@@ -18,9 +18,8 @@ build::
 #     cd services/rest && npm i && npm run docker:push:all
 
 push::
-    cd services/ingesters/facts/intake && npm i && npm run docker:push:all & \
-	cd services/rest && npm i && npm run docker:push:all & \
-	wait || exit $$?
+	cd services/ingesters/facts/intake && npm i && npm run docker:push:all
+	cd services/rest && npm i && npm run docker:push:all
 
 # push::
 # 	cd services/rest && npm i && npm run docker:push:all & \
