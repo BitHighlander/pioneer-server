@@ -118,7 +118,7 @@ export class pioneerAiController extends Controller {
     public async createSkill(@Header('Authorization') authorization: string, @Body() skill: any) {
         let tag = TAG + " | createSkill | "
         try {
-            log.info(tag,"skill: ",skill)
+            log.debug(tag,"skill: ",skill)
             if(!skill.script) throw Error("Invalid result! missing script")
             if(!skill.summary) throw Error("Invalid result! missing summary")
             if(!skill.keywords) throw Error("Invalid result! missing keywords")

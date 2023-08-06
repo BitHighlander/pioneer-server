@@ -642,10 +642,10 @@ export class pioneerPublicController extends Controller {
 
             // Get dapps with sort, limit, and skip parameters
             log.debug(tag, 'filterTags: ', filterTags);
-            let dapps = await ATLAS[collection].find(query, { limit, skip });
+            let results = await ATLAS[collection].find(query, { limit, skip });
 
             //if no score then set to 0
-            dapps = dapps.map((dapp) => {
+            results = results.map((dapp) => {
                 if (!dapp.score) {
                     dapp.score = 0;
                 }
@@ -659,11 +659,11 @@ export class pioneerPublicController extends Controller {
                     return b.score - a.score;
                 });
             };
-            dapps = sortArrayByScore(dapps);
+            results = sortArrayByScore(results);
 
             let total = await dappsDB.count(query);
 
-            return { dapps, total };
+            return { results, total };
         } catch (e) {
             let errorResp: Error = {
                 success: false,

@@ -133,7 +133,7 @@ let onStart = async function(){
     try{
         //get nodes
         let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
-        log.info(tag,"unchainedNodes: ",unchainedNodes)
+        log.debug(tag,"unchainedNodes: ",unchainedNodes)
         //init networks with gaurenteed live nodes
         await networks['ANY'].init(unchainedNodes)
     }catch(e){
@@ -798,7 +798,7 @@ export class atlasPublicController extends Controller {
                                 let mongoSave2 = await invocationsDB.update(
                                     {invocationId:output.invocationId},
                                     {$set:{withdrawalUrl:output.withdrawalUrl}})
-                                log.info(tag,"mongoSave2: ",mongoSave2)
+                                log.debug(tag,"mongoSave2: ",mongoSave2)
                                 output.resultUpdateWithdrawalUrl = mongoSave2
 
                                 //
@@ -816,9 +816,9 @@ export class atlasPublicController extends Controller {
                     log.error(" txid Not found!")
                 }
             } else {
-                log.info(tag,"Not a swap! ")
-                log.info(tag,"Not a swap! ",output.type)
-                log.info(tag,"Not a swap! ",output.isConfirmed)
+                log.debug(tag,"Not a swap! ")
+                log.debug(tag,"Not a swap! ",output.type)
+                log.debug(tag,"Not a swap! ",output.isConfirmed)
             }
             //
             // if(!output){
@@ -827,7 +827,7 @@ export class atlasPublicController extends Controller {
             //         message:"No invocation found with ID: "+invocationId
             //     }
             // }
-            log.info("output: ",output)
+            log.debug("output: ",output)
             return(output)
         }catch(e){
             let errorResp:Error = {
@@ -848,7 +848,7 @@ export class atlasPublicController extends Controller {
     public async getPubkeyBalance(asset:string,pubkey:string) {
         let tag = TAG + " | getPubkeyBalance | "
         try{
-            log.info(tag,{asset,pubkey})
+            log.debug(tag,{asset,pubkey})
             let output = await redis.get("cache:balance:"+pubkey+":"+asset)
             networks.ETH.init()
             if(!output || CACHE_OVERRIDE){
@@ -857,19 +857,19 @@ export class atlasPublicController extends Controller {
                     //TODO
                     output = await networks['ETH'].getBalanceToken(pubkey,asset)
                 } else if(asset === 'ETH'){
-                    log.info(tag,"asset ETH path")
+                    log.debug(tag,"asset ETH path")
                     output = await networks['ETH'].getBalanceAddress(pubkey)
                 } else if(UTXO_COINS.indexOf(asset) >= 0){
-                    log.info(tag,"UTXO_COINS path")
+                    log.debug(tag,"UTXO_COINS path")
                     //get xpub/zpub
                     output = await networks['ANY'].getBalanceByXpub(asset,pubkey)
                 } else {
                     if(!networks[asset]) {
                         throw Error("109: asset not supported! coin: "+asset)
                     } else {
-                        log.info(tag,"default path")
-                        log.info(tag,"default asset: ",asset)
-                        log.info(tag,"default pubkey: ",pubkey)
+                        log.debug(tag,"default path")
+                        log.debug(tag,"default asset: ",asset)
+                        log.debug(tag,"default pubkey: ",pubkey)
                         output = await networks[asset].getBalance(pubkey)
                     }
                 }
@@ -941,11 +941,11 @@ export class atlasPublicController extends Controller {
             if(UTXO_COINS.indexOf(coin) >= 0){
                 //TODO supported assets
                 output = await networks['ANY'].getFee(coin)
-                log.info("output:",output)
+                log.debug("output:",output)
                 //else error
             }else{
                 output = await networks[coin].getFee(coin)
-                log.info("output:",output)
+                log.debug("output:",output)
             }
 
             return(output)

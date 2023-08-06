@@ -97,7 +97,7 @@ let onStart = async function(){
     try{
         //get servers
         let servers = await nodesDB.find({type:'blockbook'})
-        log.info(tag,"servers: ",servers.length)
+        log.debug(tag,"servers: ",servers.length)
         blockbook.init(servers)
         // networks.ANY.init('full')
         networks.ETH.init()
@@ -229,7 +229,7 @@ let get_pubkey_balances = async function (pubkey: any) {
                         allPioneers = await networks['ETH'].getAllPioneers();
                         await setInCache(cacheKeyAllPioneers, JSON.stringify(allPioneers), 60 * 60 * 1);
                     }
-                    log.info(tag, "allPioneers: ", allPioneers);
+                    log.debug(tag, "allPioneers: ", allPioneers);
                     if(!allPioneers || allPioneers.owners) allPioneers = { owners: [], images: [] };
                     let isPioneer = allPioneers.owners.includes(pubkey.pubkey.toLowerCase());
                     if (isPioneer) {
@@ -306,7 +306,7 @@ let get_pubkey_balances = async function (pubkey: any) {
                         balanceNetwork = JSON.parse(cachedDataNetwork);
                     } else {
                         balanceNetwork = await networks[pubkey.symbol].getBalance(pubkey.pubkey);
-                        log.info(tag, "balance: ", balanceNetwork);
+                        log.debug(tag, "balance: ", balanceNetwork);
                         await setInCache(cacheKeyNetwork, JSON.stringify(balanceNetwork), 60 * 60 * 1);
                     }
 
@@ -332,11 +332,11 @@ let get_pubkey_balances = async function (pubkey: any) {
         }
         if (!pubkeyInfo.nfts) pubkeyInfo.nfts = [];
         log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
-        log.info(tag, "pubkeyInfo.balances: ", pubkeyInfo.balances.length);
-        log.info(tag, "nfts: ", pubkeyInfo.nfts.length);
+        log.debug(tag, "pubkeyInfo.balances: ", pubkeyInfo.balances.length);
+        log.debug(tag, "nfts: ", pubkeyInfo.nfts.length);
 
         log.debug(tag, "balances: ", balances);
-        log.info(tag, "balances: ", balances.length);
+        log.debug(tag, "balances: ", balances.length);
 
         let saveActions = [];
         for (let i = 0; i < balances.length; i++) {
@@ -365,13 +365,13 @@ let get_pubkey_balances = async function (pubkey: any) {
                     },
                 });
             } else {
-                log.info(tag,pubkey.context + ": balance not changed! ", balance.symbol);
+                log.debug(tag,pubkey.context + ": balance not changed! ", balance.symbol);
             }
         }
 
         for (let i = 0; i < nfts.length; i++) {
             let nft = nfts[i];
-            log.info(tag, "pubkeyInfo.nfts: ", pubkeyInfo.nfts.length);
+            log.debug(tag, "pubkeyInfo.nfts: ", pubkeyInfo.nfts.length);
             let existingNft = pubkeyInfo.nfts.find((e: any) => e.name === nft.name);
 
             if (!existingNft) {
@@ -388,7 +388,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 
         if (saveActions.length > 0) {
             let updateSuccess = await pubkeysDB.bulkWrite(saveActions, { ordered: false });
-            log.info(tag, "updateSuccess: ", updateSuccess);
+            log.debug(tag, "updateSuccess: ", updateSuccess);
             output.dbUpdate = updateSuccess;
         }
 

@@ -87,7 +87,7 @@ export class pioneerController extends Controller {
     ): Promise<any> {
         const tag = TAG + ' | smartInsight | ';
         try {
-            log.info(tag, 'tx: ', body);
+            log.debug(tag, 'tx: ', body);
             if (!body.to) throw new Error('to is required!');
             if (!body.from) throw new Error('from is required!');
             if (!body.data) throw new Error('data is required!');
@@ -97,11 +97,11 @@ export class pioneerController extends Controller {
             const sort = { ping: -1 };
             const entry = await nodesDB.findOne({ chainId }, { sort });
             if(!entry) throw new Error('no node found for chainId: ' + chainId)
-            log.info(tag, 'entry: ', entry);
+            log.debug(tag, 'entry: ', entry);
             // get node for chainId
             const service = entry.service;
-            log.info(tag, 'entry: ', entry);
-            log.info(tag, 'service: ', service);
+            log.debug(tag, 'entry: ', entry);
+            log.debug(tag, 'service: ', service);
 
             const provider = new ethers.providers.JsonRpcProvider(service);
 
@@ -130,7 +130,7 @@ export class pioneerController extends Controller {
             }
 
             log.debug("gasLimit: ", gasLimit);
-            log.info("gasLimit: ", gasLimit.toString());
+            log.debug("gasLimit: ", gasLimit.toString());
 
             let recommended = {
                 "addressNList": body.addressNList,
@@ -143,29 +143,29 @@ export class pioneerController extends Controller {
 
             const gasLimitCalculated = parseInt(gasLimit.toString())
             const bodyGasLimitDecimal = parseInt(body.gasLimit, 16);
-            log.info(tag,"gasLimitCalculated: ", gasLimitCalculated);
-            log.info(tag,"bodyGasLimitDecimal: ", bodyGasLimitDecimal);
+            log.debug(tag,"gasLimitCalculated: ", gasLimitCalculated);
+            log.debug(tag,"bodyGasLimitDecimal: ", bodyGasLimitDecimal);
 
-            log.info(tag, "gasLimitCalculated: ", gasLimitCalculated);
-            log.info(tag, "bodyGasLimitDecimal: ", bodyGasLimitDecimal);
+            log.debug(tag, "gasLimitCalculated: ", gasLimitCalculated);
+            log.debug(tag, "bodyGasLimitDecimal: ", bodyGasLimitDecimal);
 
             if (!isNaN(gasLimitCalculated) && !isNaN(bodyGasLimitDecimal)) {
                 if (gasLimitCalculated > bodyGasLimitDecimal) {
-                    log.info("calculated gas limit is larger!");
+                    log.debug("calculated gas limit is larger!");
                     recommended["gasLimit"] = "0x"+gasLimitCalculated.toString(16);
                 } else {
-                    log.info("original gas limit is larger!");
-                    log.info("Original: ", body.gasLimit);
+                    log.debug("original gas limit is larger!");
+                    log.debug("Original: ", body.gasLimit);
                     recommended["gasLimit"] = body.gasLimit;
                 }
             } else if (!isNaN(gasLimitCalculated)) {
-                log.info("original gas limit is not a number! Using calculated gas limit.");
+                log.debug("original gas limit is not a number! Using calculated gas limit.");
                 recommended["gasLimit"] = "0x"+gasLimitCalculated.toString(16);
             } else if (!isNaN(bodyGasLimitDecimal)) {
-                log.info("calculated gas limit is not a number! Using original gas limit.");
+                log.debug("calculated gas limit is not a number! Using original gas limit.");
                 recommended["gasLimit"] = body.gasLimit;
             } else {
-                log.info("Both calculated and original gas limits are not numbers!");
+                log.debug("Both calculated and original gas limits are not numbers!");
                 // Handle the case when both values are NaN, such as setting a default value or throwing an error
             }
 
@@ -182,32 +182,32 @@ export class pioneerController extends Controller {
                 if(recommended["maxPriorityFeePerGas"] === '0x0' || parseInt(recommended["maxPriorityFeePerGas"]) === 0) throw Error("Invalid! maxFeePerGas is 0x0");
 
             } else {
-                log.info("non-EIP1559 transaction");
+                log.debug("non-EIP1559 transaction");
                 const gasPrice = await provider.getGasPrice();
                 const gasPriceCalculated = gasPrice.toHexString();
-                log.info("gasPriceCalculated: ", gasPriceCalculated);
+                log.debug("gasPriceCalculated: ", gasPriceCalculated);
 
                 const gasPriceCalculatedDecimal = parseInt(gasPriceCalculated, 16);
                 const bodyGasDecimal = parseInt(body.gas, 16);
-                log.info("gasPriceCalculatedDecimal: ", gasPriceCalculatedDecimal);
-                log.info("bodyGasDecimal: ", bodyGasDecimal);
+                log.debug("gasPriceCalculatedDecimal: ", gasPriceCalculatedDecimal);
+                log.debug("bodyGasDecimal: ", bodyGasDecimal);
 
                 if (!isNaN(gasPriceCalculatedDecimal) && !isNaN(bodyGasDecimal)) {
                     if (gasPriceCalculatedDecimal > bodyGasDecimal) {
-                        log.info(tag, "gas Calculated a higher fee than original!");
+                        log.debug(tag, "gas Calculated a higher fee than original!");
                         recommended["gas"] = gasPriceCalculated;
                     } else {
-                        log.info(tag, "gas sticking with original! It's higher");
+                        log.debug(tag, "gas sticking with original! It's higher");
                         recommended["gas"] = body.gas;
                     }
                 } else if (!isNaN(gasPriceCalculatedDecimal)) {
-                    log.info("Original gas value is not a number! Using calculated gas value.");
+                    log.debug("Original gas value is not a number! Using calculated gas value.");
                     recommended["gas"] = gasPriceCalculated;
                 } else if (!isNaN(bodyGasDecimal)) {
-                    log.info("Calculated gas value is not a number! Using original gas value.");
+                    log.debug("Calculated gas value is not a number! Using original gas value.");
                     recommended["gas"] = body.gas;
                 } else {
-                    log.info("Both calculated and original gas values are not numbers!");
+                    log.debug("Both calculated and original gas values are not numbers!");
                     // Handle the case when both values are NaN, such as setting a default value or throwing an error
                 }
 
@@ -252,7 +252,7 @@ export class pioneerController extends Controller {
             };
 
             publisher.publish('discord-bridge', JSON.stringify(payload));
-            log.info("Output: ", output);
+            log.debug("Output: ", output);
             return output;
         } catch (e) {
             const errorResp: Error = {
@@ -275,7 +275,7 @@ export class pioneerController extends Controller {
     public async simulation(@Header('Authorization') authorization: string, @Body() body: any): Promise<any> {
         let tag = TAG + " | simulation | "
         try{
-            log.info(tag,"mempool tx: ",body)
+            log.debug(tag,"mempool tx: ",body)
             if(!body.to) throw Error("to is required!")
             if(!body.from) throw Error("from is required!")
             if(!body.data) throw Error("data is required!")
@@ -316,18 +316,18 @@ export class pioneerController extends Controller {
         try{
             let startTime = Date.now();
 
-            log.info(tag,"Query Body:  ",body)
+            log.debug(tag,"Query Body:  ",body)
             if(!body.query) throw Error("query is required!")
 
             let authTimeStart = Date.now();
             const authInfo = await redis.hgetall(authorization)
             timingResults['auth'] = Date.now() - authTimeStart;
             if(Object.keys(authInfo).length === 0) throw Error("You must register to use Query!")
-            log.info("authInfo: ",authInfo)
+            log.debug("authInfo: ",authInfo)
 
             let userDataTimeStart = Date.now();
             const userData = await redis.get(authorization + ":user");
-            log.info("userData: ",userData)
+            log.debug("userData: ",userData)
             timingResults['userData'] = Date.now() - userDataTimeStart;
 
             //username
@@ -358,7 +358,7 @@ export class pioneerController extends Controller {
 
             let queryTimeStart = Date.now();
             let query = body.query
-            log.info("query: ",query)
+            log.debug("query: ",query)
             if(!query) throw Error("Must have query!")
             let response = await explore.query(body.query)
             if(!response) throw Error("Failed to build response!")

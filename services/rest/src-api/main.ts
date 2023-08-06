@@ -45,7 +45,7 @@ const rateLimiterRedis = new RateLimiterRedis({
     duration: 1, // Per second
 });
 let PIONEER_SPEC = process.env['PIONEER_SPEC'] || 'http://127.0.0.1:9001/spec/swagger.json'
-log.info("PIONEER_SPEC",PIONEER_SPEC)
+log.debug("PIONEER_SPEC",PIONEER_SPEC)
 process.env['PIONEER_SPEC'] = PIONEER_SPEC
 // const loggerDogMiddleWare = async (req, res, next) => {
 //     try{
@@ -355,9 +355,9 @@ subscriber.on('message', async function (channel, payloadS) {
         } else if(channel === 'bankless'){
             //push message to user
             let context = JSON.parse(payloadS)
-            log.info(tag,"context: ",context)
-            log.info(tag,"context: ",context.terminalName)
-            log.info(tag,"usersByUsername: ",usersByUsername)
+            log.debug(tag,"context: ",context)
+            log.debug(tag,"context: ",context.terminalName)
+            log.debug(tag,"usersByUsername: ",usersByUsername)
             let terminalName = context.payload.terminalName
             //send to user
             if(usersByUsername[terminalName]){
@@ -417,7 +417,7 @@ io.on('connection', async function(socket){
 
     socket.on('disconnect', function(){
         let username = usersBySocketId[socket.id]
-        log.info(tag,socket.id+" username: "+username+' disconnected');
+        log.debug(tag,socket.id+" username: "+username+' disconnected');
         redis.srem('online',username)
         //remove socket.id from username list
         if(usersByUsername[username])usersByUsername[username].splice(usersByUsername[username].indexOf(socket.id), 1);
@@ -433,14 +433,14 @@ io.on('connection', async function(socket){
 
         let queryKey = msg.queryKey
         if(queryKey && msg.username){
-            log.info(tag,"GIVEN: username: ",msg.username)
+            log.debug(tag,"GIVEN: username: ",msg.username)
             //get pubkeyInfo
             let queryKeyInfo = await redis.hgetall(queryKey)
-            log.info(tag,"ACTUAL: username: ",queryKeyInfo.username)
+            log.debug(tag,"ACTUAL: username: ",queryKeyInfo.username)
             if(queryKeyInfo.username === msg.username){
-                log.info(tag,"session valid starting!")
-                log.info(tag,"socket.id: ",socket.id)
-                log.info(tag,"msg.username: ",msg.username)
+                log.debug(tag,"session valid starting!")
+                log.debug(tag,"socket.id: ",socket.id)
+                log.debug(tag,"msg.username: ",msg.username)
                 usersBySocketId[socket.id] = msg.username
                 if(!usersByUsername[msg.username]) usersByUsername[msg.username] = []
                 usersByUsername[msg.username].push(socket.id)

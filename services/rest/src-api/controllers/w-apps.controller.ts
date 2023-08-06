@@ -817,22 +817,22 @@ export class WAppsController extends Controller {
                 sig: body.signature,
             });
             log.debug(tag,"addressFromSig: ",addressFromSig)
-            log.info(tag,"message: ",message)
-            log.info(tag,"message: ",typeof(message))
+            log.debug(tag,"message: ",message)
+            log.debug(tag,"message: ",typeof(message))
             message = JSON.parse(message)
             if(!message.app) throw Error("Ivalid message missing app")
 
             let allPioneers = await networkEth.getAllPioneers()
             let pioneers = allPioneers.owners
-            log.info(tag,"pioneers: ",pioneers)
+            log.debug(tag,"pioneers: ",pioneers)
             for(let i=0;i<pioneers.length;i++){
                 pioneers[i] = pioneers[i].toLowerCase()
             }
             let resultRevoke:any = {}
             console.log("index: ",pioneers.indexOf(addressFromSig.toLowerCase()))
-            log.info(tag,"pioneers: ",pioneers[0])
-            log.info(tag,"pioneers: ",pioneers[1])
-            log.info(tag,"pioneers: ",addressFromSig.toLowerCase())
+            log.debug(tag,"pioneers: ",pioneers[0])
+            log.debug(tag,"pioneers: ",pioneers[1])
+            log.debug(tag,"pioneers: ",addressFromSig.toLowerCase())
 
             if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
                 resultRevoke.result = await appsDB.remove({app:message.app})
@@ -879,19 +879,19 @@ export class WAppsController extends Controller {
             //get all noun owners
             let allPioneers = await networkEth.getAllPioneers()
             let pioneers = allPioneers.owners
-            log.info(tag,"pioneers: ",pioneers)
+            log.debug(tag,"pioneers: ",pioneers)
             for(let i=0;i<pioneers.length;i++){
                 pioneers[i] = pioneers[i].toLowerCase()
             }
-            log.info(tag,"pioneers: ",pioneers)
+            log.debug(tag,"pioneers: ",pioneers)
             message = JSON.parse(message)
             if(!message.name) throw Error("Ivalid message missing name")
             if(!message.url) throw Error("Ivalid message missing url")
             let resultWhitelist:any = {}
             console.log("index: ",pioneers.indexOf(addressFromSig.toLowerCase()))
-            log.info(tag,"pioneers: ",pioneers[0])
-            log.info(tag,"pioneers: ",pioneers[1])
-            log.info(tag,"pioneers: ",addressFromSig.toLowerCase())
+            log.debug(tag,"pioneers: ",pioneers[0])
+            log.debug(tag,"pioneers: ",pioneers[1])
+            log.debug(tag,"pioneers: ",addressFromSig.toLowerCase())
             if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
                 resultWhitelist = await appsDB.update({name:message.name},{$set:{whitelist:true}})
                 log.debug(tag,"resultWhitelist: ",resultWhitelist)
@@ -899,7 +899,7 @@ export class WAppsController extends Controller {
 
                 //credit the dev that submited
                 let appInfo = await appsDB.findOne({name:message.name})
-                log.info(tag,"appInfo: ",appInfo)
+                log.debug(tag,"appInfo: ",appInfo)
                 let devAddress = appInfo.developer
                 redis.hincryby(devAddress+":score",100)
 

@@ -175,8 +175,8 @@ let do_work = async function(){
                     //blocknative.submitAddress("ETH", pubkeyInfo.master)
 
                     // get ethPlorer list
-                    let ethInfo = await networks['ETH'].getBalanceTokens(work.pubkey)
-                    log.debug(tag,"ethInfo: ",ethInfo)
+                    // let ethInfo = await networks['ETH'].getBalanceTokens(work.pubkey)
+                    // log.debug(tag,"ethInfo: ",ethInfo)
 
                     //forEach
                     // let tokens = Object.keys(ethInfo.balances)
@@ -210,7 +210,7 @@ let do_work = async function(){
 
                     //get zapper dashboard
                     let zapperInfo = await zapper.getPortfolio(work.pubkey)
-                    log.info(tag,"zapperInfo: ",zapperInfo)
+                    log.debug(tag,"zapperInfo: ",zapperInfo)
 
                     // forEach tokens
                     if (zapperInfo && zapperInfo.tokens && zapperInfo.tokens.length > 0) {
@@ -238,24 +238,24 @@ let do_work = async function(){
 
                     //isPioneer
                     let allPioneers = await networks['ETH'].getAllPioneers()
-                    log.info(tag,"allPioneers: ",allPioneers)
+                    log.debug(tag,"allPioneers: ",allPioneers)
 
                     let isPioneer = false
                     if(allPioneers.owners.indexOf(work.pubkey.toLowerCase()) > -1){
-                        log.info("Pioneer detected!")
+                        log.debug("Pioneer detected!")
                         //mark user as pioneer
 
                         // Mark user as pioneer
                         isPioneer = true;
                         //work.username
                         let updatedUsername = await usersDB.update({username:work.username}, { $set: { isPioneer: true } }, { multi: true });
-                        log.info("Updated username PIONEER: ", updatedUsername);
+                        log.debug("Updated username PIONEER: ", updatedUsername);
 
                         // Get art for nft
                         const pioneerImage = allPioneers.images.find((image: { address: string }) => image.address.toLowerCase() === work.pubkey.toLowerCase());
                         if (pioneerImage) {
                             let updatedUsername2 = await usersDB.update({username:work.username}, { $set: { pioneerImage: pioneerImage.image } }, { multi: true });
-                            log.info("updatedUsername2 PIONEER: ", updatedUsername2);
+                            log.debug("updatedUsername2 PIONEER: ", updatedUsername2);
                             nfts.push({
                                 name: "Pioneer",
                                 description: "Pioneer",
@@ -281,7 +281,7 @@ let do_work = async function(){
                             { $set: { isFox: true, ...foxInfo } },
                             { multi: true }
                         );
-                        log.info("updatedUsername FOX: ", updatedUsername);
+                        log.debug("updatedUsername FOX: ", updatedUsername);
                     }
 
                     //blockbookInfo
@@ -379,10 +379,10 @@ let do_work = async function(){
 
                 // if(work.symbol === 'AVAX'){
                 //     try{
-                //         log.info(tag,"avax detected! pubkey: ",work.pubkey)
+                //         log.debug(tag,"avax detected! pubkey: ",work.pubkey)
                 //
                 //         let balanceAvax = await networks['AVAX'].getBalance(work.pubkey)
-                //         log.info(tag,"balanceAvax: ",balanceAvax)
+                //         log.debug(tag,"balanceAvax: ",balanceAvax)
                 //         if(!balanceAvax) balanceAvax = 0
                 //         balances.push({
                 //             network:work.symbol,
@@ -406,8 +406,8 @@ let do_work = async function(){
 
                 // if OSMO get tokens/ibc channels
                 if(work.network === 'OSMO'){
-                    log.info(tag,"work.symbol: ",work.symbol)
-                    log.info(tag,"networks[work.symbol]: ",networks[work.symbol])
+                    log.debug(tag,"work.symbol: ",work.symbol)
+                    log.debug(tag,"networks[work.symbol]: ",networks[work.symbol])
                     let balancesResp = await networks[work.symbol].getBalances(work.pubkey)
                     log.debug(tag,"balancesResp: ",balancesResp)
                     for(let i =0; i < balancesResp.length; i++){
@@ -510,7 +510,7 @@ let do_work = async function(){
 
                 //get asset info
                 let assetInfo = await assetsDB.findOne({symbol:balance.symbol})
-                log.info("assetInfo: ",assetInfo)
+                log.debug("assetInfo: ",assetInfo)
                 if(assetInfo){
                     balance.caip = assetInfo.caip
                     balance.image = assetInfo.image
@@ -528,7 +528,7 @@ let do_work = async function(){
                     log.debug(tag,"balance: ",balance)
                     //TODO verify this actually works
                     if(balanceMongo[0].balance !== balance.balance){
-                        log.info(tag,"Update balance~!")
+                        log.debug(tag,"Update balance~!")
 
                         //TODO events
                         // push_balance_event(work,balance)
