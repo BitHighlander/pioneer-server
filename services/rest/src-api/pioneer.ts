@@ -111,8 +111,8 @@ module.exports = {
     refresh: async function (username:string) {
         return get_and_rescan_pubkeys(username);
     },
-    register: async function (username:string, xpubs:any, context:string) {
-        return register_pubkeys(username, xpubs, context);
+    register: async function (username:string, pubkeys:any, context:string) {
+        return register_pubkeys(username, pubkeys, context);
     },
     getPubkeys: async function (username:string, context?:string) {
         return get_and_verify_pubkeys(username, context);
@@ -158,7 +158,7 @@ let get_pubkey_balances = async function (pubkey: any) {
         let balances: any = [];
         let nfts: any = [];
         let positions: any = [];
-
+        log.info(tag," scanning pubkey: ",pubkey.pubkey)
         // By type
         if (pubkey.type === "xpub" || pubkey.type === "zpub") {
             let cacheKey = `balances:blockbook:getBalanceByXpub:${pubkey.symbol}:${pubkey.pubkey}`;
@@ -388,7 +388,7 @@ let get_pubkey_balances = async function (pubkey: any) {
 
         if (saveActions.length > 0) {
             let updateSuccess = await pubkeysDB.bulkWrite(saveActions, { ordered: false });
-            log.debug(tag, "updateSuccess: ", updateSuccess);
+            log.info(tag, "updateSuccess: ", updateSuccess);
             output.dbUpdate = updateSuccess;
         }
 
@@ -651,7 +651,7 @@ let register_address = async function (username:string, pubkey:any, context:stri
 
         queue.createWork("pioneer:pubkey:ingest",work)
         let result = await get_pubkey_balances(work)
-        log.debug(result)
+        log.info(tag,"result: ",result)
 
         return queueId
     } catch (e) {
@@ -827,7 +827,7 @@ const register_pubkeys = async function (username: string, pubkeys: any, context
         output.balances = [];
         for (let i = 0; i < pubkeys.length; i++) {
             let pubkeyInfo = pubkeys[i];
-            log.debug(tag, "pubkeyInfo: ", pubkeyInfo);
+            log.info(tag, "pubkeyInfo: ", pubkeyInfo);
             let nativeAsset = getNativeAssetForBlockchain(pubkeyInfo.blockchain);
             if (!nativeAsset) throw Error("104: invalid pubkey! unsupported by coins module!");
             if (!pubkeyInfo.pubkey) throw Error("104: invalid pubkey! missing pubkey!");

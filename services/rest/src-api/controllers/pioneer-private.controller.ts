@@ -186,8 +186,8 @@ export class pioneerPrivateController extends Controller {
     public async register(@Header('Authorization') authorization: string, @Body() body: RegisterBody): Promise<any> {
         let tag = TAG + " | register | ";
         try {
-            log.debug(tag,"register body: ", body);
-            log.debug(tag,"register body: ", JSON.stringify(body));
+            log.info(tag,"register body: ", body);
+            log.info(tag,"register body: ", JSON.stringify(body));
             if (!body.context) throw new Error("Missing context parameter!");
             if (!body.blockchains) throw new Error("Missing blockchains parameter!");
             if (!body.walletDescription || typeof body.walletDescription === 'string') throw new Error("Invalid walletDescription parameter! Expected a non-string value.");
@@ -295,8 +295,8 @@ export class pioneerPrivateController extends Controller {
             //let pubkeysRegistering = body.data.pubkeys
             log.debug(tag, "pubkeysMongo: ", pubkeysMongo);
             log.debug(tag, "pubkeysRegistering: ", pubkeysRegistering);
-            log.debug(tag, "pubkeysMongo: ", pubkeysMongo.length);
-            log.debug(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
+            log.info(tag, "pubkeysMongo: ", pubkeysMongo.length);
+            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
             //register new pubkeys
 
             //get balances
@@ -320,10 +320,10 @@ export class pioneerPrivateController extends Controller {
 
             //add raw pubkeys to mongo
             if(pubkeysRegistering.length > 0){
-                log.debug("register newPubkeys: ", pubkeysRegistering.length);
+                log.info("register newPubkeys: ", pubkeysRegistering.length);
                 //pioneer.register(username, pubkeysRegistering, body.context)
                 let resultRegister = await pioneer.register(username, pubkeysRegistering, body.context)
-                log.debug("resultRegister: ", resultRegister);
+                log.info("resultRegister: ", resultRegister);
                 allBalances = resultRegister.balances
                 log.debug("Adding pubkey to the user: ", pubkeysRegistering);
                 // await usersDB.update(
@@ -351,16 +351,17 @@ export class pioneerPrivateController extends Controller {
                 throw new Error("Wallet description not found!");
             }
 
+            //TODO bring this back, broke in MM adding new pubkeys
             // Validate pubkeys are in pubkeys
-            let missingPubkeysFinal = body.data.pubkeys.flat().filter(pubkey =>
-                !userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey)
-            );
-
-            if (missingPubkeysFinal.length > 0) {
-                missingPubkeysFinal.forEach(pubkey => console.log("Pubkey not found:", pubkey.pubkey));
-                log.error(tag,"Failed to register: missingPubkeysFinal: ", missingPubkeysFinal);
-                throw new Error("Failed to register pubkey!");
-            }
+            // let missingPubkeysFinal = body.data.pubkeys.flat().filter(pubkey =>
+            //     !userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey)
+            // );
+            //
+            // if (missingPubkeysFinal.length > 0) {
+            //     missingPubkeysFinal.forEach(pubkey => console.log("Pubkey not found:", pubkey.pubkey));
+            //     log.error(tag,"Failed to register: missingPubkeysFinal: ", missingPubkeysFinal);
+            //     throw new Error("Failed to register pubkey!");
+            // }
 
             let { pubkeys } = await pioneer.getPubkeys(username);
             if(!pubkeys) throw new Error("No pubkeys found!")
