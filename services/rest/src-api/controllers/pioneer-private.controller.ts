@@ -1033,7 +1033,7 @@ export class pioneerPrivateController extends Controller {
     public async setAssetContext(@Body() body: any, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | setAssetContext | "
         try{
-            log.debug(tag,"account: ",body)
+            log.info(tag,"body: ",body)
             log.debug(tag,"Authorization: ",Authorization)
             let output:any = {}
             // get auth info
@@ -1057,7 +1057,7 @@ export class pioneerPrivateController extends Controller {
                 publisher.publish('context',JSON.stringify(contextSwitch))
                 output.success = true
                 //update Redis to new context
-                let updateRedis = await redis.hset(authInfo.username,'assetContext',body.context)
+                let updateRedis = await redis.hmset(authInfo.username,'assetContext',body.asset)
                 output.updateDB = updateRedis
             } else {
                 output.success = false
@@ -1086,7 +1086,7 @@ export class pioneerPrivateController extends Controller {
     public async setBlockchainContext(@Body() body: any, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | setBlockchainContext | "
         try{
-            log.debug(tag,"account: ",body)
+            log.info(tag,"body: ",body)
             log.debug(tag,"Authorization: ",Authorization)
             let output:any = {}
             // get auth info
@@ -1105,12 +1105,12 @@ export class pioneerPrivateController extends Controller {
                 let contextSwitch = {
                     type:"blockchainContext",
                     username:userInfo.username,
-                    blockchain:body.asset
+                    blockchain:body.blockchain
                 }
                 publisher.publish('context',JSON.stringify(contextSwitch))
                 output.success = true
                 //update Redis to new context
-                let updateRedis = await redis.hset(authInfo.username,'blockchainContext',body.blockchain)
+                let updateRedis = await redis.hmset(authInfo.username,'blockchainContext',body.blockchain)
                 output.updateDB = updateRedis
             } else {
                 output.success = false
