@@ -117,9 +117,51 @@ export class caipsController extends Controller {
         }
     }
 
+    @Get('/getBlockchainByName/{name}')
+    public async getBlockchainByName(name:string) {
+        let tag = TAG + " | getBlockchainByName | "
+        try{
+            name = name.toLowerCase()
+            log.debug(tag,"name: ",name)
+            // Get tracked blockchains
+            let blockchains = await blockchainsDB.find({ name });
+            //@TODO use smart filtering to sort by most popular
+            return blockchains;
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    @Get('/getBlockchainByChainId/{chainId}')
+    public async getBlockchainByChainId(chainId:any) {
+        let tag = TAG + " | getBlockchainByChainId | "
+        try{
+            log.debug(tag,"address: ",chainId)
+            if(typeof(chainId) === 'string') chainId = parseInt(chainId)
+            // Get tracked blockchains
+            let blockchains = await blockchainsDB.find({ chainId });
+            //@TODO use smart filtering to sort by most popular
+            return blockchains;
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
     @Get('/blockchainBySymbol/{symbol}')
-    public async getBlockchain(symbol:string) {
-        let tag = TAG + " | getBlockchain | "
+    public async getBlockchainBySymbol(symbol:string) {
+        let tag = TAG + " | getBlockchainBySymbol | "
         try{
             symbol = symbol.toUpperCase()
             log.debug(tag,"address: ",symbol)

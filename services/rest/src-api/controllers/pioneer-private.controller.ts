@@ -46,7 +46,7 @@ let config = {
 const axios = require('axios')
 import { v4 as uuidv4 } from 'uuid';
 const short = require('short-uuid');
-let pioneer = require('../pioneer')
+let pioneer = require('@pioneer-platform/pioneer')
 
 //rest-ts
 import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
