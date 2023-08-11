@@ -132,10 +132,10 @@ let onStart = async function(){
     let tag = TAG+" | onStart | "
     try{
         //get nodes
-        let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
-        log.debug(tag,"unchainedNodes: ",unchainedNodes)
+        // let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
+        // log.debug(tag,"unchainedNodes: ",unchainedNodes)
         //init networks with gaurenteed live nodes
-        await networks['ANY'].init(unchainedNodes)
+        await networks['ANY'].init()
     }catch(e){
         console.error(e)
     }
@@ -1692,7 +1692,7 @@ export class atlasPublicController extends Controller {
 
             if(UTXO_COINS.indexOf(body.network) >= 0){
                 //TODO supported assets
-                await networks['ANY'].init()
+                //await networks['ANY'].init()
                 let resp = await networks['ANY'].getFeesWithRates(body.network,body.memo)
                 log.debug("resp:",resp)
                 //else error
@@ -1775,8 +1775,8 @@ export class atlasPublicController extends Controller {
     public async broadcast(@Body() body: BroadcastBody): Promise<any> {
         let tag = TAG + " | broadcast | "
         try{
-            log.info(tag,"************************** CHECKPOINT *******************88 ")
-            log.info(tag,"body: ",body)
+            log.debug(tag,"************************** CHECKPOINT *******************88 ")
+            log.debug(tag,"body: ",body)
             if(!body.network) throw Error("104: network required! ")
             if(!body.serialized) throw Error("105: must have serialized payload! ")
 
@@ -1787,12 +1787,12 @@ export class atlasPublicController extends Controller {
 
             //if(!networks[coin]) throw Error("102: unknown network coin:"+coin)
             let updateResult2 = await invocationsDB.update({invocationId:body.invocationId},{$set:{state:'broadcasted'}})
-            log.info(tag,"updateResult2: ********* ",updateResult2)
+            log.debug(tag,"updateResult2: ********* ",updateResult2)
 
             //if
             let invocationInfo:any = {}
             if(body.invocationId){
-                log.info(tag,"invocationId: ",body.invocationId)
+                log.debug(tag,"invocationId: ",body.invocationId)
                 //get invocation
                 let invocationInfoQuery = await invocationsDB.findOne({invocationId:body.invocationId})
                 log.debug(tag,"invocationInfoQuery: ",invocationInfoQuery)
@@ -1805,7 +1805,7 @@ export class atlasPublicController extends Controller {
                 redis.lpush(body.invocationId,body.txid)
 
                 let updateResult = await invocationsDB.update({invocationId:body.invocationId},{$set:{state:'broadcasted'}})
-                log.info(tag,"invocation updateResult: ",updateResult)
+                log.debug(tag,"invocation updateResult: ",updateResult)
             } else {
                 log.error(tag,"No invocationId on body.")
                 throw Error('invocationId required!')
@@ -1813,7 +1813,7 @@ export class atlasPublicController extends Controller {
 
             //broadcast
             if(!body.noBroadcast){
-                log.info(tag,"broadcasting!")
+                log.debug(tag,"broadcasting!")
                 let result
                 try{
                     if(network === 'EOS'){
@@ -1855,7 +1855,7 @@ export class atlasPublicController extends Controller {
                                 throw Error("Type not supported! "+body.type)
                         }
                     } else if(UTXO_COINS.indexOf(network) >= 0){
-                        log.info(tag,"UXTO DETECTED!: ",network)
+                        log.debug(tag,"UXTO DETECTED!: ",network)
                         //normal broadcast
                         try{
                             if(!body.serialized) throw Error("signature required!")
@@ -1875,7 +1875,7 @@ export class atlasPublicController extends Controller {
                             }
                             if(!output.error && !output.success) output.error = "unknown error"
                             if(!output.success) output.success = false
-                            log.info(tag,"result: ",result)
+                            log.debug(tag,"result: ",result)
                         }catch(e){
                             log.error(tag,"ERRROR ON BROADCAST e: ",e)
                             result = {
@@ -1884,15 +1884,15 @@ export class atlasPublicController extends Controller {
                             }
                         }
                     } else {
-                        log.info(tag,"normal broadcast! ")
+                        log.debug(tag,"normal broadcast! ")
                         //All over coins
                         try{
-                            log.info(tag,"body: ",body)
-                            log.info(tag,"body.serialized: ",body.serialized)
-                            log.info(tag,"network: ",network)
+                            log.debug(tag,"body: ",body)
+                            log.debug(tag,"body.serialized: ",body.serialized)
+                            log.debug(tag,"network: ",network)
                             network = COIN_MAP[network]
                             let result = await networks[network].broadcast(body.serialized)
-                            log.info(tag,"BROADCASAT RESULT: ",result)
+                            log.debug(tag,"BROADCASAT RESULT: ",result)
                             output.result = result
                             if(result.success){
                                 output.success = true
@@ -1904,8 +1904,8 @@ export class atlasPublicController extends Controller {
                             } else {
                                 if(result.error) output.error = result.error
                             }
-                            log.info(tag,"output: ",output)
-                            log.info(tag,"result: ",result)
+                            log.debug(tag,"output: ",output)
+                            log.debug(tag,"result: ",result)
                         }catch(e){
                             log.error(tag,"Failed to broadcast!: ",e)
                             result = {

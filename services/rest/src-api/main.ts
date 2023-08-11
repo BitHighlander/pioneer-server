@@ -124,7 +124,7 @@ let io = require('socket.io')(server,{cors: {origin:'*'}});
 io.sockets.setMaxListeners(SOCKET_MAX_CONNECTIONS);
 
 //web
-app.use('/',express.static('build'));
+app.use('/',express.static('frontend/dist'));
 
 //docs
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -505,7 +505,7 @@ io.on('connection', async function(socket){
         log.debug(tag,'event ****************: ' + msg);
     })
     socket.on('message', function(msg){
-        log.info(tag,'message ****************: ' , msg);
+        log.debug(tag,'message ****************: ' , msg);
         if(msg.actionId){
             //actionId
             redis.lpush(msg.actionId,JSON.stringify(msg))

@@ -186,8 +186,8 @@ export class pioneerPrivateController extends Controller {
     public async register(@Header('Authorization') authorization: string, @Body() body: RegisterBody): Promise<any> {
         let tag = TAG + " | register | ";
         try {
-            log.info(tag,"register body: ", body);
-            log.info(tag,"register body: ", JSON.stringify(body));
+            log.debug(tag,"register body: ", body);
+            log.debug(tag,"register body: ", JSON.stringify(body));
             if (!body.context) throw new Error("Missing context parameter!");
             if (!body.blockchains) throw new Error("Missing blockchains parameter!");
             if (!body.walletDescription || typeof body.walletDescription === 'string') throw new Error("Invalid walletDescription parameter! Expected a non-string value.");
@@ -295,8 +295,8 @@ export class pioneerPrivateController extends Controller {
             //let pubkeysRegistering = body.data.pubkeys
             log.debug(tag, "pubkeysMongo: ", pubkeysMongo);
             log.debug(tag, "pubkeysRegistering: ", pubkeysRegistering);
-            log.info(tag, "pubkeysMongo: ", pubkeysMongo.length);
-            log.info(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
+            log.debug(tag, "pubkeysMongo: ", pubkeysMongo.length);
+            log.debug(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
             //register new pubkeys
 
             //get balances
@@ -320,10 +320,10 @@ export class pioneerPrivateController extends Controller {
 
             //add raw pubkeys to mongo
             if(pubkeysRegistering.length > 0){
-                log.info("register newPubkeys: ", pubkeysRegistering.length);
+                log.debug("register newPubkeys: ", pubkeysRegistering.length);
                 //pioneer.register(username, pubkeysRegistering, body.context)
                 let resultRegister = await pioneer.register(username, pubkeysRegistering, body.context)
-                log.info("resultRegister: ", resultRegister);
+                log.debug("resultRegister: ", resultRegister);
                 allBalances = resultRegister.balances
                 log.debug("Adding pubkey to the user: ", pubkeysRegistering);
                 // await usersDB.update(
@@ -1033,7 +1033,7 @@ export class pioneerPrivateController extends Controller {
     public async setAssetContext(@Body() body: any, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | setAssetContext | "
         try{
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
             log.debug(tag,"Authorization: ",Authorization)
             let output:any = {}
             // get auth info
@@ -1086,7 +1086,7 @@ export class pioneerPrivateController extends Controller {
     public async setBlockchainContext(@Body() body: any, @Header() Authorization: any): Promise<any> {
         let tag = TAG + " | setBlockchainContext | "
         try{
-            log.info(tag,"body: ",body)
+            log.debug(tag,"body: ",body)
             log.debug(tag,"Authorization: ",Authorization)
             let output:any = {}
             // get auth info

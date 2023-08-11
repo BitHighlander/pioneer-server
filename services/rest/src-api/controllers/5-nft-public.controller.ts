@@ -8,7 +8,7 @@
 let TAG = ' | API | '
 
 // const pjson = require('../../package.json');
-// const log = require('@pioneer-platform/loggerdog')()
+const log = require('@pioneer-platform/loggerdog')()
 // const {subscriber, publisher, redis, redisQueue} = require('@pioneer-platform/default-redis')
 // const midgard = require("@pioneer-platform/midgard-client")
 // const uuid = require('short-uuid');

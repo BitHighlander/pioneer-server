@@ -893,7 +893,7 @@ export class pioneerPublicController extends Controller {
             }
 
             // Get tracked networks with sort, limit, and skip parameters
-            log.info(tag, "filterTags: ", filterTags)
+            log.debug(tag, "filterTags: ", filterTags)
             let assets = await nodesDB.find(query, { sort, limit, skip });
             let total = await assetsDB.count(query);
 
@@ -981,9 +981,9 @@ export class pioneerPublicController extends Controller {
                 for(let i = 0; i < ALL_CHAINS.length; i++){
                     let chainInfo = ALL_CHAINS[i]
                     let chainId = chainInfo.chain_id
-                    log.info(tag,"chainId: ",chainId)
+                    log.debug(tag,"chainId: ",chainId)
                     let entry = await nodesDB.find({chainId},{limit})
-                    log.info(tag,"entry: ",entry.length)
+                    log.debug(tag,"entry: ",entry.length)
                     if(entry.length > 1){
                         for(let j = 0; j < entry.length; j++){
                             let server = entry[j]
@@ -1021,7 +1021,7 @@ export class pioneerPublicController extends Controller {
         try {
             const limit = 10;
             const entry = await nodesDB.find({ chainId }, { limit });
-            log.info(tag,"entry: ",entry.length)
+            log.debug(tag,"entry: ",entry.length)
             const output = entry.slice(0, limit);
 
             const pingNode = async (node) => {
@@ -1032,7 +1032,7 @@ export class pioneerPublicController extends Controller {
 
                     let result = await web3.eth.getBlockNumber();
                     result = result.toString(); // Convert BigInt to string
-                    log.info("result: ",result)
+                    log.debug("result: ",result)
                     const endTime = new Date().getTime();
                     const ping = endTime - startTime;
                     console.log(`Node: ${node.service}, Ping: ${ping}`);
@@ -1235,11 +1235,11 @@ export class pioneerPublicController extends Controller {
     public async searchBlockchainByChainId(chainId:string) {
         let tag = TAG + " | searchBlockchainByChainId | "
         try{
-            log.info(tag,"chainId: ",chainId)
-            log.info(tag,"chainId: ",typeof(chainId))
+            log.debug(tag,"chainId: ",chainId)
+            log.debug(tag,"chainId: ",typeof(chainId))
             // @ts-ignore
             chainId = parseInt(chainId)
-            log.info(tag,"chainId: ",typeof(chainId))
+            log.debug(tag,"chainId: ",typeof(chainId))
             //Get tracked networks
             let networks = await blockchainsDB.find({ chainId },{limit:10})
 
@@ -1449,11 +1449,11 @@ export class pioneerPublicController extends Controller {
             let directMatch = await blockchainsDB.findOne({ "name": blockchain })
             let directMatchChainId = await blockchainsDB.findOne({ "chainId": parseInt(blockchain) })
             if(directMatchChainId) directMatch = directMatchChainId
-            log.info(tag,"directMatch: ",directMatch)
+            log.debug(tag,"directMatch: ",directMatch)
             let blockchainInfo
             if(!directMatch){
                 directMatch = await blockchainsDB.findOne({ $or: [{ "blockchain": blockchain },{ "name": blockchain }] })
-                log.info("No direct match found!")
+                log.debug("No direct match found!")
                 if(!directMatch){
                     //if miss then look for partial match
                     let escapeRegex = function (text) {
@@ -1462,13 +1462,13 @@ export class pioneerPublicController extends Controller {
                     //TODO sanitize
                     const regex = new RegExp(escapeRegex(blockchain) + ".*", 'gi');
                     //Get tracked networks
-                    log.info("regex: ",regex)
+                    log.debug("regex: ",regex)
                     blockchainInfo = await blockchainsDB.find({ "blockchain": regex },{limit:10})[0]
                     if(!blockchainInfo){
-                        log.info("No REGEX match found on name!")
+                        log.debug("No REGEX match found on name!")
                         blockchainInfo = await blockchainsDB.find({ "blockchain": regex },{limit:10})[0]
                         if(!blockchainInfo){
-                            log.info("No REGEX match found on blockchain!")
+                            log.debug("No REGEX match found on blockchain!")
                             blockchainInfo = await blockchainsDB.find({ "symbol": regex },{limit:10})[0]
                         }
                     }
@@ -1501,28 +1501,28 @@ export class pioneerPublicController extends Controller {
             //TODO sanitize
             //look for direct match
             let directMatch = await dappsDB.findOne({ "name": name })
-            log.info(tag,"directMatch: ",directMatch)
+            log.debug(tag,"directMatch: ",directMatch)
             let dappInfo
             if(!directMatch){
                 directMatch = await dappsDB.findOne({ $or: [{ "app": name },{ "name": name }] })
-                log.info("No direct match found!")
+                log.debug("No direct match found!")
                 if(!directMatch){
                     const escapeRegex = function (text) {
                         return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
                     };
 
                     const regex = new RegExp(escapeRegex(name), 'gi');
-                    console.log("regex: ", regex); // Use console.log instead of log.info for debugging
+                    console.log("regex: ", regex); // Use console.log instead of log.debug for debugging
 
                     // Use the regex to search for documents in the collection.
                     dappInfo = await dappsDB.find({ name: regex });
                     console.log("dappInfo", dappInfo);
 
                     if(dappInfo.length === 0){
-                        log.info("No REGEX match found on name!")
+                        log.debug("No REGEX match found on name!")
                         dappInfo = await dappsDB.find({ "name": regex },{limit:10})
                         if(!dappInfo.length){
-                            log.info("No REGEX match found on description!")
+                            log.debug("No REGEX match found on description!")
                             dappInfo = await dappsDB.find({ "description": regex },{limit:10})
                         }
                     }
@@ -2064,7 +2064,7 @@ export class pioneerPublicController extends Controller {
 
             let allPioneers = await networkEth.getAllPioneers()
             let pioneers = allPioneers.owners
-            log.info(tag,"pioneers: ",pioneers)
+            log.debug(tag,"pioneers: ",pioneers)
             for(let i=0;i<pioneers.length;i++){
                 pioneers[i] = pioneers[i].toLowerCase()
             }
@@ -2078,7 +2078,7 @@ export class pioneerPublicController extends Controller {
 
                     //update aliases
                     let saveAliasesResult = await assetsDB.update({ name: message.name }, { $set: { aliases } })
-                    log.info("saveAliasesResult: ",saveAliasesResult)
+                    log.debug("saveAliasesResult: ",saveAliasesResult)
                     output.saveAliasesResult = saveAliasesResult
                 }
                 //TODO tags, if tag, simply add to array
@@ -2088,13 +2088,13 @@ export class pioneerPublicController extends Controller {
                     tags.push(message.value)
                     //update aliases
                     let saveAliasesResult = await assetsDB.update({ name: message.name }, { $set: { tags } })
-                    log.info("saveAliasesResult: ",saveAliasesResult)
+                    log.debug("saveAliasesResult: ",saveAliasesResult)
                     output.saveAliasesResult = saveAliasesResult
                 } else {
                     //TODO this is kinda not readable, but it works
                     //Everything that is NOT a tag update in mongo
                     let saveNamesResult = await assetsDB.update({ name: message.name }, { $set: { [message.key]: message.value } })
-                    log.info("saveNamesResult: ",saveNamesResult)
+                    log.debug("saveNamesResult: ",saveNamesResult)
                     output.saveNamesResult = saveNamesResult
                 }
             } else {
@@ -2138,22 +2138,22 @@ export class pioneerPublicController extends Controller {
                 sig: body.signature,
             });
             log.debug(tag,"addressFromSig: ",addressFromSig)
-            log.info(tag,"message: ",message)
-            log.info(tag,"message: ",typeof(message))
+            log.debug(tag,"message: ",message)
+            log.debug(tag,"message: ",typeof(message))
             message = JSON.parse(message)
             if(!message.app) throw Error("Ivalid message missing app")
 
             let allPioneers = await networkEth.getAllPioneers()
             let pioneers = allPioneers.owners
-            log.info(tag,"pioneers: ",pioneers)
+            log.debug(tag,"pioneers: ",pioneers)
             for(let i=0;i<pioneers.length;i++){
                 pioneers[i] = pioneers[i].toLowerCase()
             }
             let resultRevoke:any = {}
             console.log("index: ",pioneers.indexOf(addressFromSig.toLowerCase()))
-            log.info(tag,"pioneers: ",pioneers[0])
-            log.info(tag,"pioneers: ",pioneers[1])
-            log.info(tag,"pioneers: ",addressFromSig.toLowerCase())
+            log.debug(tag,"pioneers: ",pioneers[0])
+            log.debug(tag,"pioneers: ",pioneers[1])
+            log.debug(tag,"pioneers: ",addressFromSig.toLowerCase())
 
             if(pioneers.indexOf(addressFromSig.toLowerCase()) >= 0) {
                 resultRevoke.result = await assetsDB.remove({name:message.app})
