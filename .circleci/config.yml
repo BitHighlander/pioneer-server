@@ -20,7 +20,7 @@ jobs:
       - run:
           command: "make"
   push:
-    resource_class: xlarge
+    resource_class: large
     executor: node
     parameters:
       env:

@@ -1,6 +1,6 @@
 #uncomment ONLY on M1 mac (rolls eyes)
 #FROM --platform=linux/amd64 node:14.16.0
-FROM --platform=linux/amd64 node:20.1.0
+FROM --platform=linux/amd64 node:18.17.1
 
 RUN apt-get update && apt-get install -y chromium
 
