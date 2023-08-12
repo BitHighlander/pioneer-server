@@ -16,6 +16,7 @@ RUN echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} > /usr/src/app/.npmrc
 
 #copy all files except node_modules folder
 COPY . .
+RUN npm install -g pnpm
 RUN npm install
 RUN npm run build:all-stage
 
