@@ -43,53 +43,53 @@ txsDB.createIndex({invocationId: 1})
 let blockchains = []
 const networks:any = {}
 
-if(process.env['FEATURE_BITCOIN_BLOCKCHAIN']){
-    blockchains.push('bitcoin')
-    //all utxo's share
-    networks['ANY'] = require('@pioneer-platform/utxo-network')
-}
-
-if(process.env['FEATURE_BITCOINCASH_BLOCKCHAIN']){
-    blockchains.push('bitcoincash')
-}
-
-if(process.env['FEATURE_DASH_BLOCKCHAIN']){
-    blockchains.push('dash')
-}
-
-if(process.env['FEATURE_LITECOIN_BLOCKCHAIN']){
-    blockchains.push('litecoin')
-}
-
-if(process.env['FEATURE_DOGECOIN_BLOCKCHAIN']){
-    blockchains.push('dogecoin')
-}
-
-if(process.env['FEATURE_ETHEREUM_BLOCKCHAIN']){
-    blockchains.push('ethereum')
-    networks['ETH'] = require('@pioneer-platform/eth-network')
-    networks['ETH'].init()
-}
-
-if(process.env['FEATURE_COSMOS_BLOCKCHAIN']){
-    blockchains.push('cosmos')
-    networks['ATOM'] = require('@pioneer-platform/cosmos-network')
-}
-
-if(process.env['FEATURE_BINANCE_BLOCKCHAIN']){
-    blockchains.push('binance')
-    networks['BNB'] = require('@pioneer-platform/binance-network')
-}
-
-if(process.env['FEATURE_THORCHAIN_BLOCKCHAIN']){
-    blockchains.push('thorchain')
-    networks['RUNE'] = require('@pioneer-platform/thor-network')
-}
-
-if(process.env['FEATURE_OSMOSIS_BLOCKCHAIN']){
-    blockchains.push('osmosis')
-    networks['OSMO'] = require('@pioneer-platform/osmosis-network')
-}
+// if(process.env['FEATURE_BITCOIN_BLOCKCHAIN']){
+//     blockchains.push('bitcoin')
+//     //all utxo's share
+//     networks['ANY'] = require('@pioneer-platform/utxo-network')
+// }
+//
+// if(process.env['FEATURE_BITCOINCASH_BLOCKCHAIN']){
+//     blockchains.push('bitcoincash')
+// }
+//
+// if(process.env['FEATURE_DASH_BLOCKCHAIN']){
+//     blockchains.push('dash')
+// }
+//
+// if(process.env['FEATURE_LITECOIN_BLOCKCHAIN']){
+//     blockchains.push('litecoin')
+// }
+//
+// if(process.env['FEATURE_DOGECOIN_BLOCKCHAIN']){
+//     blockchains.push('dogecoin')
+// }
+//
+// if(process.env['FEATURE_ETHEREUM_BLOCKCHAIN']){
+//     blockchains.push('ethereum')
+//     networks['ETH'] = require('@pioneer-platform/eth-network')
+//     networks['ETH'].init()
+// }
+//
+// if(process.env['FEATURE_COSMOS_BLOCKCHAIN']){
+//     blockchains.push('cosmos')
+//     networks['ATOM'] = require('@pioneer-platform/cosmos-network')
+// }
+//
+// if(process.env['FEATURE_BINANCE_BLOCKCHAIN']){
+//     blockchains.push('binance')
+//     networks['BNB'] = require('@pioneer-platform/binance-network')
+// }
+//
+// if(process.env['FEATURE_THORCHAIN_BLOCKCHAIN']){
+//     blockchains.push('thorchain')
+//     networks['RUNE'] = require('@pioneer-platform/thor-network')
+// }
+//
+// if(process.env['FEATURE_OSMOSIS_BLOCKCHAIN']){
+//     blockchains.push('osmosis')
+//     networks['OSMO'] = require('@pioneer-platform/osmosis-network')
+// }
 
 // if(process.env['FEATURE_RIPPLE_BLOCKCHAIN']){
 //     blockchains.push('ripple')
