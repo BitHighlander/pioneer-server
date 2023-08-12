@@ -78,7 +78,6 @@
     "@pioneer-platform/pioneer-invoke": "latest",
     "@pioneer-platform/pioneer-types": "latest",
     "@pioneer-platform/redis-queue": "latest",
-    "@pioneer-platform/ripple-network": "latest",
     "@pioneer-platform/secret-network": "latest",
     "@pioneer-platform/signing": "latest",
     "@pioneer-platform/terra-network": "latest",

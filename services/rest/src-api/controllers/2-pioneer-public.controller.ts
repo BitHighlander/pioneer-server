@@ -91,11 +91,11 @@ if(process.env['FEATURE_OSMOSIS_BLOCKCHAIN']){
     networks['OSMO'] = require('@pioneer-platform/osmosis-network')
 }
 
-if(process.env['FEATURE_RIPPLE_BLOCKCHAIN']){
-    blockchains.push('ripple')
-    networks['XRP'] = require('@pioneer-platform/ripple-network')
-    networks['XRP'].init()
-}
+// if(process.env['FEATURE_RIPPLE_BLOCKCHAIN']){
+//     blockchains.push('ripple')
+//     networks['XRP'] = require('@pioneer-platform/ripple-network')
+//     networks['XRP'].init()
+// }
 
 //Cache time
 let CACHE_TIME = process.env['CACHE_EXPIRE_TIME'] || 99999999
