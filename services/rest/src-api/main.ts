@@ -550,8 +550,8 @@ let start_server = async function () {
     try {
         log.info("DEBUG checkpoint PRE")
         //clear online
-        await redis.del("online")
-
+        // await redis.del("online")
+        log.info("DEBUG checkpoint PRE")
         server.listen(API_PORT, () => console.log(`Server started listening to port ${API_PORT}`));
         //TODO handle exit
 
