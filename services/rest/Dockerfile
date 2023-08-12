@@ -21,11 +21,11 @@ RUN npm install
 RUN npm run build:all-stage
 
 # Set environment variables
-ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium
-ENV CHROME_BIN /usr/bin/chromium
+#ENV PUPPETEER_EXECUTABLE_PATH /usr/bin/chromium
+#ENV CHROME_BIN /usr/bin/chromium
 
-ENV NODE_ENV docker
-ENV CHROME_PATH /usr/lib/chromium/
+#ENV NODE_ENV docker
+#ENV CHROME_PATH /usr/lib/chromium/
 
 #start
 CMD [ "npm", "run", "start" ]
