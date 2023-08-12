@@ -137,10 +137,10 @@ let onStart = async function(){
     let tag = TAG+" | onStart | "
     try{
         //get nodes
-        let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
-        log.debug(tag,"unchainedNodes: ",unchainedNodes)
+        // let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
+        // log.debug(tag,"unchainedNodes: ",unchainedNodes)
         //init networks with gaurenteed live nodes
-        networks['ANY'].init(unchainedNodes)
+        //networks['ANY'].init()
     }catch(e){
         console.error(e)
     }
