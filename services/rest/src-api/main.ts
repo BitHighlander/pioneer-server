@@ -558,7 +558,7 @@ let start_server = async function () {
         return true
     }catch(e){
         log.error(tag,"e: ",e)
-        throw e
+        //throw e
     }
 }
 start_server()
