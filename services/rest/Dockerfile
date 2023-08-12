@@ -1,8 +1,8 @@
 #uncomment ONLY on M1 mac (rolls eyes)
 #FROM --platform=linux/amd64 node:14.16.0
-FROM --platform=linux/amd64 node:18.17.1
+FROM --platform=linux/amd64 node:16.13.2
 
-RUN apt-get update && apt-get install -y chromium
+#RUN apt-get update && apt-get install -y chromium
 
 ARG NPM_TOKEN
 ARG NODE_ENV
