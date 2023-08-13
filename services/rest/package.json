@@ -65,7 +65,7 @@
     "@pioneer-platform/foxitar-client": "^8.1.27",
     "@pioneer-platform/harpie-client": "^8.1.23",
     "@pioneer-platform/kava-network": "latest",
-    "@pioneer-platform/loggerdog": "latest",
+    "@pioneer-platform/loggerdog": "^8.1.31",
     "@pioneer-platform/markets": "^8.1.36",
     "@pioneer-platform/midgard-client": "latest",
     "@pioneer-platform/network": "latest",

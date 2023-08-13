@@ -30,7 +30,7 @@ let dapsDB = connection.get('dapps')
 //modules
 
 //rest-ts
-import { Body, Controller, Get, Post, Route, Tags, SuccessResponse, Query, Request, Response, Header } from 'tsoa';
+import { Controller, Get, Route, Tags } from 'tsoa';
 import * as express from 'express';
 
 //import { User, UserCreateRequest, UserUpdateRequest } from '../models/user';
