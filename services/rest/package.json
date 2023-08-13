@@ -109,6 +109,7 @@
     "express-jwt": "^7.7.7",
     "framer-motion": "^4.1.17",
     "hnswlib-node": "^1.4.2",
+    "http-proxy-middleware": "^2.0.6",
     "https": "^1.0.0",
     "jsonwebtoken": "^8.5.1",
     "langchain": "^0.0.95",

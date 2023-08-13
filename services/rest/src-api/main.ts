@@ -16,6 +16,7 @@ import * as express from 'express';
 import * as methodOverride from 'method-override';
 
 import { RegisterRoutes } from './routes/routes';  // here
+const { createProxyMiddleware } = require('http-proxy-middleware');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../api/dist/swagger.json')
 // const metrics = require('datadog-metrics');
@@ -135,6 +136,20 @@ app.use('/coins', express.static('coins'));
 
 //REST API v1
 RegisterRoutes(app);  // and here
+
+//@TODO this keeps domain if you care
+app.use(['/','/assets','/coins','/docs'], createProxyMiddleware({
+    target: 'https://pioneer-frontend-v3.vercel.app',
+    changeOrigin: true,
+    onProxyRes: function (proxyRes, req, res) {
+        // Remove potential security headers
+        delete proxyRes.headers['strict-transport-security'];
+        delete proxyRes.headers['content-security-policy'];
+        delete proxyRes.headers['x-content-security-policy'];
+        delete proxyRes.headers['x-webkit-csp'];
+        delete proxyRes.headers['public-key-pins'];
+    }
+}));
 
 //globals
 let globalSockets = {}
