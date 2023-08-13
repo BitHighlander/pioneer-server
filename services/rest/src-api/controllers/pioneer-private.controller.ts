@@ -196,7 +196,11 @@ export class pioneerPrivateController extends Controller {
             let username;
             const authInfo = await redis.hgetall(authorization);
             if (Object.keys(authInfo).length === 0) {
-                log.debug("New user!");
+                log.info("api key not reconized!");
+                //is username taken?
+                let userInfoMongo = await usersDB.findOne({username:body.username})
+                if(userInfoMongo) throw new Error("Username already taken!")
+
                 // Generate a unique identifier for each registration if the user hasn't chosen a username
                 username = body.username || "user:" + uuidv4();
                 let userInfo = {
@@ -227,6 +231,7 @@ export class pioneerPrivateController extends Controller {
 
             let userInfoMongo = await usersDB.findOne({ username });
             if (!userInfoMongo) {
+                log.info(tag,"no user found in mongo?")
                 // New user in MongoDB
                 let code = randomstring.generate(6).toUpperCase();
                 let pubkeys = []
@@ -250,7 +255,8 @@ export class pioneerPrivateController extends Controller {
                 };
                 userInfoMongo = userInfo
                 try {
-                    await usersDB.insert(userInfo);
+                    let saveNewUser = await usersDB.insert(userInfo);
+                    log.info(tag,"saveNewUser: ",saveNewUser)
                 } catch (error) {
                     if (error.code === 11000) {
                         // Duplicate key error, handle it gracefully
@@ -260,113 +266,14 @@ export class pioneerPrivateController extends Controller {
                     }
                 }
             }
-
-            let isNewWallet = userInfoMongo && userInfoMongo.wallets ? !userInfoMongo.wallets.some(wallet => wallet === body.context) : true;
-            let isNewWalletDescription = userInfoMongo && userInfoMongo.walletDescriptions ? !userInfoMongo.walletDescriptions.some(walletDesc => walletDesc.context === body.context) : true;
-
-            if (isNewWallet) {
-                // Update the existing user's information with the new pubkeys/wallet
-                await usersDB.update({ username }, { $addToSet: { "wallets": body.context, "pubkeys": { $each: ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))) } } });
-            }
-
-            if (isNewWalletDescription) {
-                // Add a new wallet description if it doesn't already exist
-                let walletDescription = {
-                    context: body.context,
-                    type: body.walletDescription.type,
-                    valueUsdContext: 0 // Placeholder value for responseMarkets.total
-                };
-                await usersDB.update({ username }, { $addToSet: { "walletDescriptions": walletDescription } });
-            }
-
-            if (isNewWallet) {
-                await redis.sadd(username + ':wallets', body.context);
-            }
-
-            // Register with pioneer and get balances
-            if (!body.data.pubkeys) throw new Error("Cannot register an empty wallet!");
-            // pioneer.register(username, ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))), body.context);
-
-            // Add any pubkeys missing from the user
-            log.debug(tag, "userInfoMongo: ", userInfoMongo);
-            let pubkeysMongo = userInfoMongo.pubkeys || [];
-            //only new keys? untested
-            let pubkeysRegistering = ([] as Pubkey[]).concat(...body.data.pubkeys.map((pubkey: Pubkey) => ({ ...pubkey, context: body.context }))); // Flatten the pubkeys array and add the context
-            //let pubkeysRegistering = body.data.pubkeys
-            log.debug(tag, "pubkeysMongo: ", pubkeysMongo);
-            log.debug(tag, "pubkeysRegistering: ", pubkeysRegistering);
-            log.debug(tag, "pubkeysMongo: ", pubkeysMongo.length);
-            log.debug(tag, "pubkeysRegistering: ", pubkeysRegistering.length);
-            //register new pubkeys
-
-            //get balances
-            let allBalances:any = [];
-            let allNfts = [];
-
-            // Validate pubkeys are in pubkeys
-            // let missingPubkeys = body.data.pubkeys.flat().filter(pubkey =>
-            //     !userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey)
-            // );
-            //
-            // if (missingPubkeys.length > 0) {
-            //     missingPubkeys.forEach(pubkey => console.log("Pubkey not found:", pubkey.pubkey));
-            //     for(let i = 0; i < missingPubkeys.length; i++){
-            //         let pubkey = missingPubkeys[i]
-            //         let resultRegister = await pioneer.register(username, [pubkey], body.context)
-            //         allBalances = resultRegister.balances
-            //         allNfts = resultRegister.nfts || []
-            //     }
-            // }
-
-            //add raw pubkeys to mongo
-            if(pubkeysRegistering.length > 0){
-                log.debug("register newPubkeys: ", pubkeysRegistering.length);
-                //pioneer.register(username, pubkeysRegistering, body.context)
-                let resultRegister = await pioneer.register(username, pubkeysRegistering, body.context)
-                log.debug("resultRegister: ", resultRegister);
-                allBalances = resultRegister.balances
-                log.debug("Adding pubkey to the user: ", pubkeysRegistering);
-                // await usersDB.update(
-                //     { username: userInfoMongo.username },
-                //     {
-                //         $addToSet: { pubkeys: pubkeysRegistering },
-                //         $set: { isSynced: false }
-                //     }
-                // );
-            } else {
-                log.debug("No new pubkeys to register!");
-            }
-
-            let userInfoFinal = await usersDB.findOne({ username });
-            log.debug("userInfoFinal: ", userInfoFinal);
-
-            // Validate the context is in wallets
-            if (!userInfoFinal.wallets.includes(body.context)) {
-                throw new Error("Invalid wallet context!");
-            }
-
-            // Validate the wallet is in walletDescriptions
-            let walletExistsInDescriptions = userInfoFinal.walletDescriptions.some(walletDesc => walletDesc.context === body.context);
-            if (!walletExistsInDescriptions) {
-                throw new Error("Wallet description not found!");
-            }
-
-            //TODO bring this back, broke in MM adding new pubkeys
-            // Validate pubkeys are in pubkeys
-            // let missingPubkeysFinal = body.data.pubkeys.flat().filter(pubkey =>
-            //     !userInfoFinal.pubkeys.some(existingPubkey => existingPubkey.pubkey === pubkey.pubkey)
-            // );
-            //
-            // if (missingPubkeysFinal.length > 0) {
-            //     missingPubkeysFinal.forEach(pubkey => console.log("Pubkey not found:", pubkey.pubkey));
-            //     log.error(tag,"Failed to register: missingPubkeysFinal: ", missingPubkeysFinal);
-            //     throw new Error("Failed to register pubkey!");
-            // }
-
+            if(!userInfoMongo)throw Error("unable to register user!")
             let { pubkeys } = await pioneer.getPubkeys(username);
             if(!pubkeys) throw new Error("No pubkeys found!")
             log.debug("pubkeys returned from pioneer: ", pubkeys.length);
 
+            let userInfoFinal = userInfoMongo
+            let allBalances:any = [];
+            let allNfts:any = [];
 
             for (let i = 0; i < pubkeys.length; i++) {
                 let pubkey = pubkeys[i];
@@ -836,7 +743,7 @@ export class pioneerPrivateController extends Controller {
 
          */
 
-    /** POST /users */
+    /** POST /redemption */
     @Post('/redemption')
     //CreateAppBody
     public async redemption(@Body() body: any): Promise<any> {
@@ -901,7 +808,7 @@ export class pioneerPrivateController extends Controller {
 
      */
 
-    /** POST /users */
+    /** POST /login */
     @Post('/login')
     //CreateAppBody
     public async login(@Body() body: any): Promise<any> {
