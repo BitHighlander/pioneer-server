@@ -128,19 +128,19 @@ let {
 } = require('@pioneer-platform/pioneer-coins')
 
 
-// let onStart = async function(){
-//     let tag = TAG+" | onStart | "
-//     try{
-//         //get nodes
-//         // let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
-//         // log.debug(tag,"unchainedNodes: ",unchainedNodes)
-//         //init networks with gaurenteed live nodes
-//         await networks['ANY'].init()
-//     }catch(e){
-//         console.error(e)
-//     }
-// }
-// onStart()
+let onStart = async function(){
+    let tag = TAG+" | onStart | "
+    try{
+        //get nodes
+        // let unchainedNodes = await nodesDB.find({ tags: { $in: ['unchained'] } },{limit:100})
+        // log.debug(tag,"unchainedNodes: ",unchainedNodes)
+        //init networks with gaurenteed live nodes
+        await networks['ANY'].init()
+    }catch(e){
+        console.error(e)
+    }
+}
+onStart()
 
 //route
 @Tags('Public Endpoints')

@@ -124,7 +124,7 @@ let io = require('socket.io')(server,{cors: {origin:'*'}});
 io.sockets.setMaxListeners(SOCKET_MAX_CONNECTIONS);
 
 //web
-app.use('/',express.static('frontend/dist'));
+//app.use('/',express.static('frontend/dist'));
 
 //docs
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));

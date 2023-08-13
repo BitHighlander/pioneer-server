@@ -84,7 +84,7 @@
     "@pioneer-platform/terra-network": "latest",
     "@pioneer-platform/thor-network": "^8.1.35",
     "@pioneer-platform/unchained": "^8.1.57",
-    "@pioneer-platform/utxo-network": "^8.1.68",
+    "@pioneer-platform/utxo-network": "^8.1.76",
     "@pioneer-platform/zapper-client": "^8.1.23",
     "@pioneer-sdk/sdk": "^1.0.19",
     "@pioneer-sdk/tx-builder": "^1.0.3",
