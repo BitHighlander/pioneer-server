@@ -70,7 +70,7 @@
     "@pioneer-platform/midgard-client": "^8.1.37",
     "@pioneer-platform/network": "latest",
     "@pioneer-platform/osmosis-network": "^8.1.36",
-    "@pioneer-platform/pioneer": "^8.2.4",
+    "@pioneer-platform/pioneer": "^8.2.13",
     "@pioneer-platform/pioneer-client": "^8.1.29",
     "@pioneer-platform/pioneer-coins": "^8.1.71",
     "@pioneer-platform/pioneer-explore": "^8.1.17",
