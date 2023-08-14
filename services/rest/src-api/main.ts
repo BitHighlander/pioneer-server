@@ -138,7 +138,7 @@ RegisterRoutes(app);  // and here
 
 //@TODO this keeps domain if you care
 app.use(['/','/assets','/coins','/docs'], createProxyMiddleware({
-    target: 'https://pioneer-frontend-v4.vercel.app/',
+    target: 'https://pioneer-frontend-v4.vercel.app',
     changeOrigin: true,
     onProxyRes: function (proxyRes, req, res) {
         // Remove potential security headers
