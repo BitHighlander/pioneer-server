@@ -208,8 +208,7 @@ export class pioneerPrivateController extends Controller {
                     queryKey: authorization,
                     publicAddress: body.publicAddress,
                     verified: false,
-                    wallets: [body.context],
-                    pubkeys: ([] as any[]).concat(...body.data.pubkeys.map((pubkey: any) => ({ ...pubkey, context: body.context })))
+                    wallets: [body.context]
                 };
                 await redis.hmset(authorization, userInfo);
             } else {
@@ -267,52 +266,15 @@ export class pioneerPrivateController extends Controller {
                 }
             }
             if(!userInfoMongo)throw Error("unable to register user!")
-            let { pubkeys } = await pioneer.getPubkeys(username);
-            if(!pubkeys) throw new Error("No pubkeys found!")
-            log.debug("pubkeys returned from pioneer: ", pubkeys.length);
+            log.info(tag,"username: ",username)
+            log.info(tag,"body.data.pubkeys: ",body.data.pubkeys)
+            let registerResult = await pioneer.register(username, body.data.pubkeys);
+            log.info(tag,"registerResult: ",registerResult)
+            userInfoMongo.balances = registerResult.balances
+            userInfoMongo.nfts = registerResult.nfts
+            userInfoMongo.isSynced = registerResult.isSynced
 
-            let userInfoFinal = userInfoMongo
-            let allBalances:any = [];
-            let allNfts:any = [];
-
-            for (let i = 0; i < pubkeys.length; i++) {
-                let pubkey = pubkeys[i];
-                let balances = await pubkey.balances || []
-                for (let j = 0; j < balances.length; j++) {
-                    let balance = balances[j];
-                    allBalances.push(balance);
-                }
-
-                let nfts = await pubkey.nfts || [];
-                for (let j = 0; j < nfts.length; j++) {
-                    let nft = nfts[j];
-                    allNfts.push(nft);
-                }
-            }
-
-            userInfoFinal.balances = allBalances;
-            userInfoFinal.nfts = allNfts;
-
-            for (let i = 0; i < allNfts.length; i++) {
-                let nft = allNfts[i];
-                if (nft.name === "Pioneer") {
-                    userInfoFinal.isPioneer = true;
-                    userInfoFinal.pioneerImage = nft.image;
-                }
-                if (nft.name === "Foxitar") {
-                    userInfoFinal.isFox = true;
-                }
-                // Add other conditions for different nft names if needed
-            }
-
-            if (!userInfoFinal.balances) userInfoFinal.balances = [];
-
-            //if no context, set to wallet0
-            if (!userInfoFinal.context) {
-                userInfoFinal.context = userInfoFinal.wallets[0]
-            }
-
-            return userInfoFinal;
+            return userInfoMongo;
         } catch (e) {
             log.error(tag,"Error: ", e);
             throw new ApiError("error", 503, "error: " + e.toString());
