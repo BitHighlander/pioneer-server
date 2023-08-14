@@ -1020,54 +1020,9 @@ export class pioneerPublicController extends Controller {
         const tag = TAG + " | getEvmNode | ";
         try {
             const limit = 10;
-            const entry = await nodesDB.find({ chainId }, { limit });
-            log.debug(tag,"entry: ",entry.length)
-            const output = entry.slice(0, limit);
-
-            const pingNode = async (node) => {
-                const startTime = new Date().getTime();
-                try {
-                    const providerUrl = node.service;
-                    const web3 = new Web3(providerUrl);
-
-                    let result = await web3.eth.getBlockNumber();
-                    result = result.toString(); // Convert BigInt to string
-                    log.debug("result: ",result)
-                    const endTime = new Date().getTime();
-                    const ping = endTime - startTime;
-                    console.log(`Node: ${node.service}, Ping: ${ping}`);
-
-                    await nodesDB.update({ _id: node._id }, { $set: { ping } }); // Update ping in MongoDB
-
-                    return ping;
-                } catch (error) {
-                    log.error(tag, `Timeout for ${node.service}`);
-                    await nodesDB.update({ _id: node._id }, { $set: { isOffline: true } });
-                    return null;
-                }
-            };
-
-            const pingPromises = output.map(server => pingNode(server));
-            // @ts-ignore
-            const pings = await Promise.allSettled(pingPromises);
-
-            pings.forEach((result, index) => {
-                if (result.status === 'fulfilled') {
-                    const ping = result.value;
-                    if (ping !== null) {
-                        output[index].ping = ping;
-                    }
-                }
-            });
-
-            const bestPingNode = output.reduce((best, current) => {
-                if (!best || current.ping < best.ping) {
-                    return current;
-                }
-                return best;
-            }, null);
-
-            return bestPingNode;
+            const entrys = await nodesDB.find({ chainId }, { limit });
+            log.info(tag, "entrys: ", entrys.length);
+            return entrys;
         } catch (e) {
             const errorResp: Error = {
                 success: false,
@@ -1075,7 +1030,7 @@ export class pioneerPublicController extends Controller {
                 e,
             };
             log.error(tag, "e: ", { errorResp });
-            throw new ApiError("error", 503, "error: " + e.toString());
+            return { error: true, message: e instanceof ApiError ? e.message : "error: " + e.toString() };
         }
     }
 

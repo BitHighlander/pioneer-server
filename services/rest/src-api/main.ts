@@ -61,7 +61,6 @@ const rateLimiterRedis = new RateLimiterRedis({
 //     }
 // };
 
-
 //TODO handle broke redis
 // ReplyError: MISCONF Redis is configured
 // This is commented because of Too many bug, but its not a too many, its a fucking broke server
