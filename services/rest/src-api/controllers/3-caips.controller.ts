@@ -159,6 +159,35 @@ export class caipsController extends Controller {
         }
     }
 
+
+    /*
+    * ATLAS
+    *
+    *    getAssetBy CAIP
+    *
+    * */
+    @Get('/atlas/assets/caip/{caip}')
+    public async assetsByCaip(caip:string) {
+        let tag = TAG + " | assetsByCaip | "
+        try{
+            log.debug(tag,"chainId: ",caip)
+            log.debug(tag,"chainId: ",typeof(caip))
+            //Get tracked networks
+            let results = await assetsDB.findOne({ caip },{limit:10})
+
+            return results
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+
     @Get('/blockchainBySymbol/{symbol}')
     public async getBlockchainBySymbol(symbol:string) {
         let tag = TAG + " | getBlockchainBySymbol | "
@@ -185,7 +214,7 @@ export class caipsController extends Controller {
         let tag = TAG + " | blockchainByCaip | "
         try{
             caip = caip.toLowerCase()
-            log.debug(tag,"caip: ",caip)
+            log.info(tag,"caip: ",caip)
             // Get tracked assets with fuzzy search
             let blockchain = await blockchainsDB.find({caip});
             //@TODO use smart filtering to sort by most popular

@@ -593,6 +593,8 @@ export class pioneerPublicController extends Controller {
             filterTags?: string[];
             isWhitelisted?: boolean;
             blockchain?: string;
+            searchQuery?: string;
+            searchFields?: string[];
         }
     ) {
         let tag = TAG + ' | searchAtlas | ';
@@ -606,6 +608,8 @@ export class pioneerPublicController extends Controller {
                 filterTags = [],
                 isWhitelisted,
                 blockchain,
+                searchQuery,
+                searchFields,
             } = payload;
 
             let allCollections = Object.keys(ATLAS)
@@ -638,6 +642,11 @@ export class pioneerPublicController extends Controller {
             // Add filter for blockchain
             if (blockchain && typeof blockchain === 'string') {
                 query.blockchain = blockchain;
+            }
+
+            if (searchQuery && searchFields && searchFields.length > 0) {
+                const regexQueries = searchFields.map(field => ({ [field]: { $regex: searchQuery, $options: 'i' } }));
+                query.$or = regexQueries;
             }
 
             // Get dapps with sort, limit, and skip parameters
@@ -1603,6 +1612,7 @@ export class pioneerPublicController extends Controller {
             if(!body.signature) throw Error("signature is required!")
             if(!body.payload) throw Error("payload is required!")
             if(!body.blockchain) throw Error("blockchain is required!")
+            if(!body.blockchainCaip) throw Error("blockchainCaip is required!")
             if(!body.caip) throw Error("caip is required!")
             let asset:any = {
                 name:body.name.toLowerCase(),
@@ -1610,6 +1620,7 @@ export class pioneerPublicController extends Controller {
                 caip:body.caip.toLowerCase(),
                 tags:body.tags,
                 blockchain:body.blockchain.toLowerCase(),
+                blockchainCaip:body.blockchainCaip.toLowerCase(),
                 symbol:body.symbol,
                 decimals:body.decimals,
                 image:body.image,
@@ -1668,7 +1679,7 @@ export class pioneerPublicController extends Controller {
             if(!body.type) throw Error("type is required!")
             if(!body.image) throw Error("image is required!")
             if(!body.tags) throw Error("tags is required!")
-            if(!body.symbol) throw Error("symbol is required!")
+            // if(!body.symbol) throw Error("symbol is required!")
             if(!body.chain) throw Error("chain is required!")
             if(!body.explorer) throw Error("explorer is required!")
             if(!body.description) throw Error("description is required!")
