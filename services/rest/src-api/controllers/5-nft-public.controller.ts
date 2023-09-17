@@ -62,9 +62,16 @@ export class nftPublicController extends Controller {
     public async getNfts(address:string) {
         let tag = TAG + " | nfts | "
         try{
-
-            let tokens = await zapper.getTokens(address)
-            return tokens
+            try{
+                let tokens = await zapper.getTokens(address)
+                return tokens
+            }catch(e){
+                return {
+                    success:false,
+                    msg:"zapper failed to provide data!",
+                    error:e.toString()
+                }
+            }
         }catch(e){
             let errorResp:Error = {
                 success:false,
@@ -80,9 +87,16 @@ export class nftPublicController extends Controller {
     public async getPortfolio(address:string) {
         let tag = TAG + " | getPortfolio | "
         try{
-
-            let tokens = await zapper.getPortfolio(address)
-            return tokens
+            try{
+                let tokens = await zapper.getPortfolio(address)
+                return tokens
+            }catch(e){
+                return {
+                    success:false,
+                    msg:"zapper failed to provide data!",
+                    error:e.toString()
+                }
+            }
         }catch(e){
             let errorResp:Error = {
                 success:false,
