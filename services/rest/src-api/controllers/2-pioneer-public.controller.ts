@@ -5,6 +5,8 @@
 
 
  */
+import {ethers} from "ethers";
+
 let TAG = ' | API | '
 
 const pjson = require('../../package.json');
@@ -922,6 +924,33 @@ export class atlasPublicController extends Controller {
             //TODO if nft
 
             return(output)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    //eip155 gas quote
+    @Get('/getFeeInfo/eip155/byCaip/{caip}')
+    public async getFeeInfoByCaip(caip:string) {
+        let tag = TAG + " | getFeeInfoByCaip | "
+        try{
+            const sort = { ping: -1 };
+            const entry = await nodesDB.findOne({ caip }, { sort });
+            if(!entry) throw new Error('no node found for caip: ' + caip)
+            const service = entry.service;
+            log.debug(tag, 'entry: ', entry);
+            log.info(tag, 'service: ', service);
+            const provider = new ethers.providers.JsonRpcProvider(service);
+            let getFeeData = await provider.getFeeData();
+            log.info(tag, 'getFeeData: ', getFeeData);
+
+            return(getFeeData)
         }catch(e){
             let errorResp:Error = {
                 success:false,
