@@ -76,7 +76,7 @@
     "@pioneer-platform/pioneer-explore": "latest",
     "@pioneer-platform/pioneer-intelligence": "latest",
     "@pioneer-platform/pioneer-invoke": "^8.1.50",
-    "@pioneer-platform/pioneer-types": "^8.1.55",
+    "@pioneer-platform/pioneer-types": "^8.1.56",
     "@pioneer-platform/redis-queue": "latest",
     "@pioneer-platform/ripple-network": "^8.1.55",
     "@pioneer-platform/secret-network": "^8.1.23",

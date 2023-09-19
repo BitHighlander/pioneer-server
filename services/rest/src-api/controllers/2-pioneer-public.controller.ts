@@ -1852,7 +1852,7 @@ export class atlasPublicController extends Controller {
         try{
             log.debug(tag,"************************** CHECKPOINT *******************88 ")
             log.debug(tag,"body: ",body)
-            if(!body.network) throw Error("104: network required! ")
+            if(!body.network && !body.caip) throw Error("104: network or caip required! ")
             if(!body.serialized) throw Error("105: must have serialized payload! ")
 
             let output:any = {
@@ -1891,101 +1891,123 @@ export class atlasPublicController extends Controller {
                 log.debug(tag,"broadcasting!")
                 let result
                 try{
-                    if(network === 'EOS'){
-                        throw Error("103: EOS not finished!")
-                        //result = await networks[network].broadcast(body.broadcastBody)
-                    } else if(network === 'FIO'){
-                        let broadcast = {
-                            signatures:
-                                [ body.signature ],
-                            compression: "none",
-                            packed_context_free_data: '',
-                            packed_trx:
-                            body.serialized
-                        }
-                        if(!body.type) {
-                            log.error(tag,"invalid payload!: ",broadcast)
-                            throw Error("Fio txs require type!")
-                        }
+                    if(body.caip){
+                        let caip = body.caip;
+                        //get node by caip
+                        const sort = { ping: -1 };
+                        const entry = await nodesDB.findOne({ caip }, { sort });
+                        if(!entry) throw new Error('no node found for caip: ' + caip)
+                        const service = entry.service;
+                        //TODO dont assume all caips are eip155
+                        log.debug(tag, 'entry: ', entry);
+                        log.info(tag, 'service: ', service);
+                        const provider = new ethers.providers.JsonRpcProvider(service);
+                        let getFeeData = await provider.getFeeData();
+                        log.info(tag, 'getFeeData: ', getFeeData);
 
-                        //broadcast based on tx
-                        switch(body.type) {
-                            case "fioSignAddPubAddressTx":
-                                log.debug(tag,"checkpoint: fioSignAddPubAddressTx ")
-                                log.debug(tag,"broadcast: ",broadcast)
-                                result = await networks[network].broadcastAddPubAddressTx(broadcast)
-                                break;
-                            case "fioSignRegisterDomainTx":
-                                //TODO
-                                break;
-                            case "fioSignRegisterFioAddressTx":
-                                //TODO
-                                break;
-                            case "fioSignNewFundsRequestTx":
-                                log.debug(tag,"checkpoint: broadcastNewFundsRequestTx ")
-                                log.debug(tag,"broadcast: ",broadcast)
-                                result = await networks[network].broadcastNewFundsRequestTx(broadcast)
-                                break;
-                            default:
-                                throw Error("Type not supported! "+body.type)
-                        }
-                    } else if(UTXO_COINS.indexOf(network) >= 0){
-                        log.debug(tag,"UXTO DETECTED!: ",network)
-                        //normal broadcast
-                        try{
-                            if(!body.serialized) throw Error("signature required!")
-                            if(!body.network) throw Error("network required!")
-                            log.debug(tag,"network: ",network)
-                            log.debug(tag,"body.serialized: ",body.serialized)
-                            result = await networks['ANY'].broadcast(network,body.serialized)
-                            log.debug(tag,"result: ",result)
-                            // if(result && result.txid)
-                            if(result.success){
-                                output.success = true
-                                output.txid = result.txid
+                        //broadcast by caip
+                        const txHash = await provider.sendTransaction(body.serialized);
+                        log.info(tag,"txHash: ",txHash)
+                        // @ts-ignore
+                        output.txid = txHash.hash
+                    }else{
+                        //broadcast by network (legacy)
+                        if(network === 'EOS'){
+                            throw Error("103: EOS not finished!")
+                            //result = await networks[network].broadcast(body.broadcastBody)
+                        } else if(network === 'FIO'){
+                            let broadcast = {
+                                signatures:
+                                    [ body.signature ],
+                                compression: "none",
+                                packed_context_free_data: '',
+                                packed_trx:
+                                body.serialized
                             }
-                            if(result.error){
-                                output.success = false
-                                output.error = result.error
+                            if(!body.type) {
+                                log.error(tag,"invalid payload!: ",broadcast)
+                                throw Error("Fio txs require type!")
                             }
-                            if(!output.error && !output.success) output.error = "unknown error"
-                            if(!output.success) output.success = false
-                            log.debug(tag,"result: ",result)
-                        }catch(e){
-                            log.error(tag,"ERRROR ON BROADCAST e: ",e)
-                            result = {
-                                error:true,
-                                errorMsg: e.toString()
+
+                            //broadcast based on tx
+                            switch(body.type) {
+                                case "fioSignAddPubAddressTx":
+                                    log.debug(tag,"checkpoint: fioSignAddPubAddressTx ")
+                                    log.debug(tag,"broadcast: ",broadcast)
+                                    result = await networks[network].broadcastAddPubAddressTx(broadcast)
+                                    break;
+                                case "fioSignRegisterDomainTx":
+                                    //TODO
+                                    break;
+                                case "fioSignRegisterFioAddressTx":
+                                    //TODO
+                                    break;
+                                case "fioSignNewFundsRequestTx":
+                                    log.debug(tag,"checkpoint: broadcastNewFundsRequestTx ")
+                                    log.debug(tag,"broadcast: ",broadcast)
+                                    result = await networks[network].broadcastNewFundsRequestTx(broadcast)
+                                    break;
+                                default:
+                                    throw Error("Type not supported! "+body.type)
                             }
-                        }
-                    } else {
-                        log.debug(tag,"normal broadcast! ")
-                        //All over coins
-                        try{
-                            log.debug(tag,"body: ",body)
-                            log.debug(tag,"body.serialized: ",body.serialized)
-                            log.debug(tag,"network: ",network)
-                            network = COIN_MAP[network]
-                            let result = await networks[network].broadcast(body.serialized)
-                            log.debug(tag,"BROADCASAT RESULT: ",result)
-                            output.result = result
-                            if(result.success){
-                                output.success = true
-                                if(result.txid) {
+                        } else if(UTXO_COINS.indexOf(network) >= 0){
+                            log.debug(tag,"UXTO DETECTED!: ",network)
+                            //normal broadcast
+                            try{
+                                if(!body.serialized) throw Error("signature required!")
+                                if(!body.network) throw Error("network required!")
+                                log.debug(tag,"network: ",network)
+                                log.debug(tag,"body.serialized: ",body.serialized)
+                                result = await networks['ANY'].broadcast(network,body.serialized)
+                                log.debug(tag,"result: ",result)
+                                // if(result && result.txid)
+                                if(result.success){
+                                    output.success = true
                                     output.txid = result.txid
-                                    //update txid URL
-                                    output.explorerUrl = getExplorerTxUrl(network,output.txid)
                                 }
-                            } else {
-                                if(result.error) output.error = result.error
+                                if(result.error){
+                                    output.success = false
+                                    output.error = result.error
+                                }
+                                if(!output.error && !output.success) output.error = "unknown error"
+                                if(!output.success) output.success = false
+                                log.debug(tag,"result: ",result)
+                            }catch(e){
+                                log.error(tag,"ERRROR ON BROADCAST e: ",e)
+                                result = {
+                                    error:true,
+                                    errorMsg: e.toString()
+                                }
                             }
-                            log.debug(tag,"output: ",output)
-                            log.debug(tag,"result: ",result)
-                        }catch(e){
-                            log.error(tag,"Failed to broadcast!: ",e)
-                            result = {
-                                error:true,
-                                errorMsg: e.toString()
+                        } else {
+                            log.debug(tag,"normal broadcast! ")
+                            //All over coins
+                            try{
+                                log.debug(tag,"body: ",body)
+                                log.debug(tag,"body.serialized: ",body.serialized)
+                                log.debug(tag,"network: ",network)
+                                network = COIN_MAP[network]
+                                let result = await networks[network].broadcast(body.serialized)
+                                log.debug(tag,"BROADCASAT RESULT: ",result)
+                                output.result = result
+                                if(result.success){
+                                    output.success = true
+                                    if(result.txid) {
+                                        output.txid = result.txid
+                                        //update txid URL
+                                        output.explorerUrl = getExplorerTxUrl(network,output.txid)
+                                    }
+                                } else {
+                                    if(result.error) output.error = result.error
+                                }
+                                log.debug(tag,"output: ",output)
+                                log.debug(tag,"result: ",result)
+                            }catch(e){
+                                log.error(tag,"Failed to broadcast!: ",e)
+                                result = {
+                                    error:true,
+                                    errorMsg: e.toString()
+                                }
                             }
                         }
                     }
