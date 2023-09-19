@@ -26,6 +26,7 @@ let blockchainsDB = connection.get('blockchains')
 let dappsDB = connection.get('apps')
 let nodesDB = connection.get('nodes')
 let assetsDB = connection.get('assets')
+import { BigNumber } from "ethers";
 
 usersDB.createIndex({id: 1}, {unique: true})
 usersDB.createIndex({username: 1}, {unique: true})
@@ -951,6 +952,51 @@ export class atlasPublicController extends Controller {
             log.info(tag, 'getFeeData: ', getFeeData);
 
             return(getFeeData)
+        }catch(e){
+            let errorResp:Error = {
+                success:false,
+                tag,
+                e
+            }
+            log.error(tag,"e: ",{errorResp})
+            throw new ApiError("error",503,"error: "+e.toString());
+        }
+    }
+
+    //eip155 nonce quote
+    @Get('/getAddressInfo/eip155/byCaip/{caip}/{address}')
+    public async getAddressInfoByCaip(caip:string,address:string) {
+        let tag = TAG + " | getAddressInfoByCaip | "
+        try{
+            log.info(tag,"caip: ",caip)
+            log.info(tag,"address: ",address)
+            const sort = { ping: -1 };
+            const entry = await nodesDB.findOne({ caip }, { sort });
+            if(!entry) throw new Error('no node found for caip: ' + caip)
+            const service = entry.service;
+            log.debug(tag, 'entry: ', entry);
+            log.info(tag, 'service: ', service);
+            const provider = new ethers.providers.JsonRpcProvider(service);
+            //get nonce
+            let txCount = await provider.getTransactionCount(address,'pending')
+
+            const decimals = 18;  // Number of decimal places you want to keep
+            const BASE = BigNumber.from("10").pow(decimals);  // 10^18, as before
+
+            let balance: any = await provider.getBalance(address);
+
+            // Keep more precision by not dividing; instead, we'll handle this as a fixed-point number
+            let fixedPointBalance = balance.toString();
+
+            // Extract the whole and decimal parts of the fixed-point number
+            let wholePart = fixedPointBalance.slice(0, -decimals);
+            let decimalPart = fixedPointBalance.slice(-decimals);
+
+            let output = {
+                nonce: txCount,
+                balance: wholePart + "." + decimalPart,
+            };
+            return output
         }catch(e){
             let errorResp:Error = {
                 success:false,
