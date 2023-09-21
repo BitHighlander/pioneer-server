@@ -1895,21 +1895,37 @@ export class atlasPublicController extends Controller {
                         let caip = body.caip;
                         //get node by caip
                         const sort = { ping: -1 };
-                        const entry = await nodesDB.findOne({ caip }, { sort });
-                        if(!entry) throw new Error('no node found for caip: ' + caip)
-                        const service = entry.service;
-                        //TODO dont assume all caips are eip155
-                        log.debug(tag, 'entry: ', entry);
-                        log.info(tag, 'service: ', service);
-                        const provider = new ethers.providers.JsonRpcProvider(service);
-                        let getFeeData = await provider.getFeeData();
-                        log.info(tag, 'getFeeData: ', getFeeData);
-
-                        //broadcast by caip
-                        const txHash = await provider.sendTransaction(body.serialized);
-                        log.info(tag,"txHash: ",txHash)
-                        // @ts-ignore
-                        output.txid = txHash.hash
+                        const entrys = await nodesDB.find({ caip }, { sort, limit: 10 });
+                        if(!entrys || entrys.length === 0) throw new Error('no node found for caip: ' + caip)
+                        //broadcast to all
+                        let results = []
+                        for(let i = 0; i < entrys.length; i++){
+                            let entry = entrys[i];
+                            const service = entry.service;
+                            //TODO dont assume all caips are eip155
+                            log.debug(tag, 'entry: ', entry);
+                            log.info(tag, 'service: ', service);let result:any = {
+                                service
+                            }
+                            try{
+                                const provider = new ethers.providers.JsonRpcProvider(service);
+                                //broadcast by caip
+                                const txHash = await provider.sendTransaction(body.serialized);
+                                result.result = txHash;
+                                log.info(tag,"txHash: ",txHash)
+                                // @ts-ignore
+                                if(txHash){
+                                    output.success = true
+                                    output.txid = txHash.hash
+                                }
+                                results.push(result)
+                            }catch(e){
+                                result.result = e.toString();
+                                results.push(result)
+                            }
+                        }
+                        log.info(tag,"results: ",results)
+                        output.results = results;
                     }else{
                         //broadcast by network (legacy)
                         if(network === 'EOS'){
