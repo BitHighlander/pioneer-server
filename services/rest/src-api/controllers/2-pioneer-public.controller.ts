@@ -984,17 +984,11 @@ export class atlasPublicController extends Controller {
             const BASE = BigNumber.from("10").pow(decimals);  // 10^18, as before
 
             let balance: any = await provider.getBalance(address);
-
-            // Keep more precision by not dividing; instead, we'll handle this as a fixed-point number
-            let fixedPointBalance = balance.toString();
-
-            // Extract the whole and decimal parts of the fixed-point number
-            let wholePart = fixedPointBalance.slice(0, -decimals);
-            let decimalPart = fixedPointBalance.slice(-decimals);
+            let etherBalance = ethers.utils.formatUnits(balance, decimals);
 
             let output = {
                 nonce: txCount,
-                balance: wholePart + "." + decimalPart,
+                balance: etherBalance,
             };
             return output
         }catch(e){
