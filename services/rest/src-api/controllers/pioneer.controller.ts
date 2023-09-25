@@ -120,7 +120,9 @@ export class pioneerController extends Controller {
                     data: body.data,
                 });
                 log.debug(tag, 'gasLimit: ', gasLimit);
-
+                // Calculate a 20% buffer and add it to the gasLimit
+                const buffer = gasLimit.mul(20).div(100); // 20% buffer
+                gasLimit = gasLimit.add(buffer);
                 //if gas limit is < 21000 then set to 21000
                 if (gasLimit.lt(ethers.BigNumber.from('36000'))) {
                     gasLimit = ethers.BigNumber.from('36000');
