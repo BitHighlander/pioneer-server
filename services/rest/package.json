@@ -85,7 +85,7 @@
     "@pioneer-platform/thor-network": "^8.1.48",
     "@pioneer-platform/unchained": "^8.1.57",
     "@pioneer-platform/utxo-network": "^8.1.82",
-    "@pioneer-platform/zapper-client": "^8.1.28",
+    "@pioneer-platform/zapper-client": "^8.1.29",
     "@pioneer-sdk/sdk": "^1.1.158",
     "@pioneer-sdk/tx-builder": "^1.0.3",
     "@types/jsonwebtoken": "^8.5.9",
