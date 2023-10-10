@@ -11,7 +11,7 @@ clean::
 	sh scripts/clean.sh
 
 build::
-	cd services/rest && npm i && npm run build:all-$(env)
+	cd services/rest && npm run build:all-$(env)
 
 # push::
 #     cd services/ingesters/pubkeys && npm i && npm run docker:push:all
@@ -19,7 +19,7 @@ build::
 
 push::
 #	cd services/ingesters/facts/intake && npm i && npm run docker:push:all
-	cd services/rest && npm i && npm run docker:push:all
+	cd services/rest && npm run docker:push:all
 
 # push::
 # 	cd services/rest && npm i && npm run docker:push:all & \
