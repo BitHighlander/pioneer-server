@@ -3,7 +3,7 @@ version: 2.1
 executors:
   node:
     docker:
-      - image: circleci/node:14
+      - image: circleci/node:16
 
 jobs:
   make:
@@ -30,10 +30,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          name: Downgrade npm
-          command: |
-            sudo npm install -g npm@6
       - run:
           command: "curl -sL https://github.com/digitalocean/doctl/releases/download/v1.56.0/doctl-1.56.0-linux-amd64.tar.gz | tar -xzv"
       - run:
