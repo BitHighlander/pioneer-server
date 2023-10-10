@@ -1,6 +1,6 @@
 #uncomment ONLY on M1 mac (rolls eyes)
-FROM --platform=linux/amd64 node:14-buster
-#FROM --platform=linux/amd64 node:16-buster
+#FROM --platform=linux/amd64 node:14-buster
+FROM --platform=linux/amd64 node:16-buster
 
 RUN apt-get update
 
