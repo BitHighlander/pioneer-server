@@ -43,7 +43,7 @@ txsRawDB.createIndex({txhash: 1}, {unique: true})
 appsDB.createIndex({app: 1}, {unique: true})
 appsDB.createIndex({homepage: 1}, {unique: true})
 appsDB.createIndex({id: 1}, {unique: true})
-assetsDB.createIndex({name: 1}, {unique: true})
+// assetsDB.createIndex({name: 1}, {unique: true})
 //globals
 const ADMIN_PUBLIC_ADDRESS = process.env['ADMIN_PUBLIC_ADDRESS']
 if(!ADMIN_PUBLIC_ADDRESS) throw Error("Invalid ENV missing ADMIN_PUBLIC_ADDRESS")

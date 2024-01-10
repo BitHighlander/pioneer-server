@@ -1366,9 +1366,9 @@ export class atlasPublicController extends Controller {
     public async getAccountInfo(network:string,address:string) {
         let tag = TAG + " | accountsFromPubkey | "
         try{
-            log.debug(tag,"network: ",network)
-            log.debug(tag,"address: ",address)
-            log.debug(tag,"networks: ",networks)
+            log.info(tag,"network: ",network)
+            log.info(tag,"address: ",address)
+            log.info(tag,"networks: ",networks)
             if(!networks[network]) throw Error("103: network not supported! network: "+network)
             let accounts = await networks[network].getAccount(address)
             return accounts
